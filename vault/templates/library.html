@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Alkahest</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { margin-bottom: 20px; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        
+        .card:hover { transform: scale(1.05); z-index: 10; cursor: pointer; }
+        
+        .card img {
+            width: 100%;
+            height: 225px; /* Tamanho padrão de capa */
+            object-fit: cover;
+            display: block;
+        }
+        
+        .card-info { padding: 10px; }
+        
+        .card-title {
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: bold;
+        }
+        
+        .badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: #fff;
+        }
+        
+        .status-playing { border-bottom: 3px solid #4caf50; }
+        .status-backlog { border-bottom: 3px solid #ff9800; }
+        .status-completed { border-bottom: 3px solid #2196f3; }
+    </style>
+</head>
+<body>
+
+    <h1>Minha Estante ({{ total_games }} jogos)</h1>
+
+    <div class="grid">
+        {% for entry in library %}
+            <div class="card status-{{ entry.status }}">
+                <!-- Badge da Plataforma (Steam/PSN) -->
+                <div class="badge">{{ entry.platform_game.platform.name }}</div>
+                
+                <!-- Capa -->
+                {% if entry.platform_game.master_game.cover_url %}
+                    <img src="{{ entry.platform_game.master_game.cover_url }}" alt="{{ entry.platform_game.master_game.title }}">
+                {% else %}
+                    <!-- Placeholder Elegante -->
+                    <div style="
+                        height: 225px; 
+                        background: linear-gradient(45deg, #2c3e50, #4ca1af); 
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: center; 
+                        padding: 10px; 
+                        text-align: center;
+                        color: rgba(255,255,255,0.8);
+                        font-weight: bold;
+                    ">
+                        {{ entry.platform_game.master_game.title }}
+                    </div>
+                {% endif %}
+                
+                <div class="card-info">
+                    <div class="card-title">{{ entry.platform_game.master_game.title }}</div>
+                    <div style="font-size: 0.8rem; color: #888;">
+                        {{ entry.playtime_hours }}h jogadas
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p>Nenhum jogo encontrado. Rode o importador!</p>
+        {% endfor %}
+    </div>
+
+</body>
+</html>
