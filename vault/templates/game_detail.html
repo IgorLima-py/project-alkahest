@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Coluna da Esquerda (Capa e Info) -->
+    <div class="col-md-3">
+        <div class="card bg-dark border-0">
+            {% if master.cover_url %}
+                <img src="{{ master.cover_url }}" class="img-fluid rounded shadow-lg mb-3">
+            {% else %}
+                <div class="bg-secondary rounded shadow-lg mb-3 d-flex align-items-center justify-content-center" style="height: 300px;">
+                    {{ master.title }}
+                </div>
+            {% endif %}
+
+            <div class="d-grid gap-2">
+                <button class="btn btn-{{ entry.status|yesno:'success,warning,primary,danger' }} btn-sm text-uppercase fw-bold">
+                    {{ entry.get_status_display }}
+                </button>
+            </div>
+            
+            <ul class="list-group list-group-flush mt-3 rounded">
+                <li class="list-group-item bg-dark text-light border-secondary d-flex justify-content-between">
+                    <span>Tempo:</span> <strong>{{ entry.playtime_hours }}h</strong>
+                </li>
+                <li class="list-group-item bg-dark text-light border-secondary d-flex justify-content-between">
+                    <span>Plataforma:</span> <strong>{{ platform.name }}</strong>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Coluna da Direita (Conquistas e Stats) -->
+    <div class="col-md-9">
+        <h1 class="display-5 fw-bold">{{ master.title }}</h1>
+        <p class="lead text-secondary">
+            <!-- Aqui virá a descrição do IGDB no futuro -->
+            Gerenciando via {{ platform.name }}
+        </p>
+
+        <hr class="border-secondary">
+
+        <!-- Área de Conquistas (Vazia por enquanto) -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>Conquistas</h3>
+            <button class="btn btn-outline-light btn-sm">
+                <i class="bi bi-arrow-clockwise"></i> Atualizar
+            </button>
+        </div>
+
+        <div class="alert alert-dark border-secondary">
+             {% with total=entry.platform_game.achievements.count unlocked=entry.user.userachievement_set.count %}
+        <!-- Barra de Progresso Geral -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between mb-1">
+                <span>Progresso</span>
+                <span class="fw-bold">{{ unlocked_achievements }} / {{ total_achievements }}</span>
+            </div>
+            <div class="progress" style="height: 10px; background-color: #333;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: {{ percentage }}%"></div>
+            </div>
+            <small class="text-muted text-end d-block mt-1">{{ percentage }}% Completo</small>
+        </div>
+        
+        <!-- Lista de Conquistas -->
+        <div class="list-group">
+            {% for ach in entry.platform_game.achievements.all %}
+                {% if ach.id in unlocked_ids %}
+                    <!-- CASO 1: DESBLOQUEADA (Colorida e Brilhante) -->
+                    <div class="list-group-item bg-success bg-opacity-10 border-success text-light d-flex align-items-center mb-2 rounded shadow-sm">
+                        <img src="{{ ach.icon_url }}" style="width: 56px; height: 56px; margin-right: 15px; border: 2px solid #4caf50; border-radius: 4px;" loading="lazy">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0 text-success fw-bold">{{ ach.name }} <i class="bi bi-check-circle-fill"></i></h6>
+                            <small class="text-light opacity-75">{{ ach.description }}</small>
+                        </div>
+                        <span class="badge bg-success">{{ ach.xp_value }} XP</span>
+                    </div>
+                {% else %}
+                    <!-- CASO 2: BLOQUEADA (Cinza e Transparente) -->
+                    <div class="list-group-item bg-dark border-secondary text-light d-flex align-items-center mb-2 rounded" style="opacity: 0.6;">
+                        <!-- Filtro grayscale na imagem -->
+                        <img src="{{ ach.icon_url }}" style="width: 56px; height: 56px; margin-right: 15px; filter: grayscale(100%);" loading="lazy">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0 text-muted">{{ ach.name }}</h6>
+                            <small class="text-secondary">{{ ach.description }}</small>
+                        </div>
+                        <span class="badge bg-secondary">{{ ach.xp_value }} XP</span>
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div class="alert alert-warning">Nenhuma conquista encontrada.</div>
+            {% endfor %}
+        </div>
+        {% endwith %}
+    </div>
+</div>
+{% endblock %}

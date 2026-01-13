@@ -17,8 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from vault.views import library_view
+from vault.views import library_view, game_detail_view, profile_view  # <--- Adicione game_detail_view
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', library_view, name='library'), # <--- Rota vazia = Home
+    path('', library_view, name='library'),
+    path('game/<uuid:game_id>/', game_detail_view, name='game_detail'),
+    path('profile/', profile_view, name='profile'),
 ]

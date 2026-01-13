@@ -77,3 +77,13 @@ class Achievement(models.Model):
     icon_url = models.URLField(blank=True, null=True)
     is_hidden = models.BooleanField(default=False)
     xp_value = models.IntegerField(default=0)
+
+class UserAchievement(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
+    unlocked_at = models.DateTimeField()
+    
+    class Meta:
+        unique_together = ('user', 'achievement')

@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <!-- Cartão de Perfil e Nível -->
+    <div class="col-md-12">
+        <div class="card bg-dark border-secondary p-4">
+            <div class="d-flex align-items-center mb-3">
+                <!-- Avatar (Placeholder) -->
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                    {{ user.username|first|upper }}
+                </div>
+                
+                <div class="flex-grow-1">
+                    <h2 class="fw-bold mb-0">{{ user.username }}</h2>
+                    <span class="text-secondary">Alquimista Nível {{ current_level }}</span>
+                </div>
+
+                <div class="text-end">
+                    <h3 class="text-warning fw-bold mb-0">{{ total_xp }} XP</h3>
+                    <small class="text-muted">{{ achievements_count }} Conquistas</small>
+                </div>
+            </div>
+
+            <!-- Barra de XP -->
+            <div class="progress" style="height: 25px; background-color: #111;">
+                <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ level_progress_percent }}%">
+                    {{ xp_current }} / 1000 XP
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grid de KPIs -->
+<div class="row g-4 mb-4">
+    <!-- Horas Jogadas -->
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary h-100 text-center p-3">
+            <h6 class="text-secondary text-uppercase">Tempo Total</h6>
+            <h1 class="fw-bold text-light">{{ total_hours }}h</h1>
+            <small class="text-success"><i class="bi bi-clock-history"></i> Registrado</small>
+        </div>
+    </div>
+
+    <!-- Jogos Zerados -->
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary h-100 text-center p-3">
+            <h6 class="text-secondary text-uppercase">Zerados</h6>
+            <h1 class="fw-bold text-info">{{ completed_games }}</h1>
+            <small class="text-muted">De {{ total_games }} jogos</small>
+        </div>
+    </div>
+
+    <!-- Backlog -->
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary h-100 text-center p-3">
+            <h6 class="text-secondary text-uppercase">Backlog</h6>
+            <h1 class="fw-bold text-warning">{{ backlog_games }}</h1>
+            <small class="text-muted">Jogos parados</small>
+        </div>
+    </div>
+
+    <!-- Jogando -->
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary h-100 text-center p-3">
+            <h6 class="text-secondary text-uppercase">Jogando</h6>
+            <h1 class="fw-bold text-success">{{ playing_games }}</h1>
+            <small class="text-muted">Atuais</small>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Distribuição por Plataforma -->
+    <div class="col-md-6">
+        <h4 class="mb-3">Plataformas</h4>
+        <div class="card bg-dark border-secondary">
+            <ul class="list-group list-group-flush">
+                {% for stat in platform_stats %}
+                <li class="list-group-item bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
+                    <span>
+                        {% if stat.platform_game__platform__name == 'Steam' %} <i class="bi bi-steam me-2"></i>
+                        {% elif stat.platform_game__platform__name == 'RetroAchievements' %} <i class="bi bi-joystick me-2"></i>
+                        {% endif %}
+                        {{ stat.platform_game__platform__name }}
+                    </span>
+                    <span class="badge bg-secondary rounded-pill">{{ stat.count }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Espaço para Gráfico Futuro -->
+    <div class="col-md-6">
+        <h4 class="mb-3">Atividade Recente</h4>
+        <div class="alert alert-dark border-secondary">
+            Aqui colocaremos o Heatmap (Igual GitHub) na próxima atualização!
+        </div>
+    </div>
+</div>
+{% endblock %}
