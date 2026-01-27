@@ -28,7 +28,8 @@ from .models import (
     Platform,
     PlatformGame,
     UserProfile,
-    UserFollow
+    UserFollow,
+    User
 )
 
 # Utils
@@ -532,17 +533,26 @@ def rivals_view(request):
     following_ids.append(request.user.id)
     
     leaderboard_data = []
-    # Busca perfis
+    # Busca perfis com otimização
     profiles = UserProfile.objects.filter(user_id__in=following_ids).select_related('user')
     
     for profile in profiles:
         total_xp = UserAchievement.objects.filter(user=profile.user).aggregate(Sum('achievement__xp_value'))['achievement__xp_value__sum'] or 0
+        
+        # Correção do Erro B: Calcular nível aqui no Python
+        level = 1 + int(total_xp / 1000) 
+
         leaderboard_data.append({
             'user': profile.user,
             'xp': total_xp,
+            'level': level, # Passando o nível pronto
             'games_completed': UserLibraryEntry.objects.filter(user=profile.user, status='completed').count(),
             'avatar': profile.avatar_url
         })
+    
+    leaderboard_data.sort(key=lambda x: x['xp'], reverse=True)
+    return render(request, 'social/rivals.html', {'leaderboard': leaderboard_data})
+
     
     leaderboard_data.sort(key=lambda x: x['xp'], reverse=True)
     return render(request, 'social/rivals.html', {'leaderboard': leaderboard_data})
