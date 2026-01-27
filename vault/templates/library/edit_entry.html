@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <h1 class="display-5 fw-bold">Editar Jogo na Biblioteca</h1>
+        <p class="lead text-muted">Alterando: <strong>{{ entry.platform_game.master_game.title }}</strong></p>
+
+        <div class="card bg-dark border-secondary p-4 mt-4">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.platform.id_for_label }}" class="form-label">Plataforma</label>
+                    <!-- O Django vai renderizar o dropdown aqui -->
+                    <select name="{{ form.platform.name }}" id="{{ form.platform.id_for_label }}" class="form-select bg-secondary text-light border-0">
+                        {% for value, text in form.platform.field.choices %}
+                            <option value="{{ value }}" {% if form.platform.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ text }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Mudar a plataforma moverá esta entrada para a versão correta do jogo.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                    <!-- O Django vai renderizar o dropdown de status aqui -->
+                     <select name="{{ form.status.name }}" id="{{ form.status.id_for_label }}" class="form-select bg-secondary text-light border-0">
+                        {% for value, text in form.status.field.choices %}
+                            <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>{{ text }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <hr class="border-secondary my-4">
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'game_detail' entry.id %}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-success fw-bold">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
