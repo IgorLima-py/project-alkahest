@@ -3,41 +3,45 @@
 
 {% block content %}
 <!-- PROFILE HEADER -->
-<div class="position-relative mb-5" style="margin-top: -1.5rem;">
-    <!-- Background Gradient Cover -->
-    <div style="height: 200px; background: linear-gradient(to bottom, rgba(124, 58, 237, 0.2), transparent); border-bottom: 1px solid var(--border-subtle);"></div>
+<div class="position-relative mb-5">
+    <!-- Banner -->
+    <div style="height: 200px; background: linear-gradient(to bottom, #4c1d95, #09090b); border-bottom: 1px solid var(--border-subtle); border-radius: 0 0 16px 16px;"></div>
     
     <div class="px-4 d-flex flex-column flex-md-row align-items-end gap-4" style="margin-top: -60px;">
         <!-- Avatar -->
         <div class="position-relative">
-            <img src="{% if user.profile.avatar_url %}{{ user.profile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=7c3aed&color=fff&size=128{% endif %}" 
+            <img src="{{ user.profile.avatar_url|default:'https://ui-avatars.com/api/?name='|add:user.username }}" 
                  class="rounded-circle shadow-lg bg-dark" 
-                 width="120" height="120" 
+                 width="128" height="128" 
                  style="border: 4px solid var(--bg-body);">
-            <span class="position-absolute bottom-0 end-0 badge bg-warning text-dark border border-dark rounded-pill py-1 px-2 fw-bold">
-                LVL {{ current_level }}
-            </span>
         </div>
         
         <!-- User Info -->
-        <div class="mb-2 flex-grow-1">
-            <h1 class="display-5 fw-bold text-white mb-0 font-heading">{{ user.username }}</h1>
+        <div class="mb-2 flex-grow-1 pt-2">
+            <div class="d-flex align-items-center gap-2">
+                <h1 class="display-5 fw-bold text-white mb-0 font-heading">{{ user.username }}</h1>
+                <!-- TAG PRO/ADMIN (Item 16) -->
+                {% if user.is_staff %}
+                <span class="badge bg-warning text-dark border border-warning shadow-sm fw-bold" style="background: linear-gradient(45deg, #fbbf24, #d97706);">PRO</span>
+                {% endif %}
+            </div>
             <p class="text-muted mb-2 fst-italic">"{{ user.profile.bio|default:'Just another digital traveler.' }}"</p>
             
-            <div class="d-flex gap-3 text-white small fw-bold text-uppercase">
-                <span>{{ total_games }} Games</span> <span class="text-muted">|</span>
-                <span>{{ achievements_count }} Achievements</span> <span class="text-muted">|</span>
-                <span>{{ total_xp|intcomma }} XP</span>
+            <div class="d-flex gap-3 text-white small fw-bold text-uppercase opacity-75">
+                <span>{{ total_games }} Games</span> <span>•</span>
+                <span>{{ achievements_count }} Trophies</span> <span>•</span>
+                <span class="text-accent-primary">{{ total_xp|intcomma }} XP</span>
             </div>
         </div>
 
         <!-- Actions -->
         <div class="mb-3 d-flex gap-2">
-            <button class="btn btn-outline-secondary text-white"><i data-lucide="share-2" size="18"></i></button>
-            <button class="btn btn-primary fw-bold">Edit Profile</button>
+             <button class="btn btn-outline-secondary text-white btn-sm"><i data-lucide="settings" size="16"></i></button>
+             <button class="btn btn-primary fw-bold btn-sm shadow-lg">Edit Profile</button>
         </div>
     </div>
 </div>
+
 
 <!-- HALL OF FAME (Top 5 Favorites) -->
 <div class="mb-4">
