@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="display-5 fw-bold text-danger">Confirmar Deleção</h1>
+<p class="lead">Você tem certeza que quer apagar sua review para <strong>{{ review.library_entry.platform_game.master_game.title }}</strong>?</p>
+<p class="text-muted">Esta ação não pode ser desfeita.</p>
+
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sim, Deletar</button>
+    <a href="{% url 'game_detail' review.library_entry.id %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

@@ -4,37 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Alkahest</title>
-    <!-- Bootstrap CSS (Design pronto) -->
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Ícones -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     
     <style>
-        body { background-color: #0f0f0f; } /* Fundo quase preto */
+        body { background-color: #0f0f0f; font-family: 'Segoe UI', sans-serif; }
         
-        /* Estilos globais dos cards */
+        /* --- CARDS --- */
         .card-game { 
-            transition: transform 0.2s; 
-            border: none; 
-            background: #1f1f1f;
+            transition: transform 0.2s; border: none; background: #1f1f1f; 
         }
         .card-game:hover { 
-            transform: translateY(-5px); 
-            cursor: pointer; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
+            transform: translateY(-5px); cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
         }
         
-        /* Barras de Status coloridas */
+        /* --- BARRAS DE STATUS --- */
         .status-bar { height: 4px; width: 100%; }
         .bg-playing { background-color: #2ecc71; }
         .bg-backlog { background-color: #f39c12; }
         .bg-completed { background-color: #3498db; }
         .bg-dropped { background-color: #e74c3c; }
+
+        /* --- CSS MAGIC: STAR RATING (INPUT) --- */
+        /* Isso faz o input de estrelas funcionar com meias estrelas */
+        .rate { display: inline-block; border: 0; }
+        .rate > input { display: none; }
+        .rate { float: left; } /* Garante alinhamento */
+        
+        .rate > label { 
+            float: right; 
+            color: #444; 
+            cursor: pointer; 
+            font-size: 1.8rem; 
+            padding: 0;
+            position: relative;
+        }
+
+        /* Estrela Cheia */
+        .rate > label:before { 
+            content: "\F586"; /* Bootstrap Icon: star */
+            font-family: "bootstrap-icons";
+            display: inline-block;
+            padding: 0 2px;
+        }
+        
+        /* Meia Estrela (Sobreposta) */
+        .rate .half:before { 
+            content: "\F586"; /* Bootstrap Icon: star */
+            font-family: "bootstrap-icons";
+            position: absolute; 
+            left: 0; 
+            width: 50%; 
+            overflow: hidden; 
+            z-index: 1;
+        }
+
+        /* Cores (Amarelo ao selecionar/hover) */
+        .rate > input:checked ~ label,
+        .rate > label:hover, 
+        .rate > label:hover ~ label { color: #ffc107; }
+        
+        .rate > input:checked + label:hover, 
+        .rate > input:checked ~ label:hover,
+        .rate > label:hover ~ input:checked ~ label, 
+        .rate > input:checked ~ label:hover ~ label { color: #cc9a06; }
     </style>
 </head>
 <body>
 
-    <!-- Navbar Fixa -->
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary mb-4">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/">
@@ -45,37 +85,27 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <!-- Link Biblioteca (Home) -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'library' %}">Biblioteca</a>
-                    </li>
-                    
-                    <!-- Link Meu Perfil (NOVO) -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'profile' %}">Meu Perfil</a>
-                    </li>
-
-                    <!-- Link Admin -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin">Admin</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'library' %}">Biblioteca</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'my_lists' %}">Minhas Listas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Meu Perfil</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/admin">Admin</a></li>
                 </ul>
 
-                <!-- Campo de Busca -->
-                <form class="d-flex" method="GET" action="/">
-                    <!-- Mantemos os filtros atuais ocultos ao buscar -->
-                    {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
-                    {% if request.GET.platform %}<input type="hidden" name="platform" value="{{ request.GET.platform }}">{% endif %}
-                    
-                    <input class="form-control form-control-sm me-2 bg-dark text-light border-secondary" type="search" name="q" placeholder="Buscar jogo..." value="{{ request.GET.q|default:'' }}">
-                </form>
+                <!-- Área de Ação e Busca -->
+                <div class="d-flex align-items-center ms-lg-3">
+                    <a href="{% url 'add_game' %}" class="btn btn-warning btn-sm me-2 flex-shrink-0">
+                        <i class="bi bi-plus-circle-fill"></i> Add Jogo
+                    </a>
+                    <form class="d-flex w-100" method="GET" action="/">
+                        <input class="form-control form-control-sm me-2 bg-dark text-light border-secondary" type="search" name="q" placeholder="Buscar na biblioteca..." value="{{ request.GET.q|default:'' }}" style="min-width: 200px;">
+                    </form>
+                </div>
             </div>
         </div>
     </nav>
 
     <div class="container pb-5">
         {% block content %}
-        <!-- O conteúdo das páginas entra aqui -->
         {% endblock %}
     </div>
 

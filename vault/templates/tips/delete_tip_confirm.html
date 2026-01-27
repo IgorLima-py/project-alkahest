@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center text-center">
+    <div class="col-md-7">
+        <h1 class="display-5 fw-bold text-danger">Confirmar Deleção</h1>
+        <p class="lead">Você tem certeza que quer apagar permanentemente sua dica para <strong>{{ tip.master_game.title }}</strong>?</p>
+        
+        <div class="card bg-dark border-secondary my-4">
+            <div class="card-body">
+                <blockquote class="blockquote mb-0 text-start">
+                    <p class="fst-italic text-light">"{{ tip.text }}"</p>
+                </blockquote>
+            </div>
+        </div>
+
+        <p class="text-muted">Esta ação não pode ser desfeita.</p>
+
+        <form method="POST" class="d-inline-block">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-lg">Sim, Deletar</button>
+            <a href="javascript:history.back()" class="btn btn-secondary btn-lg">Não, voltar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

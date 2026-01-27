@@ -1,103 +1,167 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row mb-4">
-    <!-- Cartão de Perfil e Nível -->
-    <div class="col-md-12">
-        <div class="card bg-dark border-secondary p-4">
-            <div class="d-flex align-items-center mb-3">
-                <!-- Avatar (Placeholder) -->
-                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px; font-size: 2rem;">
-                    {{ user.username|first|upper }}
-                </div>
-                
-                <div class="flex-grow-1">
-                    <h2 class="fw-bold mb-0">{{ user.username }}</h2>
-                    <span class="text-secondary">Alquimista Nível {{ current_level }}</span>
-                </div>
-
-                <div class="text-end">
-                    <h3 class="text-warning fw-bold mb-0">{{ total_xp }} XP</h3>
-                    <small class="text-muted">{{ achievements_count }} Conquistas</small>
-                </div>
-            </div>
-
-            <!-- Barra de XP -->
-            <div class="progress" style="height: 25px; background-color: #111;">
-                <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ level_progress_percent }}%">
-                    {{ xp_current }} / 1000 XP
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Grid de KPIs -->
-<div class="row g-4 mb-4">
-    <!-- Horas Jogadas -->
-    <div class="col-md-3">
-        <div class="card bg-dark border-secondary h-100 text-center p-3">
-            <h6 class="text-secondary text-uppercase">Tempo Total</h6>
-            <h1 class="fw-bold text-light">{{ total_hours }}h</h1>
-            <small class="text-success"><i class="bi bi-clock-history"></i> Registrado</small>
-        </div>
-    </div>
-
-    <!-- Jogos Zerados -->
-    <div class="col-md-3">
-        <div class="card bg-dark border-secondary h-100 text-center p-3">
-            <h6 class="text-secondary text-uppercase">Zerados</h6>
-            <h1 class="fw-bold text-info">{{ completed_games }}</h1>
-            <small class="text-muted">De {{ total_games }} jogos</small>
-        </div>
-    </div>
-
-    <!-- Backlog -->
-    <div class="col-md-3">
-        <div class="card bg-dark border-secondary h-100 text-center p-3">
-            <h6 class="text-secondary text-uppercase">Backlog</h6>
-            <h1 class="fw-bold text-warning">{{ backlog_games }}</h1>
-            <small class="text-muted">Jogos parados</small>
-        </div>
-    </div>
-
-    <!-- Jogando -->
-    <div class="col-md-3">
-        <div class="card bg-dark border-secondary h-100 text-center p-3">
-            <h6 class="text-secondary text-uppercase">Jogando</h6>
-            <h1 class="fw-bold text-success">{{ playing_games }}</h1>
-            <small class="text-muted">Atuais</small>
-        </div>
-    </div>
-</div>
-
 <div class="row">
-    <!-- Distribuição por Plataforma -->
-    <div class="col-md-6">
-        <h4 class="mb-3">Plataformas</h4>
-        <div class="card bg-dark border-secondary">
-            <ul class="list-group list-group-flush">
-                {% for stat in platform_stats %}
-                <li class="list-group-item bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
-                    <span>
-                        {% if stat.platform_game__platform__name == 'Steam' %} <i class="bi bi-steam me-2"></i>
-                        {% elif stat.platform_game__platform__name == 'RetroAchievements' %} <i class="bi bi-joystick me-2"></i>
-                        {% endif %}
-                        {{ stat.platform_game__platform__name }}
-                    </span>
-                    <span class="badge bg-secondary rounded-pill">{{ stat.count }}</span>
-                </li>
-                {% endfor %}
-            </ul>
+    <!-- ==========================================
+         COLUNA ESQUERDA: Avatar, Nível e Radar
+    =========================================== -->
+    <div class="col-md-3 text-center mb-4">
+        
+        <!-- CARD DE PERFIL -->
+        <div class="card bg-dark border-secondary p-4">
+            <!-- Avatar Placeholder (ou imagem real se tiver) -->
+            <div class="mb-3">
+                {% if user.profile.avatar_url %}
+                    <img src="{{ user.profile.avatar_url }}" class="rounded-circle" width="120" height="120" style="object-fit: cover;">
+                {% else %}
+                    <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center text-white fw-bold" style="width: 120px; height: 120px; font-size: 3rem;">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <h3 class="fw-bold text-white">{{ user.username }}</h3>
+            <span class="badge bg-warning text-dark mb-3">Nível {{ current_level }}</span>
+            
+            <!-- Barra de XP -->
+            <div class="progress bg-secondary mb-2" style="height: 10px;">
+                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ level_progress_percent }}%;"></div>
+            </div>
+            <small class="text-muted">{{ xp_current }} / 1000 XP para o próximo nível</small>
         </div>
+
+        <!-- GRÁFICO DE RADAR (ALKAHEST STAR) -->
+        <div class="card bg-dark border-secondary mt-3 p-3">
+            <h5 class="text-white text-start mb-3"><i class="bi bi-pentagon-half"></i> Alkahest Star</h5>
+            <canvas id="radarChart"></canvas>
+        </div>
+
+        <!-- BOTÃO DE EXPORTAR (NOVO) -->
+        <a href="{% url 'export_data' %}" class="btn btn-outline-secondary w-100 mt-3 btn-sm">
+            <i class="bi bi-download me-2"></i> Exportar Dados (JSON)
+        </a>
     </div>
 
-    <!-- Espaço para Gráfico Futuro -->
-    <div class="col-md-6">
-        <h4 class="mb-3">Atividade Recente</h4>
-        <div class="alert alert-dark border-secondary">
-            Aqui colocaremos o Heatmap (Igual GitHub) na próxima atualização!
+    <!-- ==========================================
+         COLUNA DIREITA: Estatísticas e KPIs
+    =========================================== -->
+    <div class="col-md-9">
+        <!-- Linha de KPIs -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary text-center p-3 h-100">
+                    <h2 class="fw-bold text-primary">{{ total_games }}</h2>
+                    <small class="text-muted text-uppercase">Total de Jogos</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary text-center p-3 h-100">
+                    <h2 class="fw-bold text-success">{{ completed_games }}</h2>
+                    <small class="text-muted text-uppercase">Zerados</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary text-center p-3 h-100">
+                    <h2 class="fw-bold text-warning">{{ achievements_count }}</h2>
+                    <small class="text-muted text-uppercase">Conquistas</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark border-secondary text-center p-3 h-100">
+                    <h2 class="fw-bold text-info">{{ total_hours }}h</h2>
+                    <small class="text-muted text-uppercase">Tempo Jogado</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribuição de Status -->
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header border-secondary fw-bold text-white">Status da Biblioteca</div>
+            <div class="card-body">
+                <div class="progress" style="height: 25px; background-color: #111;">
+                    {% if playing_games %}<div class="progress-bar bg-success" style="width: {{ playing_games }}%" title="Jogando: {{ playing_games }}"></div>{% endif %}
+                    {% if completed_games %}<div class="progress-bar bg-primary" style="width: {{ completed_games }}%" title="Zerados: {{ completed_games }}"></div>{% endif %}
+                    {% if backlog_games %}<div class="progress-bar bg-warning" style="width: {{ backlog_games }}%" title="Backlog: {{ backlog_games }}"></div>{% endif %}
+                </div>
+                <div class="d-flex justify-content-between mt-2 text-muted small">
+                    <span><i class="bi bi-circle-fill text-success"></i> Jogando</span>
+                    <span><i class="bi bi-circle-fill text-primary"></i> Zerados</span>
+                    <span><i class="bi bi-circle-fill text-warning"></i> Backlog</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plataformas -->
+        <div class="row">
+            <div class="col-12">
+                <h5 class="text-white mb-3">Plataformas</h5>
+                <div class="row g-2">
+                    {% for p in platform_stats %}
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-between align-items-center bg-dark border border-secondary p-3 rounded">
+                            <span class="fw-bold text-white">{{ p.platform_game__platform__name }}</span>
+                            <span class="badge bg-secondary">{{ p.count }} Jogos</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12"><p class="text-muted">Nenhuma plataforma registrada.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Scripts para o Gráfico -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    
+    // Nomes atualizados para bater com a lógica do Python (Vigor, Maestria, etc)
+    const labels = ['Vigor (Vol)', 'Maestria (Skill)', 'Variedade', 'Conexão (Soc)', 'Dedicação'];
+    
+    const data = {
+        labels: labels,
+        datasets: [{
+            label: 'Atributos',
+            data: [
+                {{ profile.stat_volume }},  // Vigor
+                {{ profile.stat_skill }},   // Maestria
+                {{ profile.stat_variety }}, // Variedade
+                {{ profile.stat_social }},  // Conexão
+                {{ profile.stat_speed }}    // Dedicação (Antigo Speed)
+            ],
+            fill: true,
+            backgroundColor: 'rgba(255, 193, 7, 0.2)', 
+            borderColor: 'rgba(255, 193, 7, 1)',      
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#fff',
+            borderWidth: 2
+        }]
+    };
+
+    const config = {
+        type: 'radar',
+        data: data,
+        options: {
+            scales: {
+                r: {
+                    angleLines: { color: '#444' }, 
+                    grid: { color: '#444' },       
+                    pointLabels: { 
+                        color: '#ddd',
+                        font: { size: 11 } 
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: { display: false, backdropColor: 'transparent' } 
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    };
+    new Chart(ctx, config);
+</script>
 {% endblock %}

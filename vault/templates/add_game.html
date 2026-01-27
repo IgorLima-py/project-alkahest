@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mb-5">
+    <div class="col-md-8 text-center">
+        <h1 class="fw-bold mb-3">Adicionar Jogo Manualmente</h1>
+        <p class="text-secondary">Busque no banco de dados global e adicione à sua coleção (PS5, Switch, etc).</p>
+        
+        <!-- Formulário de Busca -->
+        <form method="POST" class="d-flex gap-2">
+            {% csrf_token %}
+            <input type="text" name="search_query" class="form-control bg-dark text-light border-secondary form-control-lg" placeholder="Digite o nome do jogo (ex: God of War)..." value="{{ search_query }}" required>
+            <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-search"></i></button>
+        </form>
+    </div>
+</div>
+
+{% if results %}
+<div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-4">
+    {% for game in results %}
+    <div class="col">
+        <div class="card bg-dark border-secondary h-100">
+            <!-- Capa -->
+            {% if game.cover %}
+                <img src="{{ game.cover.url }}" class="card-img-top" style="aspect-ratio: 3/4; object-fit: cover;">
+            {% else %}
+                <div class="bg-secondary d-flex align-items-center justify-content-center" style="aspect-ratio: 3/4;">Sem Capa</div>
+            {% endif %}
+            
+            <div class="card-body p-2 d-flex flex-column">
+                <h6 class="card-title text-light text-truncate mb-auto" title="{{ game.name }}">{{ game.name }}</h6>
+                <small class="text-muted d-block mb-2">{{ game.first_release_date|default:"Ano desc." }}</small>
+                
+                <!-- Botão que abre Modal de Adicionar -->
+                <button type="button" class="btn btn-sm btn-outline-success w-100 mt-2" data-bs-toggle="modal" data-bs-target="#addModal{{ game.id }}">
+                    <i class="bi bi-plus-lg"></i> Adicionar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ESPECÍFICO PARA CADA RESULTADO -->
+    <div class="modal fade" id="addModal{{ game.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Adicionar {{ game.name }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <!-- Dados Ocultos para enviar pro Backend -->
+                        <input type="hidden" name="add_game_id" value="{{ game.id }}">
+                        <input type="hidden" name="game_title" value="{{ game.name }}">
+                        <input type="hidden" name="cover_url" value="{{ game.cover.url }}">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Em qual plataforma?</label>
+                            <select name="platform_slug" class="form-select bg-secondary text-light border-0">
+                                {% for plat in platforms %}
+                                    <!-- Deixa PS5 selecionado por padrão se quiser, ou o primeiro -->
+                                    <option value="{{ plat.slug }}">{{ plat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Status Inicial</label>
+                            <select name="status" class="form-select bg-secondary text-light border-0">
+                                <option value="backlog">Backlog (Quero Jogar)</option>
+                                <option value="playing">Jogando</option>
+                                <option value="completed">Zerado / Platinado</option>
+                                <option value="dropped">Largado</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 fw-bold">Salvar na Biblioteca</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% elif search_query %}
+    <div class="text-center text-muted mt-5">Nenhum jogo encontrado no IGDB. Tente outro nome.</div>
+{% endif %}
+{% endblock %}
