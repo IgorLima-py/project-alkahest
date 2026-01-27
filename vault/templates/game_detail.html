@@ -1,201 +1,325 @@
 {% extends 'base.html' %}
-{% load vault_extras %} <!-- Carrega nosso filtro de estrelas -->
+{% load vault_extras %}
+{% load humanize %}
 
 {% block content %}
-<div class="row">
-    <!-- ===================================================
-         BLOCO 1: COLUNA DA ESQUERDA (Capa, Ações, Histórico)
-    ==================================================== -->
-    <div class="col-md-3">
-        
-        <!-- CARD DA CAPA E STATUS -->
-        <div class="card bg-dark border-0 mb-3">
-            {% if master.cover_url %}
-                <img src="{{ master.cover_url }}" class="img-fluid rounded shadow-lg">
-            {% else %}
-                <div class="bg-secondary rounded shadow-lg d-flex align-items-center justify-content-center" style="height: 300px;">{{ master.title }}</div>
+<div class="row g-4">
+
+    <!-- === COLUNA ESQUERDA: CAPA & STATUS (3 Cols) === -->
+    <div class="col-12 col-lg-3">
+        <!-- Cover Card -->
+        <div class="position-relative mb-3">
+            <img src="{{ master.cover_url|default:'https://placehold.co/600x900/1a1a1a/FFF' }}" 
+                 class="w-100 rounded-3 shadow-lg border border-subtle" 
+                 style="aspect-ratio: 2/3; object-fit: cover;">
+            
+            {% if entry.is_favorite %}
+            <div class="position-absolute top-0 end-0 p-2">
+                <span class="badge bg-danger shadow-sm"><i data-lucide="heart" size="14" fill="currentColor"></i></span>
+            </div>
             {% endif %}
+        </div>
 
-            <!-- Botão de Favorito -->
-            <form method="POST" class="text-center my-3">
-                {% csrf_token %}
-                <input type="hidden" name="toggle_favorite" value="true">
-                <button type="submit" class="btn btn-link p-0 text-decoration-none">
-                    {% if entry.is_favorite %}
-                        <i class="bi bi-heart-fill text-danger" style="font-size: 2rem;" title="Remover dos Favoritos"></i>
-                    {% else %}
-                        <i class="bi bi-heart text-secondary" style="font-size: 2rem;" title="Adicionar aos Favoritos"></i>
-                    {% endif %}
+        <!-- Status & Actions Block -->
+        <div class="b-card p-3 mb-3">
+            <label class="small text-muted text-uppercase fw-bold mb-2">Your Status</label>
+            
+            <!-- Visual Status Badge (Simulando Dropdown) -->
+            <div class="dropdown w-100 mb-3">
+                <button class="btn btn-dark border-subtle w-100 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown">
+                    <span class="text-white fw-bold text-uppercase">{{ entry.get_status_display }}</span>
+                    <i data-lucide="chevron-down" size="16"></i>
                 </button>
-            </form>
+                <ul class="dropdown-menu dropdown-menu-dark w-100">
+                    <li><a class="dropdown-item" href="{% url 'edit_library_entry' entry.id %}">Edit Details (Status/Platform)</a></li>
+                </ul>
+            </div>
 
-            <!-- STATS RÁPIDOS (Nota e Status) -->
-            <ul class="list-group list-group-flush rounded mb-3">
-                <li class="list-group-item bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
-                    <span>Nota:</span> 
-                    <span>{{ entry.rating|render_stars|default:"--" }}</span>
-                </li>
-                <li class="list-group-item bg-dark text-light border-secondary d-flex justify-content-between">
-                    <span>Status:</span>
-                    <span class="badge bg-primary">{{ entry.get_status_display }}</span>
-                </li>
-            </ul>
+            <label class="small text-muted text-uppercase fw-bold mb-1">Your Rating</label>
+            <div class="mb-3">
+                <div class="d-flex align-items-center gap-1 text-warning fs-5">
+                    {{ entry.rating|render_stars }}
+                </div>
+            </div>
+            
+            <button class="btn btn-outline-secondary w-100 text-white btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                <i data-lucide="pencil" size="14" class="me-2"></i> Edit Full Review
+            </button>
         </div>
 
-        <!-- AÇÕES PRINCIPAIS -->
-        <div class="d-grid gap-2 mb-4">
-            <button class="btn btn-primary fw-bold" type="button" data-bs-toggle="modal" data-bs-target="#reviewModal"><i class="bi bi-pencil-fill"></i> Registrar Atividade</button>
-            <button class="btn btn-outline-light" type="button" data-bs-toggle="modal" data-bs-target="#addListModal"><i class="bi bi-list-plus"></i> Adicionar à Lista</button>
-            <a href="{% url 'edit_library_entry' entry.id %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-gear-fill"></i> Editar Jogo</a>
+        <!-- Information Block -->
+        <div class="b-card p-3">
+            <h6 class="font-heading fw-bold mb-3">Information</h6>
+            
+            <div class="d-flex justify-content-between mb-2 small">
+                <span class="text-muted">Platform</span>
+                <span class="text-white fw-bold">{{ platform.name }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2 small">
+                <span class="text-muted">Release</span>
+                <span class="text-white">{{ master.release_date|date:"M d, Y" }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2 small">
+                <span class="text-muted">Playtime</span>
+                <span class="text-white fw-bold">{{ entry.playtime_hours }}h</span>
+            </div>
+            
+            <hr class="border-subtle my-3">
+            
+            <div class="d-flex justify-content-between mb-2 small">
+                <span class="text-muted">IGDB ID</span>
+                <span class="font-monospace text-muted">{{ master.igdb_id }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- === COLUNA CENTRAL: CONTEÚDO (6 Cols) === -->
+    <div class="col-12 col-lg-6">
+        
+        <!-- Header Info -->
+        <div class="mb-4">
+            <div class="d-flex gap-2 mb-2">
+                {% for genre in master.genres|slice:":3" %}
+                <span class="badge bg-dark border border-subtle text-muted fw-normal">{{ genre.name }}</span>
+                {% endfor %}
+            </div>
+            <h1 class="display-4 fw-bold text-white font-heading mb-2">{{ master.title }}</h1>
+            <!-- Se tivesse Description no model, iria aqui. Usando Placeholder dos Gêneros como overview -->
+            <p class="text-muted">
+                Explore the journey in <strong>{{ master.title }}</strong> on {{ platform.name }}. 
+                You have played for {{ entry.playtime_hours }} hours and unlocked {{ unlocked_achievements }} achievements.
+            </p>
         </div>
 
-        <!-- HISTÓRICO DE REVIEWS DO USUÁRIO -->
-        <div class="mt-4">
-            <h6 class="text-uppercase text-muted small fw-bold mb-3">Histórico</h6>
+        <!-- Trophies / Achievements -->
+        <div class="b-card mb-4">
+            <div class="d-flex justify-content-between align-items-end mb-2">
+                <h5 class="fw-bold font-heading mb-0">Trophies</h5>
+                <span class="text-warning small fw-bold">{{ unlocked_achievements }} / {{ total_achievements }} ({{ percentage|floatformat:0 }}%)</span>
+            </div>
+            <div class="progress bg-dark border border-subtle mb-3" style="height: 8px;">
+                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ percentage }}%"></div>
+            </div>
+            
+            <!-- Mini List of Unlocked -->
+            <div class="d-flex gap-2 overflow-auto pb-2">
+                {% for user_ach in entry.platform_game.achievements.all|slice:":5" %} 
+                <!-- Nota: Idealmente filtramos apenas os desbloqueados no view, mas aqui simulamos -->
+                    {% if user_ach.id in unlocked_ids %}
+                    <div class="rounded border border-warning bg-warning bg-opacity-10 p-2 d-flex align-items-center justify-content-center" 
+                         style="width: 48px; height: 48px;" title="{{ user_ach.name }}">
+                        <i data-lucide="trophy" size="20" class="text-warning"></i>
+                    </div>
+                    {% else %}
+                    <div class="rounded border border-subtle bg-dark p-2 d-flex align-items-center justify-content-center opacity-50" 
+                         style="width: 48px; height: 48px;">
+                        <i data-lucide="lock" size="16" class="text-muted"></i>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                {% if total_achievements > 5 %}
+                <div class="rounded border border-subtle bg-dark p-2 d-flex align-items-center justify-content-center text-muted small" 
+                     style="width: 48px; height: 48px;">+{{ total_achievements|add:"-5" }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Traveler Echoes (Tips) -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold font-heading mb-0">Traveler Echoes</h5>
+                <button class="btn btn-sm btn-outline-warning text-warning border-warning" data-bs-toggle="collapse" data-bs-target="#tipForm">
+                    <i data-lucide="edit-2" size="14" class="me-1"></i> Leave Tip
+                </button>
+            </div>
+
+            <!-- Form Collapse -->
+            <div class="collapse mb-3" id="tipForm">
+                <div class="b-card p-3 border-warning border-opacity-25">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="create_tip" value="true">
+                        <textarea name="tip_text" class="form-control bg-dark text-white border-secondary mb-2" rows="2" placeholder="Try finger but hole..."></textarea>
+                        <button type="submit" class="btn btn-warning btn-sm text-dark fw-bold">Post Echo</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tips List -->
+            <div class="d-flex flex-column gap-2">
+                {% for tip in tips %}
+                <div class="p-3 rounded border border-subtle bg-dark position-relative overflow-hidden group">
+                    <!-- Accent Line -->
+                    <div class="position-absolute top-0 start-0 bottom-0 bg-warning" style="width: 3px;"></div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <span class="text-warning fw-bold small text-uppercase mb-1 d-block ps-2">{{ tip.user.username }}</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <form method="POST" class="d-inline">{% csrf_token %}
+                                <input type="hidden" name="vote_tip" value="true"><input type="hidden" name="tip_id" value="{{ tip.id }}"><input type="hidden" name="vote_value" value="1">
+                                <button class="btn btn-link p-0 text-muted hover-white"><i data-lucide="thumbs-up" size="14"></i></button>
+                            </form>
+                            <span class="small fw-bold text-white">{{ tip.score }}</span>
+                        </div>
+                    </div>
+                    <p class="mb-0 small text-light ps-2 fst-italic">"{{ tip.text }}"</p>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 border border-dashed border-subtle rounded text-muted small">
+                    No echoes found. Be the first to leave a mark.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Reviews -->
+        <div>
+            <h5 class="fw-bold font-heading mb-3">Journal Entries</h5>
             {% for review in user_reviews %}
-            <div class="card bg-dark border-secondary mb-3">
-                <div class="card-header border-secondary d-flex justify-content-between align-items-center p-2">
+            <div class="b-card p-3 mb-3">
+                <div class="d-flex justify-content-between mb-2">
                     <div class="d-flex align-items-center gap-2">
-                        {{ review.rating|render_stars }}
-                        {% if review.is_recommended is True %}<i class="bi bi-hand-thumbs-up-fill text-success"></i>{% endif %}
-                        {% if review.is_recommended is False %}<i class="bi bi-hand-thumbs-down-fill text-danger"></i>{% endif %}
+                        <span class="badge bg-dark border border-subtle text-warning">{{ review.rating }} <i data-lucide="star" size="10" fill="currentColor"></i></span>
+                        <span class="text-muted small">{{ review.created_at|date:"M d, Y" }}</span>
+                        {% if review.contains_spoilers %}<span class="badge bg-danger text-white small">SPOILER</span>{% endif %}
                     </div>
                     <div class="dropdown">
-                        <button class="btn btn-sm btn-link text-secondary py-0" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                        <button class="btn btn-sm btn-link text-muted p-0" data-bs-toggle="dropdown"><i data-lucide="more-horizontal" size="16"></i></button>
                         <ul class="dropdown-menu dropdown-menu-dark">
-                            <li><a class="dropdown-item" href="{% url 'edit_review' review.id %}"><i class="bi bi-pencil-fill me-2"></i>Editar</a></li>
-                            <li><a class="dropdown-item text-danger" href="{% url 'delete_review' review.id %}"><i class="bi bi-trash-fill me-2"></i>Apagar</a></li>
+                            <li><a class="dropdown-item" href="{% url 'edit_review' review.id %}">Edit</a></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'delete_review' review.id %}">Delete</a></li>
                         </ul>
                     </div>
                 </div>
-                <div class="card-body p-2">
-                    <div class="text-light small" style="white-space: pre-wrap;">{{ review.text_html|safe }}</div>
+                <div class="text-light opacity-90 small">{{ review.text_html|safe }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+    <!-- === COLUNA DIREITA: META & PREÇO (3 Cols) === -->
+    <div class="col-12 col-lg-3">
+        <!-- Add to List -->
+        <div class="b-card p-0 d-flex mb-3">
+            <input type="text" class="form-control border-0 bg-transparent text-white p-3" placeholder="Add to List...">
+            <button class="btn btn-link text-white" data-bs-toggle="modal" data-bs-target="#addListModal"><i data-lucide="plus" size="20"></i></button>
+        </div>
+
+        <!-- Featured Lists -->
+        <div class="mb-4">
+            <label class="small text-muted text-uppercase fw-bold mb-2">Featured In Lists</label>
+            <div class="d-flex flex-column gap-2">
+                <div class="p-2 rounded bg-dark border border-subtle d-flex align-items-center gap-2">
+                    <div class="bg-secondary rounded" style="width: 32px; height: 32px;"></div>
+                    <span class="small fw-bold text-white">Best Open Worlds</span>
+                </div>
+                <div class="p-2 rounded bg-dark border border-subtle d-flex align-items-center gap-2">
+                    <div class="bg-secondary rounded" style="width: 32px; height: 32px;"></div>
+                    <span class="small fw-bold text-white">The Soulsborne Run</span>
                 </div>
             </div>
-            {% empty %}
-            <p class="text-muted small fst-italic">Nenhum registro de atividade ainda.</p>
-            {% endfor %}
+        </div>
+
+        <!-- Best Price -->
+        <div class="b-card border-success border-opacity-25 bg-success bg-opacity-10">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-white mb-0">Best Price</h6>
+                <span class="badge bg-success text-white">DEAL</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2 small">
+                <span class="text-white">Steam Key</span>
+                <span class="text-success fw-bold">R$ 139,90</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3 small opacity-50">
+                <span class="text-white">PS Store</span>
+                <span class="text-decoration-line-through">R$ 299,90</span>
+            </div>
+            <button class="btn btn-success w-100 btn-sm fw-bold">View Deal</button>
         </div>
     </div>
 
-    <!-- ===================================================
-         BLOCO 2: COLUNA DA DIREITA (Título, Dicas, Conquistas)
-    ==================================================== -->
-    <div class="col-md-9">
-        <h1 class="display-5 fw-bold">{{ master.title }}</h1>
-        <p class="lead text-secondary">Plataforma: {{ platform.name }}</p>
-        <hr class="border-secondary">
+</div>
 
-        <!-- DICAS DA COMUNIDADE -->
-        <div class="mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 class="text-secondary"><i class="bi bi-chat-left-quote-fill me-2"></i>Dicas Rápidas</h5>
-                <button class="btn btn-outline-warning btn-sm" data-bs-toggle="collapse" data-bs-target="#tipForm"><i class="bi bi-plus-lg"></i> Deixar Dica</button>
+<!-- REVIEW MODAL -->
+<div class="modal fade" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-card border border-subtle shadow-lg">
+            <div class="modal-header border-subtle">
+                <h5 class="modal-title fw-bold font-heading text-white">Journal Entry</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            
-            <!-- (Formulário para criar dica fica aqui, omitido por brevidade mas deve existir no seu HTML) -->
-
-            <div class="row g-2">
-                {% for tip in tips %}
-                <div class="col-md-6">
-                    <div class="card bg-dark border-secondary h-100">
-                        <div class="card-body p-2 d-flex gap-2">
-                            <!-- Votação -->
-                            <div class="d-flex flex-column align-items-center justify-content-center border-end border-secondary pe-2 me-1">
-                                <form method="POST" class="d-inline">{% csrf_token %}<input type="hidden" name="vote_tip" value="true"><input type="hidden" name="tip_id" value="{{ tip.id }}"><input type="hidden" name="vote_value" value="1"><button type="submit" class="btn btn-link text-success p-0"><i class="bi bi-caret-up-fill"></i></button></form>
-                                <span class="fw-bold small">{{ tip.score }}</span>
-                                <form method="POST" class="d-inline">{% csrf_token %}<input type="hidden" name="vote_tip" value="true"><input type="hidden" name="tip_id" value="{{ tip.id }}"><input type="hidden" name="vote_value" value="-1"><button type="submit" class="btn btn-link text-danger p-0"><i class="bi bi-caret-down-fill"></i></button></form>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="create_review" value="true">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted text-uppercase fw-bold">Rating</label>
+                            <input type="number" name="rating" class="form-control bg-dark text-white border-secondary" step="0.1" min="0" max="5" value="{{ entry.rating|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted text-uppercase fw-bold">Status</label>
+                            <select name="status" class="form-select bg-dark text-white border-secondary">
+                                <option value="playing">Playing</option>
+                                <option value="completed">Completed</option>
+                                <option value="dropped">Dropped</option>
+                                <option value="backlog">Backlog</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small text-muted text-uppercase fw-bold">Review</label>
+                            <textarea name="review_text" class="form-control bg-dark text-white border-secondary" rows="5" placeholder="Write your thoughts... Markdown supported."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="contains_spoilers" id="spoilers">
+                                <label class="form-check-label text-white small" for="spoilers">Contains Spoilers</label>
                             </div>
-                            <!-- Conteúdo da Dica -->
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between">
-                                    <small class="text-warning fw-bold">{{ tip.user.username }}</small>
-                                    {% if tip.user == request.user %}
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-link text-secondary py-0" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
-                                        <ul class="dropdown-menu dropdown-menu-dark">
-                                            <li><a class="dropdown-item" href="{% url 'edit_tip' tip.id %}">Editar</a></li>
-                                            <li><a class="dropdown-item text-danger" href="{% url 'delete_tip' tip.id %}">Apagar</a></li>
-                                        </ul>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                <p class="mb-0 small text-light fst-italic">"{{ tip.text }}"</p>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_recommended" id="rec" checked>
+                                <label class="form-check-label text-white small" for="rec">Recommended</label>
                             </div>
                         </div>
                     </div>
                 </div>
-                {% empty %}
-                <p class="text-muted small">Nenhuma dica para este jogo ainda. Seja o primeiro!</p>
-                {% endfor %}
-            </div>
-        </div>
-        
-        <!-- =============================================
-             BLOCO RESTAURADO: PROGRESSO E CONQUISTAS
-        ============================================== -->
-        <h3 class="mb-3">Conquistas</h3>
-        <div class="alert alert-dark border-secondary">
-            <!-- Barra de Progresso Geral -->
-            <div class="mb-4">
-                <div class="d-flex justify-content-between mb-1">
-                    <span>Progresso Geral</span>
-                    <span class="fw-bold">{{ unlocked_achievements }} / {{ total_achievements }}</span>
+                <div class="modal-footer border-subtle">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4">Save Entry</button>
                 </div>
-                <div class="progress" style="height: 10px; background-color: #333;">
-                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ percentage }}%"></div>
-                </div>
-                <small class="text-muted text-end d-block mt-1">{{ percentage|floatformat:1 }}% Completo</small>
-            </div>
-            
-            <!-- Lista de Conquistas -->
-            <div class="list-group">
-                {% for ach in entry.platform_game.achievements.all %}
-                    {% if ach.id in unlocked_ids %}
-                        <!-- CASO 1: DESBLOQUEADA -->
-                        <div class="list-group-item bg-success bg-opacity-10 border-success text-light d-flex align-items-center mb-2 rounded shadow-sm">
-                            <img src="{{ ach.icon_url }}" style="width: 56px; height: 56px; margin-right: 15px; border: 2px solid #4caf50; border-radius: 4px;" loading="lazy">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0 text-success fw-bold">{{ ach.name }} <i class="bi bi-check-circle-fill"></i></h6>
-                                <small class="text-light opacity-75">{{ ach.description }}</small>
-                            </div>
-                            <span class="badge bg-success">{{ ach.xp_value }} XP</span>
-                        </div>
-                    {% else %}
-                        <!-- CASO 2: BLOQUEADA -->
-                        <div class="list-group-item bg-dark border-secondary text-light d-flex align-items-center mb-2 rounded" style="opacity: 0.6;">
-                            <img src="{{ ach.icon_url }}" style="width: 56px; height: 56px; margin-right: 15px; filter: grayscale(100%);" loading="lazy">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0 text-muted">{{ ach.name }}</h6>
-                                <small class="text-secondary">{{ ach.description }}</small>
-                            </div>
-                            <span class="badge bg-secondary">{{ ach.xp_value }} XP</span>
-                        </div>
-                    {% endif %}
-                {% empty %}
-                    <div class="alert alert-warning">Nenhuma conquista encontrada para este jogo nesta plataforma.</div>
-                {% endfor %}
-            </div>
+            </form>
         </div>
-
     </div>
 </div>
 
-<!-- ==========================================
-     BLOCO 3: MODAIS (Mantidos para funcionalidade)
-=========================================== -->
-
-<!-- MODAL ADD LISTA -->
+<!-- ADD LIST MODAL (Placeholder for logic) -->
 <div class="modal fade" id="addListModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <!-- O conteúdo do seu modal de adicionar à lista vai aqui -->
+        <div class="modal-content bg-card border border-subtle">
+            <div class="modal-header border-subtle">
+                <h6 class="text-white fw-bold mb-0">Add to List</h6>
+            </div>
+            <div class="modal-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for list in user_lists %}
+                    <form method="POST" action="{% url 'add_to_list' entry.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="list_id" value="{{ list.id }}">
+                        <button type="submit" class="list-group-item list-group-item-action bg-dark text-white border-subtle d-flex justify-content-between align-items-center">
+                            <span>{{ list.title }}</span>
+                            <i data-lucide="plus" size="14"></i>
+                        </button>
+                    </form>
+                    {% empty %}
+                    <div class="p-3 text-center text-muted small">No lists created yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- MODAL REGISTRAR ATIVIDADE/REVIEW -->
-<div class="modal fade" id="reviewModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <!-- O conteúdo do seu modal de review vai aqui -->
-    </div>
-</div>
+<style>
+    .hover-white:hover { color: white !important; }
+</style>
 {% endblock %}

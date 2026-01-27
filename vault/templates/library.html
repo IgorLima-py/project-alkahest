@@ -1,101 +1,129 @@
 {% extends 'base.html' %}
 {% load vault_extras %}
+{% load humanize %}
 
 {% block content %}
-<style>
-    .cover-container {
-        width: 100%; aspect-ratio: 3/4; position: relative;
-        overflow: hidden; border-radius: 4px 4px 0 0; background-color: #2c2c2c;
-    }
-    .cover-img { width: 100%; height: 100%; object-fit: cover; }
-    .filter-bar { background: #1a1a1a; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
-    .badge-platform { position: absolute; top: 0; right: 0; margin: 0.25rem; }
-</style>
+<div class="d-flex flex-column gap-4">
 
-<!-- Barra de Filtros (Estilo Antigo Restaurado) -->
-<div class="filter-bar">
-    <form method="GET" id="filter-form" class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
-        <div class="d-flex gap-2">
-            <!-- Status -->
-            <select name="status" class="form-select form-select-sm bg-dark border-secondary text-light" onchange="this.form.submit()">
-                <option value="" {% if not current_status %}selected{% endif %}>Todos os Status</option>
-                <option value="playing" {% if current_status == 'playing' %}selected{% endif %}>Jogando</option>
-                <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Zerados</option>
-                <option value="backlog" {% if current_status == 'backlog' %}selected{% endif %}>Backlog</option>
-            </select>
-            <!-- Plataforma -->
-            <select name="platform" class="form-select form-select-sm bg-dark border-secondary text-light" onchange="this.form.submit()">
-                <option value="" {% if not current_platform %}selected{% endif %}>Todas as Plataformas</option>
+    <!-- Header & Filters -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h2 class="h3 fw-bold mb-0 font-heading">My Collection</h2>
+            <p class="text-muted small mb-0">{{ total_games }} titles tracked</p>
+        </div>
+
+        <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
+            <!-- Search hidden input to keep search active while filtering -->
+            {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+
+            <!-- Platform Filter -->
+            <select name="platform" class="form-select form-select-sm bg-dark text-white border-subtle" style="width: auto;" onchange="this.form.submit()">
+                <option value="">All Platforms</option>
                 {% for p in platforms %}
                 <option value="{{ p.slug }}" {% if current_platform == p.slug %}selected{% endif %}>{{ p.name }}</option>
                 {% endfor %}
             </select>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <!-- Ordenar -->
-            <select name="sort" class="form-select form-select-sm bg-dark border-secondary text-light" onchange="this.form.submit()">
-                <option value="recent" {% if current_sort == 'recent' %}selected{% endif %}>Recentes</option>
-                <option value="rating_desc" {% if current_sort == 'rating_desc' %}selected{% endif %}>Maior Nota</option>
-                <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Nome (A-Z)</option>
-                <option value="playtime_desc" {% if current_sort == 'playtime_desc' %}selected{% endif %}>Mais Jogado</option>
-            </select>
-            <!-- Itens por página -->
-            <select name="per_page" class="form-select form-select-sm bg-dark border-secondary text-light" onchange="this.form.submit()">
-                <option value="24" {% if current_per_page == '24' %}selected{% endif %}>24/pág</option>
-                <option value="48" {% if current_per_page == '48' %}selected{% endif %}>48/pág</option>
-                <option value="all" {% if current_per_page == '9999' %}selected{% endif %}>Todos</option>
-            </select>
-        </div>
-    </form>
-</div>
 
-<!-- GRID DE JOGOS -->
-<div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3">
-    {% for entry in page_obj %}
-    <div class="col">
-        <a href="{% url 'game_detail' entry.id %}" class="text-decoration-none">
-            <div class="card card-game h-100">
-                <div class="cover-container">
-                    {% if entry.platform_game.master_game.cover_url %}
-                        <img src="{{ entry.platform_game.master_game.cover_url }}" class="cover-img" loading="lazy">
-                    {% else %}
-                        <div class="d-flex align-items-center justify-content-center h-100 text-center p-2"><small>{{ entry.platform_game.master_game.title }}</small></div>
-                    {% endif %}
-                    <span class="badge bg-dark badge-platform shadow">{{ entry.platform_game.platform.name }}</span>
+            <!-- Status Filter -->
+            <select name="status" class="form-select form-select-sm bg-dark text-white border-subtle" style="width: auto;" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                <option value="playing" {% if current_status == 'playing' %}selected{% endif %}>Playing</option>
+                <option value="backlog" {% if current_status == 'backlog' %}selected{% endif %}>Backlog</option>
+                <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="dropped" {% if current_status == 'dropped' %}selected{% endif %}>Dropped</option>
+            </select>
+
+            <!-- Sort -->
+            <select name="sort" class="form-select form-select-sm bg-dark text-white border-subtle" style="width: auto;" onchange="this.form.submit()">
+                <option value="recent" {% if current_sort == 'recent' %}selected{% endif %}>Recently Played</option>
+                <option value="rating_desc" {% if current_sort == 'rating_desc' %}selected{% endif %}>Highest Rated</option>
+                <option value="playtime_desc" {% if current_sort == 'playtime_desc' %}selected{% endif %}>Most Played</option>
+                <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- LIBRARY GRID -->
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3">
+        {% for entry in page_obj %}
+        <div class="col">
+            <a href="{% url 'game_detail' entry.id %}" class="text-decoration-none game-poster d-block h-100">
+                <div class="position-relative mb-2">
+                    <!-- Cover Image -->
+                    <img src="{{ entry.platform_game.master_game.cover_url|default:'https://placehold.co/300x450/1a1a1a/FFF' }}" 
+                         class="poster-img w-100 shadow-sm" 
+                         loading="lazy"
+                         style="aspect-ratio: 2/3; object-fit: cover; border-radius: 8px;">
+                    
+                    <!-- Overlay Badges -->
+                    <div class="position-absolute top-0 end-0 p-1">
+                        {% if entry.status == 'playing' %}
+                            <span class="badge bg-warning text-dark border border-warning">PLAYING</span>
+                        {% elif entry.status == 'completed' %}
+                            <span class="badge bg-success text-white border border-success border-opacity-25"><i data-lucide="check" size="10"></i></span>
+                        {% elif entry.is_favorite %}
+                            <span class="badge bg-danger text-white"><i data-lucide="heart" size="10" fill="currentColor"></i></span>
+                        {% endif %}
+                    </div>
+                    
+                    <span class="position-absolute bottom-0 start-0 m-1 badge bg-dark bg-opacity-75 backdrop-blur border border-subtle" style="font-size: 0.6rem;">
+                        {{ entry.platform_game.platform.slug|upper }}
+                    </span>
                 </div>
-                <div class="status-bar bg-{{ entry.status }}"></div>
-                <div class="card-body p-2">
-                    <p class="card-title text-truncate mb-1 text-light" title="{{ entry.platform_game.master_game.title }}">{{ entry.platform_game.master_game.title }}</p>
-                    <div class="d-flex justify-content-between align-items-center text-secondary small">
-                        <span>{{ entry.rating|render_stars|default_if_none:"" }}</span>
-                        <div class="d-flex align-items-center gap-2">
-                            <span><i class="bi bi-clock"></i> {{ entry.playtime_hours }}h</span>
-                            {% if entry.total_achievements > 0 %}
-                            <span><i class="bi bi-trophy-fill"></i> {{ entry.achievement_percentage|floatformat:0 }}%</span>
-                            {% endif %}
-                        </div>
+
+                <!-- Info -->
+                <div>
+                    <div class="fw-bold text-white small text-truncate" title="{{ entry.platform_game.master_game.title }}">
+                        {{ entry.platform_game.master_game.title }}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        {% if entry.rating %}
+                            <div class="d-flex align-items-center gap-1 text-warning small">
+                                <i data-lucide="star" size="10" fill="currentColor"></i> <span>{{ entry.rating }}</span>
+                            </div>
+                        {% else %}
+                            <span class="text-muted small" style="font-size: 0.7rem;">--</span>
+                        {% endif %}
+                        
+                        {% if entry.playtime_minutes > 0 %}
+                            <span class="small text-muted" style="font-size: 0.75rem;">{{ entry.playtime_hours }}h</span>
+                        {% endif %}
                     </div>
                 </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12 py-5 text-center">
+            <div class="text-muted mb-3">
+                <i data-lucide="ghost" size="48" class="opacity-50"></i>
             </div>
-        </a>
+            <h4 class="h5 text-white">No games found</h4>
+            <p class="text-muted small">Try adjusting your filters or search query.</p>
+            <a href="{% url 'library' %}" class="btn btn-sm btn-outline-secondary">Clear Filters</a>
+        </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-12 text-center py-5"><h3 class="text-muted">Nenhum jogo encontrado.</h3></div>
-    {% endfor %}
-</div>
 
-<!-- PAGINAÇÃO -->
-{% if page_obj.paginator.num_pages > 1 %}
-<nav class="mt-4 d-flex justify-content-center">
-    <ul class="pagination">
-        {% if page_obj.has_previous %}
-            <li class="page-item"><a class="page-link bg-dark text-light border-secondary" href="?page={{ page_obj.previous_page_number }}&{{ current_params }}">&laquo;</a></li>
-        {% endif %}
-        <li class="page-item disabled"><span class="page-link bg-dark text-light border-secondary">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
-        {% if page_obj.has_next %}
-            <li class="page-item"><a class="page-link bg-dark text-light border-secondary" href="?page={{ page_obj.next_page_number }}&{{ current_params }}">&raquo;</a></li>
-        {% endif %}
-    </ul>
-</nav>
-{% endif %}
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="mt-auto pt-4 d-flex justify-content-center">
+        <ul class="pagination pagination-sm">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link bg-dark text-white border-subtle" href="?page={{ page_obj.previous_page_number }}&{{ current_params }}">&laquo;</a>
+                </li>
+            {% endif %}
+            <li class="page-item disabled">
+                <span class="page-link bg-dark text-muted border-subtle">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link bg-dark text-white border-subtle" href="?page={{ page_obj.next_page_number }}&{{ current_params }}">&raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
 {% endblock %}

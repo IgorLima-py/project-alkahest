@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALKAHEST | The Definitive Collection</title>
+    <title>ALKAHEST | Collection</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,83 +14,75 @@
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Lucide Icons -->
+    <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- HTMX (Recomendado para UX fluida futura) -->
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
 
     <style>
         :root {
-            /* Palette V6 - "Nebula Glass" */
-            --bg-body: #09090b;      /* Zinc 950 */
+            /* Palette - Nebula Glass */
+            --bg-body: #09090b;      
             --bg-sidebar: #020202;   
             --bg-card: #121214;      
             --bg-hover: #27272a;     
             
-            --accent-primary: #7c3aed; /* Violet */
+            --accent-primary: #7c3aed; 
             --accent-glow: rgba(124, 58, 237, 0.15);
             --accent-cyan: #06b6d4;
             --accent-rose: #f43f5e;
             --accent-gold: #fbbf24;
+            --accent-success: #22c55e;
             
             --text-main: #f4f4f5;
             --text-muted: #a1a1aa;
             
-            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            
             --radius-md: 8px;
             --radius-lg: 16px;
         }
 
-        /* --- GLOBAL --- */
         body {
             background-color: var(--bg-body);
             font-family: 'Inter', sans-serif;
             color: var(--text-main);
             overflow-x: hidden;
-            /* Nebula Gradient fixo no fundo */
+            /* Nebula Gradient Subtle */
             background-image: radial-gradient(circle at 50% -20%, #1e1b4b 0%, var(--bg-body) 60%);
             background-attachment: fixed;
             min-height: 100vh;
         }
 
+
         h1, h2, h3, h4, .font-heading {
             font-family: 'Space Grotesk', sans-serif;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
         }
 
-        a { text-decoration: none; color: inherit; }
-
-        /* --- SHELL --- */
+        /* --- LAYOUT --- */
         .app-shell {
             display: grid;
             grid-template-columns: 260px 1fr;
             min-height: 100vh;
         }
 
-        /* --- SIDEBAR --- */
         .sidebar {
             background-color: var(--bg-sidebar);
             border-right: 1px solid var(--border-subtle);
             padding: 24px 12px;
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            position: sticky; top: 0; height: 100vh;
+            display: flex; flex-direction: column;
             z-index: 100;
         }
 
+        /* --- COMPONENTS --- */
         .brand {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-            padding-left: 12px;
-            background: linear-gradient(90deg, #fff, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 1.25rem; font-weight: 700;
+            color: white; text-decoration: none;
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 24px; padding-left: 12px;
         }
 
         .user-mini-card {
@@ -98,83 +90,75 @@
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-md);
             padding: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-            cursor: pointer;
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 24px; cursor: pointer;
             transition: border-color 0.2s;
+            text-decoration: none;
         }
         .user-mini-card:hover { border-color: rgba(255,255,255,0.15); }
 
         .nav-section {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #52525b;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            font-size: 0.7rem; font-weight: 700; color: #52525b;
+            text-transform: uppercase; letter-spacing: 0.05em;
             margin: 16px 0 8px 12px;
         }
 
         .nav-link-custom {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: flex; align-items: center; gap: 10px;
             padding: 8px 12px;
             color: var(--text-muted);
-            font-size: 0.9rem;
-            font-weight: 500;
-            border-radius: 6px;
-            transition: all 0.2s;
-            margin-bottom: 2px;
+            font-size: 0.9rem; font-weight: 500;
+            border-radius: 6px; cursor: pointer;
+            transition: all 0.2s; text-decoration: none;
         }
         .nav-link-custom:hover { color: white; background: var(--bg-hover); }
-        
-        /* Active State Logic */
-        .nav-link-custom.active { 
-            background: var(--accent-glow); 
-            color: var(--accent-primary); 
-            border: 1px solid rgba(124, 58, 237, 0.1);
-        }
+        .nav-link-custom.active { background: var(--accent-glow); color: var(--accent-primary); }
         .nav-link-custom i { opacity: 0.7; }
         .nav-link-custom.active i { opacity: 1; }
 
-        /* --- HEADER --- */
-        .top-header {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: rgba(9, 9, 11, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-subtle);
-            padding: 16px 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .search-wrapper { position: relative; width: 320px; }
-        .search-input {
-            width: 100%;
-            background: #18181b;
-            border: 1px solid var(--border-subtle);
-            border-radius: 20px;
-            padding: 8px 16px 8px 40px;
-            color: white;
-            font-size: 0.9rem;
-            transition: width 0.3s, border-color 0.3s;
-        }
-        .search-input:focus { outline: none; border-color: var(--accent-primary); }
-        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
-
-        /* --- BENTO & CARDS UTILS --- */
+        /* --- CARDS & GRID --- */
         .b-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-lg);
             padding: 24px;
+            position: relative; overflow: hidden;
+            height: 100%; /* Importante para Grid */
         }
 
+        .game-poster {
+            width: 140px; flex-shrink: 0;
+            position: relative; cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .game-poster:hover { transform: translateY(-4px); }
+        
+        .poster-img {
+            width: 100%; aspect-ratio: 2/3;
+            object-fit: cover; border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-bottom: 8px;
+            background-color: #222;
+        }
+
+        /* --- HEADER --- */
+        .top-header {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(9, 9, 11, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 16px 32px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .search-input {
+            background: #18181b; border: 1px solid var(--border-subtle);
+            border-radius: 20px; padding: 8px 16px 8px 40px;
+            color: white; width: 320px; transition: all 0.2s;
+        }
+        .search-input:focus { outline: none; border-color: var(--accent-primary); width: 340px; }
+
+        /* Mobile */
         @media (max-width: 992px) {
             .app-shell { grid-template-columns: 1fr; }
             .sidebar { display: none; }
@@ -189,112 +173,107 @@
     
     <!-- SIDEBAR -->
     <aside class="sidebar">
-        <!-- Logo SVG Placeholder: Mande o código SVG que eu substituo aqui -->
-        <a href="/" class="brand text-decoration-none" style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 42px; height: 42px; color: var(--accent-primary);">
-                <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" 
-                    style="width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.5));">
+        <!-- Brand -->
+        <a href="{% url 'dashboard' %}" class="brand">
+            <!-- ALKA SVG -->
+            <div style="width: 32px; color: var(--accent-primary);">
+                <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
                     <g fill="currentColor">
-                        <!-- Núcleo central -->
                         <circle cx="400" cy="250" r="58" />
-                        <!-- Eletrões -->
                         <circle cx="400" cy="60" r="24" />
                         <circle cx="400" cy="440" r="24" />
-                        <!-- Órbita 1 -->
-                        <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z"
-                            fill-rule="evenodd" transform="translate(400, 250) rotate(-20)" />
-                        <!-- Órbita 2 -->
-                        <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z"
-                            fill-rule="evenodd" transform="translate(400, 250) rotate(20)" />
+                        <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(-20)" />
+                        <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(20)" />
                     </g>
                 </svg>
             </div>
-            <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.25rem; letter-spacing: -0.02em; color: white;">
-                ALKAHEST
-            </span>
+            <span>ALKA.GG</span>
         </a>
 
         <!-- User Mini Profile -->
         {% if user.is_authenticated %}
-        <a href="{% url 'profile' %}" class="user-mini-card text-decoration-none">
-            <!-- Avatar Fallback Logic -->
-            <img src="{% if user.profile.avatar_url %}{{ user.profile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=8b5cf6&color=fff{% endif %}" 
-                 class="rounded-circle" width="36" height="36">
-            <div class="lh-1 overflow-hidden">
-                <div class="fw-bold text-white small text-truncate">{{ user.username }}</div>
+        <a href="{% url 'profile' %}" class="user-mini-card">
+            <img src="{% if user.profile.avatar_url %}{{ user.profile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=7c3aed&color=fff{% endif %}" class="rounded-circle" width="36" height="36">
+            <div class="lh-1">
+                <div class="fw-bold text-white small">{{ user.username }}</div>
                 <div class="d-flex align-items-center gap-1 mt-1">
                     <i data-lucide="medal" size="10" class="text-warning"></i>
-                    <span class="text-warning fw-bold" style="font-size: 0.65rem; letter-spacing: 0.05em;">LVL {{ user.profile.stat_volume|default:"1" }}</span>
+                    <span class="text-warning fw-bold" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                        LVL {{ user.profile.stat_volume|default:"1" }}
+                    </span>
                 </div>
             </div>
         </a>
         {% endif %}
 
+        <!-- Navigation -->
         <div class="overflow-auto flex-grow-1 pe-2">
-            <div class="nav-section">Library</div>
             
+            <div class="nav-section">Main</div>
+            <a href="{% url 'dashboard' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i data-lucide="layout-grid" size="18"></i> Dashboard
+            </a>
+            <a href="#" class="nav-link-custom"> <!-- Placeholder Discovery -->
+                <i data-lucide="compass" size="18"></i> Discovery
+            </a>
+
+            <div class="nav-section">Library</div>
             <a href="{% url 'library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'library' %}active{% endif %}">
                 <i data-lucide="gamepad-2" size="18"></i> My Games
             </a>
-            
+            <a href="{% url 'library' %}?status=backlog" class="nav-link-custom d-flex justify-content-between">
+                <div class="d-flex gap-2 align-items-center"><i data-lucide="layers" size="18"></i> Backlog</div>
+            </a>
             <a href="{% url 'my_lists' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'my_lists' %}active{% endif %}">
                 <i data-lucide="scroll" size="18"></i> Lists
             </a>
 
-            <div class="nav-section">Discovery</div>
+            <div class="nav-section">System</div>
             <a href="{% url 'add_game' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'add_game' %}active{% endif %}">
                 <i data-lucide="plus-circle" size="18"></i> Add Game
             </a>
-
-            <div class="nav-section">System</div>
-            <a href="{% url 'profile' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
-                <i data-lucide="user" size="18"></i> Profile
-            </a>
-             <a href="{% url 'logout' %}" class="nav-link-custom">
+            <a href="{% url 'logout' %}" class="nav-link-custom text-danger mt-4">
                 <i data-lucide="log-out" size="18"></i> Logout
             </a>
+        </div>
+        
+        <!-- Footer Stats -->
+        <div class="mt-4 pt-3 border-top border-subtle">
+            <div class="d-flex justify-content-between text-muted small mb-1" style="font-size: 0.7rem;">
+                <span>System</span> <span class="text-success">● Online</span>
+            </div>
         </div>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="d-flex flex-column" style="height: 100vh; overflow-y: auto;">
         
-        <!-- HEADER -->
+        <!-- Header -->
         <header class="top-header">
-            <!-- Busca aponta para a Library -->
-            <form action="{% url 'library' %}" method="GET" class="search-wrapper">
-                <i data-lucide="search" class="search-icon" size="16"></i>
-                <input type="text" name="q" class="search-input" placeholder="Search your library..." value="{{ request.GET.q }}">
-            </form>
-            
+            <div style="position: relative;">
+                <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px;"></i>
+                <form action="{% url 'library' %}" method="GET">
+                    <input type="text" name="q" class="search-input" placeholder="Search games, lists, or users..." value="{{ request.GET.q }}">
+                </form>
+            </div>
             <div class="d-flex gap-3 align-items-center">
-                <a href="{% url 'add_game' %}" class="btn btn-sm btn-outline-secondary border-0 text-white" title="Quick Add">
-                    <i data-lucide="plus" size="20"></i>
-                </a>
-                <div class="position-relative">
-                    <button class="btn btn-sm btn-outline-secondary border-0 text-white">
-                        <i data-lucide="bell" size="20"></i>
-                    </button>
-                    <!-- Notificação Dummy -->
-                    <span class="position-absolute top-0 end-0 p-1 bg-danger rounded-circle border border-dark"></span>
-                </div>
+                <a href="{% url 'add_game' %}" class="btn btn-sm btn-outline-secondary border-0 text-white"><i data-lucide="plus" size="20"></i></a>
             </div>
         </header>
 
-        <!-- Dynamic Content Injection -->
-        <div class="p-4">
-            {% block content %}
-            {% endblock %}
+        <!-- Content Injection -->
+        <div class="p-4 mx-auto w-100" style="max-width: 1600px;">
+            {% block content %}{% endblock %}
         </div>
-
     </main>
 </div>
 
-<!-- Scripts -->
+<!-- Init Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Inicializa ícones Lucide
-    lucide.createIcons();
+    document.addEventListener("DOMContentLoaded", function() {
+        lucide.createIcons();
+    });
 </script>
 {% block extra_js %}{% endblock %}
 </body>

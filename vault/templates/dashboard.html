@@ -1,109 +1,117 @@
 {% extends 'base.html' %}
+{% load humanize %}
+{% load vault_extras %}
 
 {% block content %}
-<div class="container-fluid" style="max-width: 1400px;">
+<div class="row g-4">
     
-    <!-- Bento Grid -->
-    <div class="row g-3 g-md-4">
-        
-        <!-- Welcome Block -->
-        <div class="col-12 col-lg-8">
-            <div class="b-card border-0 bg-transparent p-0 d-flex flex-column justify-content-center h-100">
-                <h2 class="display-6 fw-bold mb-1 text-white font-heading">Welcome back, {{ user.username }}.</h2>
-                <p class="text-muted">You have <strong>{{ playing_count }} games</strong> currently in progress and <strong>{{ backlog_count }} titles</strong> waiting in your backlog.</p>
-            </div>
+    <!-- BLOCK 1: Welcome & Overview (8 cols) -->
+    <div class="col-12 col-xl-8">
+        <div class="b-card border-0 bg-transparent p-0 d-flex flex-column justify-content-center h-100">
+            <h2 class="display-5 fw-bold text-white font-heading mb-1">Welcome back, {{ user.username }}.</h2>
+            <p class="text-muted fs-5">
+                You have <strong class="text-white">{{ playing_count }} games</strong> in progress and 
+                <strong class="text-white">{{ backlog_count }} titles</strong> in your backlog.
+            </p>
         </div>
-
-        <!-- Quick Stats -->
-        <div class="col-12 col-lg-4">
-            <div class="b-card d-flex flex-row align-items-center gap-3 h-100">
-                <div class="p-3 rounded bg-primary bg-opacity-10 text-primary">
-                    <i data-lucide="trophy" size="24"></i>
-                </div>
-                <div>
-                    <div class="h4 mb-0 fw-bold text-white">{{ total_completed }}</div>
-                    <div class="small text-muted text-uppercase fw-bold">Completed</div>
-                </div>
-                <div class="vr mx-2 opacity-25"></div>
-                <div>
-                    <div class="h4 mb-0 fw-bold text-success">{{ total_hours }}h</div>
-                    <div class="small text-muted text-uppercase fw-bold">Played</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- JUMP BACK IN (Resume Play) -->
-        <div class="col-12">
-            <div class="b-card">
-                <div class="d-flex justify-content-between align-items-end mb-4">
-                    <h4 class="mb-0 font-heading fw-bold">Jump Back In</h4>
-                    <a href="{% url 'library' %}?status=playing" class="btn btn-sm btn-outline-secondary">View All Playing</a>
-                </div>
-                
-                <div class="d-flex gap-3 overflow-auto pb-2">
-                    {% for entry in playing_games %}
-                    <a href="{% url 'game_detail' entry.id %}" class="text-decoration-none" style="min-width: 140px; max-width: 140px;">
-                        <div class="position-relative library-card-hover rounded overflow-hidden mb-2">
-                            <img src="{% if entry.platform_game.master_game.cover_url %}{{ entry.platform_game.master_game.cover_url }}{% else %}https://via.placeholder.com/140x200{% endif %}" 
-                                 class="w-100 rounded" style="aspect-ratio: 2/3; object-fit: cover;">
-                            <span class="position-absolute bottom-0 start-0 m-1 badge bg-dark border border-secondary" style="font-size: 0.6rem;">
-                                {{ entry.platform_game.platform.slug }}
-                            </span>
-                        </div>
-                        <div class="fw-bold text-white small text-truncate">{{ entry.platform_game.master_game.title }}</div>
-                        <div class="small text-muted">{{ entry.playtime_hours }}h</div>
-                    </a>
-                    {% empty %}
-                    <div class="text-muted py-4 w-100 text-center">No games currently in 'Playing' status.</div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Reviews / Activity -->
-        <div class="col-12 col-md-8">
-            <div class="b-card h-100">
-                <div class="d-flex justify-content-between mb-3">
-                    <h5 class="mb-0 font-heading fw-bold">Recent Reviews</h5>
-                </div>
-                
-                <div class="d-flex flex-column gap-3">
-                    {% for review in recent_reviews %}
-                    <div class="d-flex gap-3 pb-3 border-bottom border-subtle">
-                         <!-- Avatar Simples -->
-                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
-                            <span class="fw-bold text-white">{{ review.user.username|slice:":1" }}</span>
-                        </div>
-                        <div>
-                            <div class="small text-white">
-                                <span class="fw-bold">{{ review.user.username }}</span> reviewed <a href="{% url 'game_detail' review.library_entry.id %}" class="fw-bold text-accent-primary text-decoration-none">{{ review.library_entry.platform_game.master_game.title }}</a>
-                            </div>
-                            <div class="d-flex text-warning my-1 align-items-center gap-1" style="font-size: 10px;">
-                                <i data-lucide="star" size="10" fill="currentColor"></i> 
-                                <span class="fw-bold">{{ review.rating }}</span>
-                            </div>
-                            <div class="small text-muted fst-italic">"{{ review.text|striptags|truncatechars:80 }}"</div>
-                        </div>
-                    </div>
-                    {% empty %}
-                        <div class="text-muted small">No recent reviews.</div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Wishlist / Discovery (Placeholder) -->
-        <div class="col-12 col-md-4">
-            <div class="b-card h-100 bg-gradient-to-b from-card to-body">
-                <div class="d-flex align-items-center gap-2 mb-3 text-accent-cyan">
-                    <i data-lucide="sparkles" size="18"></i>
-                    <h5 class="mb-0 fw-bold">Discovery</h5>
-                </div>
-                <p class="text-muted small">Recommendations engine coming in Phase 6.</p>
-                <a href="{% url 'add_game' %}" class="btn btn-outline-light btn-sm w-100">Add New Game</a>
-            </div>
-        </div>
-
     </div>
+
+    <!-- BLOCK 2: Quick Stats (4 cols) -->
+    <div class="col-12 col-xl-4">
+        <div class="b-card d-flex flex-row align-items-center gap-3">
+            <div class="p-3 rounded bg-primary bg-opacity-10 text-primary">
+                <i data-lucide="trophy" size="24"></i>
+            </div>
+            <div>
+                <div class="h4 mb-0 fw-bold font-heading">{{ total_completed }}</div>
+                <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Completed</div>
+            </div>
+            <div class="vr mx-2 opacity-25"></div>
+            <div>
+                <div class="h4 mb-0 fw-bold font-heading text-success">{{ total_hours }}h</div>
+                <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Playtime</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BLOCK 3: JUMP BACK IN (Playing Games) (12 cols) -->
+    <div class="col-12">
+        <div class="b-card">
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <h4 class="mb-0 font-heading fw-bold">Jump Back In</h4>
+                <a href="{% url 'library' %}?status=playing" class="btn btn-sm btn-outline-secondary">View Log</a>
+            </div>
+            
+            <div class="d-flex gap-3 overflow-auto pb-3">
+                {% for entry in playing_games %}
+                <a href="{% url 'game_detail' entry.id %}" class="text-decoration-none game-poster">
+                    <div class="position-relative">
+                        <img src="{{ entry.platform_game.master_game.cover_url|default:'https://placehold.co/300x400' }}" class="poster-img" loading="lazy">
+                        <!-- Platform Tag -->
+                        <span class="position-absolute bottom-0 start-0 m-1 badge bg-dark border border-subtle" style="font-size: 0.6rem;">
+                            {{ entry.platform_game.platform.slug|upper }}
+                        </span>
+                    </div>
+                    <div class="fw-bold text-white small text-truncate">{{ entry.platform_game.master_game.title }}</div>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <span class="small text-muted">{{ entry.playtime_hours }}h</span>
+                        <div class="badge bg-warning text-dark px-1" style="font-size: 0.6rem;">PLAYING</div>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="text-muted w-100 py-5 text-center border border-dashed border-subtle rounded">
+                    No games currently in 'Playing' status. <br>
+                    <a href="{% url 'library' %}" class="text-accent-primary">Start a game from your library</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- BLOCK 4: Recent Activity (8 cols) -->
+    <div class="col-12 col-lg-8">
+        <div class="b-card h-100">
+            <h5 class="font-heading fw-bold mb-4">Recent Activity</h5>
+            <div class="d-flex flex-column gap-3">
+                {% for review in recent_reviews %}
+                <div class="d-flex gap-3 pb-3 border-bottom border-subtle">
+                    <img src="https://ui-avatars.com/api/?name={{ review.user.username }}&background=27272a&color=fff" class="rounded-circle" width="40" height="40">
+                    <div>
+                        <div class="small text-white">
+                            <span class="fw-bold">{{ review.user.username }}</span> reviewed 
+                            <a href="{% url 'game_detail' review.library_entry.id %}" class="text-accent-primary fw-bold text-decoration-none">
+                                {{ review.library_entry.platform_game.master_game.title }}
+                            </a>
+                        </div>
+                        <div class="my-1">
+                            {{ review.rating|render_stars }}
+                        </div>
+                        <p class="text-muted small mb-0 fst-italic">
+                            "{{ review.text|striptags|truncatechars:100 }}"
+                        </p>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-muted small">No recent activity.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- BLOCK 5: Wishlist Deals (Placeholder for now) (4 cols) -->
+    <div class="col-12 col-lg-4">
+        <div class="b-card h-100">
+            <div class="d-flex align-items-center gap-2 mb-3 text-accent-cyan">
+                <i data-lucide="tag" size="18"></i>
+                <h5 class="mb-0 fw-bold">Wishlist Deals</h5>
+            </div>
+            
+            <div class="d-flex flex-column justify-content-center align-items-center text-center h-75 opacity-50">
+                <i data-lucide="shopping-bag" size="32" class="mb-2 text-muted"></i>
+                <p class="small text-muted">Price tracking coming in Phase 5.</p>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

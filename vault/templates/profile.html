@@ -1,167 +1,166 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block content %}
-<div class="row">
-    <!-- ==========================================
-         COLUNA ESQUERDA: Avatar, Nível e Radar
-    =========================================== -->
-    <div class="col-md-3 text-center mb-4">
+<!-- PROFILE HEADER -->
+<div class="position-relative mb-5" style="margin-top: -1.5rem;">
+    <!-- Background Gradient Cover -->
+    <div style="height: 200px; background: linear-gradient(to bottom, rgba(124, 58, 237, 0.2), transparent); border-bottom: 1px solid var(--border-subtle);"></div>
+    
+    <div class="px-4 d-flex flex-column flex-md-row align-items-end gap-4" style="margin-top: -60px;">
+        <!-- Avatar -->
+        <div class="position-relative">
+            <img src="{% if user.profile.avatar_url %}{{ user.profile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=7c3aed&color=fff&size=128{% endif %}" 
+                 class="rounded-circle shadow-lg bg-dark" 
+                 width="120" height="120" 
+                 style="border: 4px solid var(--bg-body);">
+            <span class="position-absolute bottom-0 end-0 badge bg-warning text-dark border border-dark rounded-pill py-1 px-2 fw-bold">
+                LVL {{ current_level }}
+            </span>
+        </div>
         
-        <!-- CARD DE PERFIL -->
-        <div class="card bg-dark border-secondary p-4">
-            <!-- Avatar Placeholder (ou imagem real se tiver) -->
-            <div class="mb-3">
-                {% if user.profile.avatar_url %}
-                    <img src="{{ user.profile.avatar_url }}" class="rounded-circle" width="120" height="120" style="object-fit: cover;">
-                {% else %}
-                    <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center text-white fw-bold" style="width: 120px; height: 120px; font-size: 3rem;">
-                        {{ user.username|slice:":1"|upper }}
-                    </div>
-                {% endif %}
-            </div>
+        <!-- User Info -->
+        <div class="mb-2 flex-grow-1">
+            <h1 class="display-5 fw-bold text-white mb-0 font-heading">{{ user.username }}</h1>
+            <p class="text-muted mb-2 fst-italic">"{{ user.profile.bio|default:'Just another digital traveler.' }}"</p>
             
-            <h3 class="fw-bold text-white">{{ user.username }}</h3>
-            <span class="badge bg-warning text-dark mb-3">Nível {{ current_level }}</span>
-            
-            <!-- Barra de XP -->
-            <div class="progress bg-secondary mb-2" style="height: 10px;">
-                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ level_progress_percent }}%;"></div>
-            </div>
-            <small class="text-muted">{{ xp_current }} / 1000 XP para o próximo nível</small>
-        </div>
-
-        <!-- GRÁFICO DE RADAR (ALKAHEST STAR) -->
-        <div class="card bg-dark border-secondary mt-3 p-3">
-            <h5 class="text-white text-start mb-3"><i class="bi bi-pentagon-half"></i> Alkahest Star</h5>
-            <canvas id="radarChart"></canvas>
-        </div>
-
-        <!-- BOTÃO DE EXPORTAR (NOVO) -->
-        <a href="{% url 'export_data' %}" class="btn btn-outline-secondary w-100 mt-3 btn-sm">
-            <i class="bi bi-download me-2"></i> Exportar Dados (JSON)
-        </a>
-    </div>
-
-    <!-- ==========================================
-         COLUNA DIREITA: Estatísticas e KPIs
-    =========================================== -->
-    <div class="col-md-9">
-        <!-- Linha de KPIs -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="card bg-dark border-secondary text-center p-3 h-100">
-                    <h2 class="fw-bold text-primary">{{ total_games }}</h2>
-                    <small class="text-muted text-uppercase">Total de Jogos</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-dark border-secondary text-center p-3 h-100">
-                    <h2 class="fw-bold text-success">{{ completed_games }}</h2>
-                    <small class="text-muted text-uppercase">Zerados</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-dark border-secondary text-center p-3 h-100">
-                    <h2 class="fw-bold text-warning">{{ achievements_count }}</h2>
-                    <small class="text-muted text-uppercase">Conquistas</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-dark border-secondary text-center p-3 h-100">
-                    <h2 class="fw-bold text-info">{{ total_hours }}h</h2>
-                    <small class="text-muted text-uppercase">Tempo Jogado</small>
-                </div>
+            <div class="d-flex gap-3 text-white small fw-bold text-uppercase">
+                <span>{{ total_games }} Games</span> <span class="text-muted">|</span>
+                <span>{{ achievements_count }} Achievements</span> <span class="text-muted">|</span>
+                <span>{{ total_xp|intcomma }} XP</span>
             </div>
         </div>
 
-        <!-- Distribuição de Status -->
-        <div class="card bg-dark border-secondary mb-4">
-            <div class="card-header border-secondary fw-bold text-white">Status da Biblioteca</div>
-            <div class="card-body">
-                <div class="progress" style="height: 25px; background-color: #111;">
-                    {% if playing_games %}<div class="progress-bar bg-success" style="width: {{ playing_games }}%" title="Jogando: {{ playing_games }}"></div>{% endif %}
-                    {% if completed_games %}<div class="progress-bar bg-primary" style="width: {{ completed_games }}%" title="Zerados: {{ completed_games }}"></div>{% endif %}
-                    {% if backlog_games %}<div class="progress-bar bg-warning" style="width: {{ backlog_games }}%" title="Backlog: {{ backlog_games }}"></div>{% endif %}
-                </div>
-                <div class="d-flex justify-content-between mt-2 text-muted small">
-                    <span><i class="bi bi-circle-fill text-success"></i> Jogando</span>
-                    <span><i class="bi bi-circle-fill text-primary"></i> Zerados</span>
-                    <span><i class="bi bi-circle-fill text-warning"></i> Backlog</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Plataformas -->
-        <div class="row">
-            <div class="col-12">
-                <h5 class="text-white mb-3">Plataformas</h5>
-                <div class="row g-2">
-                    {% for p in platform_stats %}
-                    <div class="col-md-4">
-                        <div class="d-flex justify-content-between align-items-center bg-dark border border-secondary p-3 rounded">
-                            <span class="fw-bold text-white">{{ p.platform_game__platform__name }}</span>
-                            <span class="badge bg-secondary">{{ p.count }} Jogos</span>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="col-12"><p class="text-muted">Nenhuma plataforma registrada.</p></div>
-                    {% endfor %}
-                </div>
-            </div>
+        <!-- Actions -->
+        <div class="mb-3 d-flex gap-2">
+            <button class="btn btn-outline-secondary text-white"><i data-lucide="share-2" size="18"></i></button>
+            <button class="btn btn-primary fw-bold">Edit Profile</button>
         </div>
     </div>
 </div>
 
-<!-- Scripts para o Gráfico -->
+<!-- LIBRARY STATUS BAR -->
+<div class="b-card p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0 text-muted text-uppercase small fw-bold">Library Status</h6>
+        <span class="small text-muted">{{ total_games }} Items</span>
+    </div>
+    
+    <!-- Progress Multi-bar -->
+    <div class="d-flex w-100 rounded-pill overflow-hidden" style="height: 8px; background: #222;">
+        {% if total_games > 0 %}
+            <div style="width: {% widthratio playing_games total_games 100 %}%;" class="bg-warning" title="Playing"></div>
+            <div style="width: {% widthratio completed_games total_games 100 %}%;" class="bg-success" title="Completed"></div>
+            <div style="width: {% widthratio backlog_games total_games 100 %}%;" class="bg-secondary opacity-50" title="Backlog"></div>
+        {% endif %}
+    </div>
+
+    <!-- Legend -->
+    <div class="d-flex gap-4 mt-3 small">
+        <div class="d-flex align-items-center gap-2">
+            <span class="rounded-circle bg-warning" style="width: 8px; height: 8px;"></span>
+            <span class="text-muted">Playing ({{ playing_games }})</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="rounded-circle bg-success" style="width: 8px; height: 8px;"></span>
+            <span class="text-muted">Completed ({{ completed_games }})</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="rounded-circle bg-secondary opacity-50" style="width: 8px; height: 8px;"></span>
+            <span class="text-muted">Backlog ({{ backlog_games }})</span>
+        </div>
+    </div>
+</div>
+
+<!-- BENTO GRID -->
+<div class="row g-4">
+    
+    <!-- ALKAHEST STAR (Radar) -->
+    <div class="col-12 col-md-4">
+        <div class="b-card h-100 d-flex flex-column align-items-center">
+            <div class="d-flex justify-content-between w-100 mb-2">
+                <h5 class="fw-bold font-heading">Alkahest Star</h5>
+                <i data-lucide="info" size="16" class="text-muted" title="Based on your gameplay stats"></i>
+            </div>
+            
+            <div class="position-relative w-100 d-flex justify-content-center align-items-center flex-grow-1" style="min-height: 250px;">
+                <canvas id="radarChart"></canvas>
+            </div>
+            
+            <div class="mt-3 text-center">
+                <span class="badge bg-dark border border-secondary text-accent-primary">BALANCED TYPE</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLATFORM STATS -->
+    <div class="col-12 col-md-8">
+        <div class="b-card h-100">
+            <h5 class="fw-bold font-heading mb-4">Platform Breakdown</h5>
+            <div class="row g-3">
+                {% for stat in platform_stats %}
+                <div class="col-6 col-sm-4">
+                    <div class="p-3 rounded bg-dark border border-subtle h-100 d-flex flex-column justify-content-between">
+                        <span class="small text-muted text-uppercase fw-bold">{{ stat.platform_game__platform__name }}</span>
+                        <div class="d-flex align-items-end justify-content-between mt-2">
+                            <span class="h3 mb-0 fw-bold text-white">{{ stat.count }}</span>
+                            <i data-lucide="gamepad-2" class="text-muted opacity-25" size="24"></i>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-muted">No platform data available.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js for Radar -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('radarChart').getContext('2d');
-    
-    // Nomes atualizados para bater com a lógica do Python (Vigor, Maestria, etc)
-    const labels = ['Vigor (Vol)', 'Maestria (Skill)', 'Variedade', 'Conexão (Soc)', 'Dedicação'];
-    
-    const data = {
-        labels: labels,
-        datasets: [{
-            label: 'Atributos',
-            data: [
-                {{ profile.stat_volume }},  // Vigor
-                {{ profile.stat_skill }},   // Maestria
-                {{ profile.stat_variety }}, // Variedade
-                {{ profile.stat_social }},  // Conexão
-                {{ profile.stat_speed }}    // Dedicação (Antigo Speed)
-            ],
-            fill: true,
-            backgroundColor: 'rgba(255, 193, 7, 0.2)', 
-            borderColor: 'rgba(255, 193, 7, 1)',      
-            pointBackgroundColor: '#fff',
-            pointBorderColor: '#fff',
-            borderWidth: 2
-        }]
-    };
-
-    const config = {
-        type: 'radar',
-        data: data,
-        options: {
-            scales: {
-                r: {
-                    angleLines: { color: '#444' }, 
-                    grid: { color: '#444' },       
-                    pointLabels: { 
-                        color: '#ddd',
-                        font: { size: 11 } 
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('radarChart');
+        
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['VOL', 'SKILL', 'VAR', 'SOC', 'SPD'],
+                    datasets: [{
+                        label: 'Stats',
+                        data: [
+                            {{ profile.stat_volume }}, 
+                            {{ profile.stat_skill }}, 
+                            {{ profile.stat_variety }}, 
+                            {{ profile.stat_social }}, 
+                            {{ profile.stat_speed }}
+                        ],
+                        backgroundColor: 'rgba(124, 58, 237, 0.4)', // Accent Primary
+                        borderColor: '#7c3aed',
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#7c3aed',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            pointLabels: { color: '#a1a1aa', font: { size: 10, weight: 'bold' } },
+                            ticks: { display: false, max: 100, min: 0 }
+                        }
                     },
-                    suggestedMin: 0,
-                    suggestedMax: 100,
-                    ticks: { display: false, backdropColor: 'transparent' } 
+                    plugins: { legend: { display: false } },
+                    maintainAspectRatio: false
                 }
-            },
-            plugins: {
-                legend: { display: false }
-            }
+            });
         }
-    };
-    new Chart(ctx, config);
+    });
 </script>
 {% endblock %}
