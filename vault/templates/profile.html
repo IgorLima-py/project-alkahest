@@ -39,6 +39,33 @@
     </div>
 </div>
 
+<!-- HALL OF FAME (Top 5 Favorites) -->
+<div class="mb-4">
+    <div class="d-flex align-items-center gap-2 mb-2 px-1">
+        <i data-lucide="crown" size="16" class="text-warning"></i>
+        <h6 class="mb-0 text-white text-uppercase small fw-bold">Hall of Fame</h6>
+    </div>
+    <div class="d-flex gap-3 overflow-auto pb-2">
+        <!-- Mock de 5 slots. Futuramente: for game in favorite_games|slice:":5" -->
+        {% for i in "12345" %}
+        <div class="position-relative group cursor-pointer" style="width: 100px; flex-shrink: 0;" title="Slot {{ i }}">
+            <div class="ratio ratio-2x3 rounded border border-subtle bg-dark d-flex align-items-center justify-content-center overflow-hidden">
+                {% if forloop.first %} <!-- Exemplo: Slot 1 preenchido -->
+                    <img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co5xex.jpg" class="w-100 h-100 object-fit-cover">
+                {% else %}
+                    <i data-lucide="plus" class="text-muted opacity-25"></i>
+                {% endif %}
+            </div>
+            {% if forloop.first %}
+            <div class="position-absolute top-0 start-0 m-1 badge bg-warning text-dark fw-bold border border-white shadow-sm" style="font-size: 0.5rem;">#1</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+
 <!-- LIBRARY STATUS BAR -->
 <div class="b-card p-3 mb-4">
     <div class="d-flex justify-content-between align-items-center mb-2">

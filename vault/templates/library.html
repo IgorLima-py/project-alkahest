@@ -2,6 +2,25 @@
 {% load vault_extras %}
 {% load humanize %}
 
+{% block extra_css %}
+<style>
+    /* Platinum Glow Effect */
+    .platinum-container { position: relative; z-index: 1; }
+    .platinum-border {
+        position: absolute; inset: -3px; border-radius: 10px;
+        background: linear-gradient(45deg, #e2e8f0, #94a3b8, #f1f5f9, #475569);
+        background-size: 300% 300%;
+        z-index: -1;
+        animation: shine 4s infinite linear;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    }
+    @keyframes shine { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
+    
+    /* Backdrop Blur for Overlay Text */
+    .backdrop-blur { backdrop-filter: blur(4px); }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex flex-column gap-4">
 
@@ -48,30 +67,45 @@
         {% for entry in page_obj %}
         <div class="col">
             <a href="{% url 'game_detail' entry.id %}" class="text-decoration-none game-poster d-block h-100">
-                <div class="position-relative mb-2">
+                <!-- Poster Container -->
+                <div class="position-relative mb-2 {% if entry.status == 'completed' and entry.achievement_percentage >= 100 %}platinum-container{% endif %}">
+                    
+                    <!-- Platinum Glow (Only if 100%) -->
+                    {% if entry.status == 'completed' and entry.achievement_percentage >= 100 %}
+                        <div class="platinum-border"></div>
+                        <div class="position-absolute top-0 start-50 translate-middle-x mt-n2 badge bg-info text-dark border border-white shadow-lg fw-bold rounded-pill px-2" style="font-size: 0.55rem; z-index: 5; letter-spacing: 1px;">
+                            PLATINUM
+                        </div>
+                    {% endif %}
+
                     <!-- Cover Image -->
                     <img src="{{ entry.platform_game.master_game.cover_url|default:'https://placehold.co/300x450/1a1a1a/FFF' }}" 
                          class="poster-img w-100 shadow-sm" 
                          loading="lazy"
                          style="aspect-ratio: 2/3; object-fit: cover; border-radius: 8px;">
                     
-                    <!-- Overlay Badges -->
-                    <div class="position-absolute top-0 end-0 p-1">
+                    <!-- Top Right Badges (Status, Heart, Review) -->
+                    <div class="position-absolute top-0 end-0 p-1 d-flex flex-column gap-1 align-items-end">
                         {% if entry.status == 'playing' %}
-                            <span class="badge bg-warning text-dark border border-warning">PLAYING</span>
-                        {% elif entry.status == 'completed' %}
-                            <span class="badge bg-success text-white border border-success border-opacity-25"><i data-lucide="check" size="10"></i></span>
-                        {% elif entry.is_favorite %}
-                            <span class="badge bg-danger text-white"><i data-lucide="heart" size="10" fill="currentColor"></i></span>
+                            <span class="badge bg-warning text-dark border border-warning shadow-sm fw-bold" style="font-size: 0.6rem;">PLAYING</span>
+                        {% endif %}
+                        
+                        {% if entry.is_favorite %}
+                            <span class="badge bg-danger text-white shadow-sm border border-danger p-1"><i data-lucide="heart" size="10" fill="currentColor"></i></span>
+                        {% endif %}
+                        
+                        {% if entry.rating %}
+                             <span class="badge bg-dark text-warning border border-subtle shadow-sm p-1" title="Reviewed: {{ entry.rating }}"><i data-lucide="pen-tool" size="10"></i></span>
                         {% endif %}
                     </div>
                     
-                    <span class="position-absolute bottom-0 start-0 m-1 badge bg-dark bg-opacity-75 backdrop-blur border border-subtle" style="font-size: 0.6rem;">
-                        {{ entry.platform_game.platform.slug|upper }}
+                    <!-- Platform Tag (Bottom Left) -->
+                    <span class="position-absolute bottom-0 start-0 m-1 badge bg-dark bg-opacity-75 backdrop-blur border border-subtle text-uppercase" style="font-size: 0.6rem;">
+                        {{ entry.platform_game.platform.slug }}
                     </span>
                 </div>
 
-                <!-- Info -->
+                <!-- Info Block -->
                 <div>
                     <div class="fw-bold text-white small text-truncate" title="{{ entry.platform_game.master_game.title }}">
                         {{ entry.platform_game.master_game.title }}
@@ -82,7 +116,7 @@
                                 <i data-lucide="star" size="10" fill="currentColor"></i> <span>{{ entry.rating }}</span>
                             </div>
                         {% else %}
-                            <span class="text-muted small" style="font-size: 0.7rem;">--</span>
+                            <span class="text-muted small opacity-50" style="font-size: 0.7rem;">--</span>
                         {% endif %}
                         
                         {% if entry.playtime_minutes > 0 %}

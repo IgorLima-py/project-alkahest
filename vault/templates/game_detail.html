@@ -20,18 +20,42 @@
             {% endif %}
         </div>
 
+        <!-- QUICK ACTIONS BAR (Novo - Item G) -->
+        <div class="b-card p-2 mb-3 d-flex justify-content-between align-items-center">
+            <button class="btn btn-sm btn-link text-muted hover-white p-1" data-bs-toggle="modal" data-bs-target="#reviewModal" title="Log/Edit">
+                <i data-lucide="pencil" size="20"></i>
+            </button>
+            <form method="POST" class="d-inline">{% csrf_token %}
+                <input type="hidden" name="toggle_favorite" value="true">
+                <button type="submit" class="btn btn-sm btn-link {% if entry.is_favorite %}text-danger{% else %}text-muted hover-white{% endif %} p-1" title="Favorite">
+                    <i data-lucide="heart" size="20" fill="{% if entry.is_favorite %}currentColor{% else %}none{% endif %}"></i>
+                </button>
+            </form>
+            <button class="btn btn-sm btn-link text-muted hover-white p-1" data-bs-toggle="modal" data-bs-target="#addListModal" title="Add to List">
+                <i data-lucide="list-plus" size="20"></i>
+            </button>
+            <button class="btn btn-sm btn-link text-muted hover-white p-1" title="Share">
+                <i data-lucide="share-2" size="20"></i>
+            </button>
+        </div>
+
         <!-- Status & Actions Block -->
         <div class="b-card p-3 mb-3">
             <label class="small text-muted text-uppercase fw-bold mb-2">Your Status</label>
             
-            <!-- Visual Status Badge (Simulando Dropdown) -->
+            <!-- Visual Status Badge -->
             <div class="dropdown w-100 mb-3">
                 <button class="btn btn-dark border-subtle w-100 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown">
                     <span class="text-white fw-bold text-uppercase">{{ entry.get_status_display }}</span>
                     <i data-lucide="chevron-down" size="16"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-dark w-100">
-                    <li><a class="dropdown-item" href="{% url 'edit_library_entry' entry.id %}">Edit Details (Status/Platform)</a></li>
+                    <li><h6 class="dropdown-header">Change Status</h6></li>
+                    <li><a class="dropdown-item" href="{% url 'edit_library_entry' entry.id %}?quick_status=playing">Playing</a></li>
+                    <li><a class="dropdown-item" href="{% url 'edit_library_entry' entry.id %}?quick_status=completed">Completed</a></li>
+                    <li><a class="dropdown-item" href="{% url 'edit_library_entry' entry.id %}?quick_status=backlog">Backlog</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'edit_library_entry' entry.id %}">Advanced Edit...</a></li>
                 </ul>
             </div>
 
@@ -41,10 +65,6 @@
                     {{ entry.rating|render_stars }}
                 </div>
             </div>
-            
-            <button class="btn btn-outline-secondary w-100 text-white btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal">
-                <i data-lucide="pencil" size="14" class="me-2"></i> Edit Full Review
-            </button>
         </div>
 
         <!-- Information Block -->
@@ -53,7 +73,20 @@
             
             <div class="d-flex justify-content-between mb-2 small">
                 <span class="text-muted">Platform</span>
-                <span class="text-white fw-bold">{{ platform.name }}</span>
+                <!-- PLATFORM ICONS (Item L) -->
+                <span class="text-white fw-bold d-flex align-items-center gap-2">
+                    {% if "Steam" in platform.name or "PC" in platform.name %}
+                        <i data-lucide="monitor" size="14"></i> PC
+                    {% elif "PlayStation" in platform.name %}
+                        <i data-lucide="gamepad-2" size="14"></i> PS
+                    {% elif "Xbox" in platform.name %}
+                        <i data-lucide="gamepad-2" size="14"></i> XBOX
+                    {% elif "Switch" in platform.name or "Nintendo" in platform.name %}
+                        <i data-lucide="gamepad-2" size="14"></i> Switch
+                    {% else %}
+                        <i data-lucide="gamepad-2" size="14"></i> {{ platform.name }}
+                    {% endif %}
+                </span>
             </div>
             <div class="d-flex justify-content-between mb-2 small">
                 <span class="text-muted">Release</span>
@@ -84,9 +117,8 @@
                 {% endfor %}
             </div>
             <h1 class="display-4 fw-bold text-white font-heading mb-2">{{ master.title }}</h1>
-            <!-- Se tivesse Description no model, iria aqui. Usando Placeholder dos Gêneros como overview -->
             <p class="text-muted">
-                Explore the journey in <strong>{{ master.title }}</strong> on {{ platform.name }}. 
+                Explore the journey in <strong>{{ master.title }}</strong>. 
                 You have played for {{ entry.playtime_hours }} hours and unlocked {{ unlocked_achievements }} achievements.
             </p>
         </div>
@@ -101,25 +133,23 @@
                 <div class="progress-bar bg-warning" role="progressbar" style="width: {{ percentage }}%"></div>
             </div>
             
-            <!-- Mini List of Unlocked -->
             <div class="d-flex gap-2 overflow-auto pb-2">
                 {% for user_ach in entry.platform_game.achievements.all|slice:":5" %} 
-                <!-- Nota: Idealmente filtramos apenas os desbloqueados no view, mas aqui simulamos -->
                     {% if user_ach.id in unlocked_ids %}
-                    <div class="rounded border border-warning bg-warning bg-opacity-10 p-2 d-flex align-items-center justify-content-center" 
+                    <div class="rounded border border-warning bg-warning bg-opacity-10 p-2 d-flex align-items-center justify-content-center flex-shrink-0" 
                          style="width: 48px; height: 48px;" title="{{ user_ach.name }}">
                         <i data-lucide="trophy" size="20" class="text-warning"></i>
                     </div>
                     {% else %}
-                    <div class="rounded border border-subtle bg-dark p-2 d-flex align-items-center justify-content-center opacity-50" 
+                    <div class="rounded border border-subtle bg-dark p-2 d-flex align-items-center justify-content-center opacity-50 flex-shrink-0" 
                          style="width: 48px; height: 48px;">
                         <i data-lucide="lock" size="16" class="text-muted"></i>
                     </div>
                     {% endif %}
                 {% endfor %}
                 {% if total_achievements > 5 %}
-                <div class="rounded border border-subtle bg-dark p-2 d-flex align-items-center justify-content-center text-muted small" 
-                     style="width: 48px; height: 48px;">+{{ total_achievements|add:"-5" }}</div>
+                <div class="rounded border border-subtle bg-dark p-2 d-flex align-items-center justify-content-center text-muted small flex-shrink-0" 
+                     style="width: 48px; height: 48px;">+More</div>
                 {% endif %}
             </div>
         </div>
@@ -133,7 +163,6 @@
                 </button>
             </div>
 
-            <!-- Form Collapse -->
             <div class="collapse mb-3" id="tipForm">
                 <div class="b-card p-3 border-warning border-opacity-25">
                     <form method="POST">
@@ -145,13 +174,10 @@
                 </div>
             </div>
 
-            <!-- Tips List -->
             <div class="d-flex flex-column gap-2">
                 {% for tip in tips %}
                 <div class="p-3 rounded border border-subtle bg-dark position-relative overflow-hidden group">
-                    <!-- Accent Line -->
                     <div class="position-absolute top-0 start-0 bottom-0 bg-warning" style="width: 3px;"></div>
-                    
                     <div class="d-flex justify-content-between">
                         <span class="text-warning fw-bold small text-uppercase mb-1 d-block ps-2">{{ tip.user.username }}</span>
                         <div class="d-flex align-items-center gap-2">
@@ -166,7 +192,7 @@
                 </div>
                 {% empty %}
                 <div class="text-center py-4 border border-dashed border-subtle rounded text-muted small">
-                    No echoes found. Be the first to leave a mark.
+                    No echoes found.
                 </div>
                 {% endfor %}
             </div>
@@ -193,6 +219,10 @@
                 </div>
                 <div class="text-light opacity-90 small">{{ review.text_html|safe }}</div>
             </div>
+            {% empty %}
+             <div class="text-center py-4 border border-dashed border-subtle rounded text-muted small">
+                No reviews yet. Click 'Edit Full Review' to write one.
+            </div>
             {% endfor %}
         </div>
 
@@ -202,11 +232,11 @@
     <div class="col-12 col-lg-3">
         <!-- Add to List -->
         <div class="b-card p-0 d-flex mb-3">
-            <input type="text" class="form-control border-0 bg-transparent text-white p-3" placeholder="Add to List...">
+            <input type="text" class="form-control border-0 bg-transparent text-white p-3" placeholder="Add to List..." readonly style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#addListModal">
             <button class="btn btn-link text-white" data-bs-toggle="modal" data-bs-target="#addListModal"><i data-lucide="plus" size="20"></i></button>
         </div>
 
-        <!-- Featured Lists -->
+        <!-- Featured Lists (Mock) -->
         <div class="mb-4">
             <label class="small text-muted text-uppercase fw-bold mb-2">Featured In Lists</label>
             <div class="d-flex flex-column gap-2">
@@ -221,7 +251,7 @@
             </div>
         </div>
 
-        <!-- Best Price -->
+        <!-- Best Price Widget (Mock) -->
         <div class="b-card border-success border-opacity-25 bg-success bg-opacity-10">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-bold text-white mb-0">Best Price</h6>
@@ -261,15 +291,15 @@
                         <div class="col-md-6">
                             <label class="form-label small text-muted text-uppercase fw-bold">Status</label>
                             <select name="status" class="form-select bg-dark text-white border-secondary">
-                                <option value="playing">Playing</option>
-                                <option value="completed">Completed</option>
-                                <option value="dropped">Dropped</option>
-                                <option value="backlog">Backlog</option>
+                                <option value="playing" {% if entry.status == 'playing' %}selected{% endif %}>Playing</option>
+                                <option value="completed" {% if entry.status == 'completed' %}selected{% endif %}>Completed</option>
+                                <option value="dropped" {% if entry.status == 'dropped' %}selected{% endif %}>Dropped</option>
+                                <option value="backlog" {% if entry.status == 'backlog' %}selected{% endif %}>Backlog</option>
                             </select>
                         </div>
                         <div class="col-12">
                             <label class="form-label small text-muted text-uppercase fw-bold">Review</label>
-                            <textarea name="review_text" class="form-control bg-dark text-white border-secondary" rows="5" placeholder="Write your thoughts... Markdown supported."></textarea>
+                            <textarea name="review_text" class="form-control bg-dark text-white border-secondary" rows="5" placeholder="Write your thoughts... Markdown supported.">{{ review.text|default:'' }}</textarea>
                         </div>
                         <div class="col-12">
                             <div class="form-check form-switch">
@@ -292,7 +322,7 @@
     </div>
 </div>
 
-<!-- ADD LIST MODAL (Placeholder for logic) -->
+<!-- ADD LIST MODAL -->
 <div class="modal fade" id="addListModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-card border border-subtle">
@@ -313,6 +343,9 @@
                     {% empty %}
                     <div class="p-3 text-center text-muted small">No lists created yet.</div>
                     {% endfor %}
+                    <a href="{% url 'create_list' %}" class="list-group-item list-group-item-action bg-dark text-accent-primary border-subtle fw-bold text-center">
+                        + Create New List
+                    </a>
                 </div>
             </div>
         </div>
