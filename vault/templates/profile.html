@@ -2,161 +2,150 @@
 {% load humanize %}
 
 {% block content %}
-<!-- PROFILE HEADER -->
-<div class="position-relative mb-5">
-    <!-- Banner -->
-    <div style="height: 200px; background: linear-gradient(to bottom, #4c1d95, #09090b); border-bottom: 1px solid var(--border-subtle); border-radius: 0 0 16px 16px;"></div>
+<!-- === PROFILE HEADER (Refatorado) === -->
+<div class="position-relative mb-4">
+    <!-- Banner com Gradiente Suave -->
+    <div style="height: 250px; background: linear-gradient(180deg, rgba(76, 29, 149, 1) 0%, rgba(9, 9, 11, 1) 100%); border-bottom: 1px solid var(--border-subtle); border-radius: 0 0 24px 24px;"></div>
     
-    <div class="px-4 d-flex flex-column flex-md-row align-items-end gap-4" style="margin-top: -60px;">
-        <!-- Avatar -->
-        <div class="position-relative">
-            <img src="{{ user.profile.avatar_url|default:'https://ui-avatars.com/api/?name='|add:user.username }}" 
-                 class="rounded-circle shadow-lg bg-dark" 
-                 width="128" height="128" 
-                 style="border: 4px solid var(--bg-body);">
-        </div>
-        
-        <!-- User Info -->
-        <div class="mb-2 flex-grow-1 pt-2">
-            <div class="d-flex align-items-center gap-2">
-                <h1 class="display-5 fw-bold text-white mb-0 font-heading">{{ user.username }}</h1>
-                <!-- TAG PRO/ADMIN (Item 16) -->
-                {% if user.is_staff %}
-                <span class="badge bg-warning text-dark border border-warning shadow-sm fw-bold" style="background: linear-gradient(45deg, #fbbf24, #d97706);">PRO</span>
-                {% endif %}
+    <div class="container-fluid px-4" style="margin-top: -80px;">
+        <div class="d-flex flex-column align-items-center text-center">
+            <!-- Avatar com Borda e Nível -->
+            <div class="position-relative mb-3 group">
+                <img src="{{ user.profile.avatar_url|default:'https://ui-avatars.com/api/?name='|add:user.username }}" 
+                     class="rounded-circle shadow-lg bg-dark cursor-pointer transition-transform hover-scale" 
+                     width="140" height="140" 
+                     style="border: 6px solid var(--bg-body);">
+                
+                <span class="position-absolute bottom-0 start-50 translate-middle-x badge bg-dark border border-warning text-warning rounded-pill px-3 py-1 shadow-lg mt-2 fw-bold font-monospace" style="bottom: -10px;">
+                    LVL {{ current_level|default:"1" }}
+                </span>
             </div>
-            <p class="text-muted mb-2 fst-italic">"{{ user.profile.bio|default:'Just another digital traveler.' }}"</p>
             
-            <div class="d-flex gap-3 text-white small fw-bold text-uppercase opacity-75">
-                <span>{{ total_games }} Games</span> <span>•</span>
-                <span>{{ achievements_count }} Trophies</span> <span>•</span>
-                <span class="text-accent-primary">{{ total_xp|intcomma }} XP</span>
+            <!-- User Info Centralizado -->
+            <h1 class="display-5 fw-bold text-white mb-1 font-heading d-flex align-items-center justify-content-center gap-2">
+                {{ user.username }}
+                {% if user.is_staff %}
+                <!-- TAG PRO DOURADA (Item 16) -->
+                <span class="badge bg-warning text-dark border border-warning shadow-sm fw-bold fs-6" 
+                      style="background: linear-gradient(45deg, #FFD700, #DAA520); color: #422006 !important; text-shadow: 0px 1px 0px rgba(255,255,255,0.4);">
+                    PRO
+                </span>
+                {% endif %}
+            </h1>
+            <p class="text-muted mb-3 fst-italic" style="max-width: 500px;">"{{ user.profile.bio|default:'Just another digital traveler.' }}"</p>
+            
+            <!-- Stats Pills -->
+            <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+                <div class="badge bg-dark border border-subtle text-light fw-normal p-2 px-3">
+                    <span class="fw-bold text-white">{{ total_games }}</span> Games
+                </div>
+                <div class="badge bg-dark border border-subtle text-light fw-normal p-2 px-3">
+                    <span class="fw-bold text-white">{{ achievements_count }}</span> Achievements
+                </div>
+                <div class="badge bg-dark border border-subtle text-light fw-normal p-2 px-3">
+                    <span class="fw-bold text-accent-primary">{{ total_xp|intcomma }}</span> XP
+                </div>
             </div>
-        </div>
 
-        <!-- Actions -->
-        <div class="mb-3 d-flex gap-2">
-             <button class="btn btn-outline-secondary text-white btn-sm"><i data-lucide="settings" size="16"></i></button>
-             <button class="btn btn-primary fw-bold btn-sm shadow-lg">Edit Profile</button>
+            <!-- Action Buttons -->
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary text-white hover-white"><i data-lucide="settings" size="16"></i> Config</button>
+                <button class="btn btn-sm btn-primary fw-bold shadow-lg bg-gradient-to-r from-accent-primary to-purple-600 border-0">Edit Profile</button>
+            </div>
         </div>
     </div>
 </div>
 
-
-<!-- HALL OF FAME (Top 5 Favorites) -->
-<div class="mb-4">
-    <div class="d-flex align-items-center gap-2 mb-2 px-1">
-        <i data-lucide="crown" size="16" class="text-warning"></i>
-        <h6 class="mb-0 text-white text-uppercase small fw-bold">Hall of Fame</h6>
+<!-- === HALL OF FAME (Centralizado) === -->
+<div class="mb-5 text-center">
+    <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+        <i data-lucide="crown" size="20" class="text-warning"></i>
+        <h6 class="mb-0 text-white text-uppercase fw-bold letter-spacing-2">Hall of Fame</h6>
     </div>
-    <div class="d-flex gap-3 overflow-auto pb-2">
-        <!-- Mock de 5 slots. Futuramente: for game in favorite_games|slice:":5" -->
+
+    <!-- Slots Grid (5 items) -->
+    <div class="d-flex justify-content-center gap-3 flex-wrap px-2">
         {% for i in "12345" %}
-        <div class="position-relative group cursor-pointer" style="width: 100px; flex-shrink: 0;" title="Slot {{ i }}">
-            <div class="ratio ratio-2x3 rounded border border-subtle bg-dark d-flex align-items-center justify-content-center overflow-hidden">
-                {% if forloop.first %} <!-- Exemplo: Slot 1 preenchido -->
-                    <img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co5xex.jpg" class="w-100 h-100 object-fit-cover">
-                {% else %}
-                    <i data-lucide="plus" class="text-muted opacity-25"></i>
-                {% endif %}
+        <div class="position-relative group" style="width: 120px; aspect-ratio: 2/3;">
+            <!-- Placeholder Slot -->
+            <div class="w-100 h-100 rounded border border-dashed border-secondary bg-dark bg-opacity-50 d-flex flex-column align-items-center justify-content-center text-muted hover-border-accent transition-all cursor-pointer">
+                <i data-lucide="plus" size="32" class="opacity-50 mb-2 group-hover-text-accent"></i>
+                <span class="small fw-bold" style="font-size: 0.7rem;">ADD GAME</span>
             </div>
-            {% if forloop.first %}
-            <div class="position-absolute top-0 start-0 m-1 badge bg-warning text-dark fw-bold border border-white shadow-sm" style="font-size: 0.5rem;">#1</div>
-            {% endif %}
+            
+            <!-- Rank Badge -->
+            <div class="position-absolute top-0 start-50 translate-middle-x mt-n2 badge bg-dark border border-secondary text-muted rounded-circle shadow-sm" style="width: 24px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">
+                {{ forloop.counter }}
+            </div>
         </div>
         {% endfor %}
     </div>
 </div>
 
+<!-- === PROFILE TABS (Navigation) === -->
+<ul class="nav nav-pills justify-content-center mb-4 border-bottom border-subtle pb-3 gap-3">
+    <li class="nav-item">
+        <a class="nav-link active bg-transparent text-white border-bottom border-2 border-accent-primary rounded-0 px-1 pb-3" href="#">Overview</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-muted hover-white rounded-0 px-1 pb-3" href="#">Journal</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-muted hover-white rounded-0 px-1 pb-3" href="#">Stats</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-muted hover-white rounded-0 px-1 pb-3" href="#">Badges</a>
+    </li>
+</ul>
 
-
-<!-- LIBRARY STATUS BAR -->
-<div class="b-card p-3 mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="mb-0 text-muted text-uppercase small fw-bold">Library Status</h6>
-        <span class="small text-muted">{{ total_games }} Items</span>
-    </div>
-    
-    <!-- Progress Multi-bar -->
-    <div class="d-flex w-100 rounded-pill overflow-hidden" style="height: 8px; background: #222;">
-        {% if total_games > 0 %}
-            <div style="width: {% widthratio playing_games total_games 100 %}%;" class="bg-warning" title="Playing"></div>
-            <div style="width: {% widthratio completed_games total_games 100 %}%;" class="bg-success" title="Completed"></div>
-            <div style="width: {% widthratio backlog_games total_games 100 %}%;" class="bg-secondary opacity-50" title="Backlog"></div>
-        {% endif %}
-    </div>
-
-    <!-- Legend -->
-    <div class="d-flex gap-4 mt-3 small">
-        <div class="d-flex align-items-center gap-2">
-            <span class="rounded-circle bg-warning" style="width: 8px; height: 8px;"></span>
-            <span class="text-muted">Playing ({{ playing_games }})</span>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <span class="rounded-circle bg-success" style="width: 8px; height: 8px;"></span>
-            <span class="text-muted">Completed ({{ completed_games }})</span>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <span class="rounded-circle bg-secondary opacity-50" style="width: 8px; height: 8px;"></span>
-            <span class="text-muted">Backlog ({{ backlog_games }})</span>
-        </div>
-    </div>
-</div>
-
-<!-- BENTO GRID -->
+<!-- === TAB CONTENT: OVERVIEW === -->
 <div class="row g-4">
-    
-    <!-- ALKAHEST STAR (Radar) -->
-    <div class="col-12 col-md-4">
-        <div class="b-card h-100 d-flex flex-column align-items-center">
+    <!-- Esquerda: Recent Activity & Bio -->
+    <div class="col-12 col-lg-8">
+        <h5 class="fw-bold font-heading mb-3">Recent Activity</h5>
+        <!-- Placeholder de Activity -->
+        <div class="b-card p-4 text-center border-dashed border-secondary opacity-50">
+             <i data-lucide="activity" size="32" class="mb-2"></i>
+             <p class="mb-0">No recent activity recorded.</p>
+        </div>
+    </div>
+
+    <!-- Direita: Stats Radar & Platform Breakdown -->
+    <div class="col-12 col-lg-4">
+        <!-- Alkahest Star -->
+        <div class="b-card mb-4 d-flex flex-column align-items-center p-3">
             <div class="d-flex justify-content-between w-100 mb-2">
-                <h5 class="fw-bold font-heading">Alkahest Star</h5>
-                <i data-lucide="info" size="16" class="text-muted" title="Based on your gameplay stats"></i>
+                <h6 class="fw-bold text-white small text-uppercase">Alkahest Star</h6>
+                <i data-lucide="info" size="14" class="text-muted" title="Based on gameplay volume, skill, and variety"></i>
             </div>
-            
-            <div class="position-relative w-100 d-flex justify-content-center align-items-center flex-grow-1" style="min-height: 250px;">
+            <div class="position-relative w-100" style="height: 200px;">
                 <canvas id="radarChart"></canvas>
             </div>
-            
-            <div class="mt-3 text-center">
-                <span class="badge bg-dark border border-secondary text-accent-primary">BALANCED TYPE</span>
-            </div>
+        </div>
+
+        <!-- Platform Stats -->
+        <div class="b-card p-3">
+             <h6 class="fw-bold text-white small text-uppercase mb-3">Platforms</h6>
+             {% for stat in platform_stats %}
+             <div class="d-flex align-items-center justify-content-between mb-2">
+                 <div class="d-flex align-items-center gap-2">
+                     <i data-lucide="gamepad-2" size="14" class="text-muted"></i>
+                     <span class="small text-light">{{ stat.platform_game__platform__name }}</span>
+                 </div>
+                 <span class="badge bg-dark border border-subtle text-white">{{ stat.count }}</span>
+             </div>
+             {% empty %}
+             <span class="text-muted small">No platform data.</span>
+             {% endfor %}
         </div>
     </div>
-
-    <!-- PLATFORM STATS -->
-    <div class="col-12 col-md-8">
-        <div class="b-card h-100">
-            <h5 class="fw-bold font-heading mb-4">Platform Breakdown</h5>
-            <div class="row g-3">
-                {% for stat in platform_stats %}
-                <div class="col-6 col-sm-4">
-                    <div class="p-3 rounded bg-dark border border-subtle h-100 d-flex flex-column justify-content-between">
-                        <span class="small text-muted text-uppercase fw-bold">{{ stat.platform_game__platform__name }}</span>
-                        <div class="d-flex align-items-end justify-content-between mt-2">
-                            <span class="h3 mb-0 fw-bold text-white">{{ stat.count }}</span>
-                            <i data-lucide="gamepad-2" class="text-muted opacity-25" size="24"></i>
-                        </div>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="col-12 text-muted">No platform data available.</div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
-<!-- Chart.js for Radar -->
+<!-- SCRIPTS (Chart.js) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const ctx = document.getElementById('radarChart');
-        
         if (ctx) {
             new Chart(ctx, {
                 type: 'radar',
@@ -171,7 +160,7 @@
                             {{ profile.stat_social }}, 
                             {{ profile.stat_speed }}
                         ],
-                        backgroundColor: 'rgba(124, 58, 237, 0.4)', // Accent Primary
+                        backgroundColor: 'rgba(124, 58, 237, 0.2)',
                         borderColor: '#7c3aed',
                         pointBackgroundColor: '#fff',
                         pointBorderColor: '#7c3aed',
@@ -181,9 +170,9 @@
                 options: {
                     scales: {
                         r: {
-                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            pointLabels: { color: '#a1a1aa', font: { size: 10, weight: 'bold' } },
+                            angleLines: { color: 'rgba(255, 255, 255, 0.05)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            pointLabels: { color: '#a1a1aa', font: { size: 9, weight: 'bold' } },
                             ticks: { display: false, max: 100, min: 0 }
                         }
                     },

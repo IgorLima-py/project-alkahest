@@ -1,6 +1,5 @@
-<!-- templates/includes/sidebar_content.html -->
 <a href="{% url 'dashboard' %}" class="brand text-decoration-none">
-    <div style="width: 32px; color: var(--accent-primary);"> <!-- Logo com Accent -->
+    <div style="width: 32px; color: var(--accent-primary);">
         <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
             <g fill="currentColor">
                 <circle cx="400" cy="250" r="58" />
@@ -16,9 +15,16 @@
 
 <div class="d-flex flex-column flex-grow-1 overflow-auto pe-2 custom-scrollbar">
     
-    <!-- SEARCH (Mobile only - Desktop is in Header) -->
+    <!-- SEARCH (Mobile only) -->
     <div class="d-lg-none mb-3">
         <input type="text" class="form-control bg-dark border-secondary text-white btn-sm" placeholder="Search...">
+    </div>
+
+    <!-- LOG GAME BUTTON (De volta ao topo - Item 14) -->
+    <div class="mb-4 mt-2">
+        <a href="{% url 'add_game' %}" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-lg glow-hover" style="background: var(--accent-primary); border: none;">
+            <i data-lucide="plus" size="18"></i> <span>Log Game</span>
+        </a>
     </div>
 
     <div class="nav-section mt-1">Main</div>
@@ -28,38 +34,36 @@
     <a href="{% url 'discovery' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'discovery' %}active{% endif %}">
         <i data-lucide="compass" size="18"></i> Discovery
     </a>
-    <a href="#" class="nav-link-custom">
-        <i data-lucide="activity" size="18"></i> Activity Feed
+    <a href="#" class="nav-link-custom opacity-75" title="Feed (Phase 4)">
+        <i data-lucide="activity" size="18"></i> Activity
     </a>
 
     <div class="nav-section">Library</div>
     <a href="{% url 'library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'library' %}active{% endif %}">
         <i data-lucide="gamepad-2" size="18"></i> My Games
     </a>
+    <a href="{% url 'library' %}?status=backlog" class="nav-link-custom">
+        <i data-lucide="layers" size="18"></i> Backlog
+    </a>
     <a href="{% url 'my_lists' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'my_lists' %}active{% endif %}">
         <i data-lucide="scroll" size="18"></i> Lists
     </a>
-    <a href="#" class="nav-link-custom opacity-75" data-bs-toggle="tooltip" title="Coming Soon">
-        <i data-lucide="heart" size="18"></i> Wishlist
-    </a>
-    <a href="#" class="nav-link-custom opacity-75" data-bs-toggle="tooltip" title="Coming Soon">
-        <i data-lucide="archive" size="18"></i> Collections
+    <a href="#" class="nav-link-custom opacity-75" title="Wishlist & Deals (Phase 5)">
+        <i data-lucide="gift" size="18"></i> Wishlist
     </a>
 
     <div class="nav-section">Community</div>
-    <a href="#" class="nav-link-custom opacity-75">
+    <a href="{% url 'social_hub' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'social_hub' %}active{% endif %}">
         <i data-lucide="users" size="18"></i> Friends
     </a>
-    <a href="#" class="nav-link-custom opacity-75">
-        <i data-lucide="swords" size="18"></i> Rivals
+    <a href="{% url 'rivals' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'rivals' %}active{% endif %}">
+        <i data-lucide="trophy" size="18"></i> Leaderboard
     </a>
-
-    <!-- ADD GAME BUTTON (Movido para baixo para menos intrusão visual mas fácil acesso) -->
-    <div class="mt-4 px-2">
-        <a href="{% url 'add_game' %}" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-lg glow-hover" style="background: var(--accent-primary); border: none;">
-            <i data-lucide="plus" size="16"></i> <span class="small">Log Game</span>
-        </a>
-    </div>
+    
+    <div class="nav-section">Pro</div>
+    <a href="#" class="nav-link-custom text-warning opacity-90" title="Fantasy Critic (Phase 7)">
+        <i data-lucide="dices" size="18"></i> Oracle League
+    </a>
 </div>
 
 <div class="mt-auto pt-3 border-top border-subtle">

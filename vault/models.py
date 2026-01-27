@@ -1,4 +1,3 @@
-# BLOCO 1: IMPORTAÇÕES
 import uuid
 from django.db import models
 from django.contrib.auth.models import User
@@ -22,8 +21,8 @@ class UserProfile(models.Model):
 # BLOCO 3: MASTER GAME
 class MasterGame(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    igdb_id = models.BigIntegerField(unique=True, db_index=True) # Indexado para busca rápida
-    title = models.CharField(max_length=255, db_index=True)      # Indexado para autocomplete
+    igdb_id = models.BigIntegerField(unique=True, db_index=True)
+    title = models.CharField(max_length=255, db_index=True)
     cover_url = models.URLField(blank=True, null=True)
     release_date = models.DateField(blank=True, null=True)
     genres = models.JSONField(default=list)
@@ -63,7 +62,6 @@ class UserLibraryEntry(models.Model):
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='backlog', db_index=True)
     playtime_minutes = models.IntegerField(default=0)
-    # Índices críticos para ordenação da biblioteca
     last_played = models.DateTimeField(blank=True, null=True, db_index=True)
     last_synced = models.DateTimeField(auto_now=True)
     rating = models.FloatField(null=True, blank=True, db_index=True) 
@@ -71,9 +69,12 @@ class UserLibraryEntry(models.Model):
     is_favorite = models.BooleanField(default=False)
     is_recommended = models.BooleanField(null=True, blank=True)
     
-    # Legado
-    review_text = models.TextField(blank=True, null=True)
-    review_date = models.DateTimeField(null=True, blank=True)
+    # NOVOS CAMPOS (Fase 1 - Preço/Moeda)
+    price_paid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=3, default='BRL', blank=True)
+    
+    review_text = models.TextField(blank=True, null=True) # Legado
+    review_date = models.DateTimeField(null=True, blank=True) # Legado
 
     @property
     def playtime_hours(self):
@@ -131,20 +132,14 @@ class Review(models.Model):
     def save(self, *args, **kwargs):
         html = markdown.markdown(self.text)
         allowed_tags = {'b', 'i', 'strong', 'em', 'p', 'br', 'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'h1', 'h2', 'hr'}
-        allowed_attrs = {
-            'a': {'href', 'title'},
-            'img': {'src', 'alt'} # Se quiser permitir imagens no futuro
-        }
-        
-        # Limpeza (Sanitização)
+        allowed_attrs = {'a': {'href', 'title'}, 'img': {'src', 'alt'}}
         self.text_html = nh3.clean(html, tags=allowed_tags, attributes=allowed_attrs)
-        
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Review de {self.user} - {self.library_entry.platform_game.master_game.title}"
 
-# BLOCO 7: DICAS & LISTAS (Mantidos iguais, apenas contexto)
+# BLOCO 7: DICAS & LISTAS
 class GameTip(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tips')
@@ -172,6 +167,7 @@ class GameList(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     likes_count = models.IntegerField(default=0)
+    is_public = models.BooleanField(default=True) # Novo (Segurança)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self): return self.title
@@ -183,3 +179,19 @@ class GameListItem(models.Model):
     comment = models.TextField(blank=True)
     class Meta:
         ordering = ['order']
+
+# BLOCO 8: SOCIAL (Fase 2 - ESTE É O BLOCO QUE FALTAVA)
+class UserFollow(models.Model):
+    follower = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
+    target = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('follower', 'target')
+        indexes = [
+            models.Index(fields=['follower']),
+            models.Index(fields=['target']),
+        ]
+
+    def __str__(self):
+        return f"{self.follower.username} follows {self.target.username}"

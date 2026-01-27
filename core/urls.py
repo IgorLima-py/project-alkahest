@@ -1,7 +1,8 @@
+# urls.py
 from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from vault import views # Importar o módulo inteiro evita linhas gigantes de imports
+from vault import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -17,8 +18,15 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('add/', views.add_game_view, name='add_game'),
     path('export/', views.export_data_view, name='export_data'),
+    
+    # Discovery (Fase 2)
     path('discovery/', views.discovery_view, name='discovery'),
     
+    # === SOCIAL (Fase 2 - ESSENCIAIS PARA CORRIGIR O ERRO) ===
+    path('social/', views.social_hub_view, name='social_hub'),
+    path('social/follow/<str:username>/', views.toggle_follow_view, name='toggle_follow'),
+    path('social/rivals/', views.rivals_view, name='rivals'),
+
     # Edição (CRUD)
     path('library/entry/edit/<uuid:entry_id>/', views.edit_library_entry_view, name='edit_library_entry'),
     path('review/edit/<uuid:review_id>/', views.edit_review_view, name='edit_review'),
@@ -31,6 +39,4 @@ urlpatterns = [
     path('lists/create/', views.create_list_view, name='create_list'),
     path('lists/<uuid:list_id>/', views.list_detail_view, name='list_detail'),
     path('lists/add/<uuid:game_id>/', views.add_to_list_view, name='add_to_list'),
-    
-    
 ]
