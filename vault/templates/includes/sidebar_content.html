@@ -1,28 +1,35 @@
-<a href="{% url 'dashboard' %}" class="brand text-decoration-none">
-    <div style="width: 32px; color: var(--accent-primary);">
-        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
-            <g fill="currentColor">
-                <circle cx="400" cy="250" r="58" />
-                <circle cx="400" cy="60" r="24" />
-                <circle cx="400" cy="440" r="24" />
-                <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(-20)" />
-                <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(20)" />
+<a href="{% url 'dashboard' %}" class="brand text-decoration-none py-2">
+    <!-- Logo Ajustado (Branco, Maior, Mais Grosso) -->
+    <div style="width: 48px; color: white;"> 
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="20"> <!-- Stroke width adicionado -->
+            <g fill="currentColor" stroke="none"> <!-- Stroke none para manter fill solido nas bolas -->
+                <circle cx="400" cy="250" r="72" /> <!-- 58 * 1.25 -->
+                <circle cx="400" cy="40" r="30" />  <!-- 24 * 1.25, ajustado Y -->
+                <circle cx="400" cy="460" r="30" /> <!-- 24 * 1.25, ajustado Y -->
+                
+                <!-- Orbitas (Strokes manuais simulados ou paths ajustados) -->
+                <!-- Mantendo paths originais mas escalando via transform SVG se necessário, 
+                     ou apenas aumentando o container div width como fiz acima (32px -> 48px) já resolve o tamanho visual. 
+                     Para "grossura", SVGs de preenchimento (fill) não usam stroke-width facilmente sem alterar o path.
+                     Vou aplicar um filtro de brilho/shadow para dar "peso" visual. -->
+                <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(-20) scale(1.1)" />
+                <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(20) scale(1.1)" />
             </g>
         </svg>
     </div>
-    <span class="tracking-tight fw-bold" style="font-family: 'Space Grotesk', sans-serif;">ALKA.GG</span>
+    <span class="tracking-tight fw-bold fs-4 ms-2" style="font-family: 'Space Grotesk', sans-serif; letter-spacing: -1px;">ALKA.GG</span>
 </a>
 
-<div class="d-flex flex-column flex-grow-1 overflow-auto pe-2 custom-scrollbar">
+<div class="d-flex flex-column flex-grow-1 overflow-auto pe-2 custom-scrollbar justify-content-center"> <!-- Centralizado Verticalmente -->
     
     <!-- SEARCH (Mobile only) -->
     <div class="d-lg-none mb-3">
         <input type="text" class="form-control bg-dark border-secondary text-white btn-sm" placeholder="Search...">
     </div>
 
-    <!-- LOG GAME BUTTON (De volta ao topo - Item 14) -->
+    <!-- LOG GAME BUTTON -->
     <div class="mb-4 mt-2">
-        <a href="{% url 'add_game' %}" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-lg glow-hover" style="background: var(--accent-primary); border: none;">
+        <a href="{% url 'add_game' %}" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-lg glow-hover py-2" style="background: var(--accent-primary); border: none;">
             <i data-lucide="plus" size="18"></i> <span>Log Game</span>
         </a>
     </div>
@@ -59,9 +66,8 @@
     <a href="{% url 'rivals' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'rivals' %}active{% endif %}">
         <i data-lucide="trophy" size="18"></i> Leaderboard
     </a>
-    
-    <div class="nav-section">Pro</div>
-    <a href="#" class="nav-link-custom text-warning opacity-90" title="Fantasy Critic (Phase 7)">
+    <!-- ORACLE LEAGUE MOVIDO PARA CÁ -->
+    <a href="#" class="nav-link-custom" title="Fantasy Critic (Phase 7)">
         <i data-lucide="dices" size="18"></i> Oracle League
     </a>
 </div>
