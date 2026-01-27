@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="display-5 fw-bold text-white font-heading mb-2">Global Leaderboard</h1>
+    <p class="text-muted">Ranking based on Total XP. Play more to climb.</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10">
+        <div class="b-card p-0 overflow-hidden shadow-lg">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead class="bg-black">
+                        <tr>
+                            <th scope="col" class="py-3 ps-4 text-muted text-uppercase small fw-bold" style="width: 80px;">Rank</th>
+                            <th scope="col" class="py-3 text-muted text-uppercase small fw-bold">User</th>
+                            <th scope="col" class="py-3 text-center text-muted text-uppercase small fw-bold">Games</th>
+                            <th scope="col" class="py-3 text-end pe-4 text-muted text-uppercase small fw-bold">Total XP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in leaderboard %}
+                        <tr class="{% if entry.user == user %}bg-primary bg-opacity-10{% endif %}">
+                            <td class="ps-4">
+                                {% if forloop.counter == 1 %}
+                                    <i data-lucide="trophy" class="text-warning" size="24"></i>
+                                {% elif forloop.counter == 2 %}
+                                    <i data-lucide="medal" class="text-secondary" size="24"></i>
+                                {% elif forloop.counter == 3 %}
+                                    <i data-lucide="medal" class="text-danger" size="24"></i>
+                                {% else %}
+                                    <span class="fw-bold text-muted h5 mb-0 ms-1">{{ forloop.counter }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="position-relative">
+                                        <img src="{{ entry.avatar|default:'https://ui-avatars.com/api/?name='|add:entry.user.username }}" class="rounded-circle border border-dark" width="48" height="48">
+                                        {% if entry.user.is_staff %}
+                                        <span class="position-absolute bottom-0 end-0 p-1 bg-warning border border-dark rounded-circle" style="width: 12px; height: 12px;"></span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-white">{{ entry.user.username }}</div>
+                                        <div class="small text-muted">Level {{ entry.xp|div:1000|add:1|floatformat:0 }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-dark border border-subtle text-white">{{ entry.games_completed }}</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="font-monospace fw-bold text-accent-primary fs-5">{{ entry.xp|intcomma }}</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
