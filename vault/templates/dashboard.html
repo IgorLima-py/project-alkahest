@@ -98,20 +98,50 @@
         </div>
     </div>
 
-    <!-- BLOCK 5: Wishlist Deals (Placeholder for now) (4 cols) -->
+    <!-- BLOCK 5: Community Pulse (Simulado) (4 cols) -->
     <div class="col-12 col-lg-4">
         <div class="b-card h-100">
-            <div class="d-flex align-items-center gap-2 mb-3 text-accent-cyan">
-                <i data-lucide="tag" size="18"></i>
-                <h5 class="mb-0 fw-bold">Wishlist Deals</h5>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center gap-2 text-accent-cyan">
+                    <i data-lucide="activity" size="18"></i>
+                    <h5 class="mb-0 fw-bold font-heading">Community Pulse</h5>
+                </div>
+                <span class="badge bg-dark border border-subtle text-muted">LIVE</span>
             </div>
             
-            <div class="d-flex flex-column justify-content-center align-items-center text-center h-75 opacity-50">
-                <i data-lucide="shopping-bag" size="32" class="mb-2 text-muted"></i>
-                <p class="small text-muted">Price tracking coming in Phase 5.</p>
+            <div class="d-flex flex-column gap-3">
+                <!-- Mock Item 1 -->
+                <div class="d-flex gap-3 align-items-center">
+                    <img src="https://ui-avatars.com/api/?name=Kratos&background=991b1b&color=fff" class="rounded-circle" width="32">
+                    <div class="lh-sm">
+                        <div class="small text-white"><span class="fw-bold">Kratos</span> started playing <span class="text-accent-primary">Hades II</span></div>
+                        <span class="text-muted" style="font-size: 0.7rem;">2 mins ago</span>
+                    </div>
+                </div>
+                <!-- Mock Item 2 -->
+                <div class="d-flex gap-3 align-items-center">
+                    <img src="https://ui-avatars.com/api/?name=Zelda&background=166534&color=fff" class="rounded-circle" width="32">
+                    <div class="lh-sm">
+                        <div class="small text-white"><span class="fw-bold">Zelda</span> reached Lv. 50</div>
+                        <span class="text-muted" style="font-size: 0.7rem;">15 mins ago</span>
+                    </div>
+                </div>
+                <!-- Mock Item 3 -->
+                <div class="d-flex gap-3 align-items-center">
+                    <img src="https://ui-avatars.com/api/?name=Mario&background=dc2626&color=fff" class="rounded-circle" width="32">
+                    <div class="lh-sm">
+                        <div class="small text-white"><span class="fw-bold">Mario</span> wishlisted <span class="text-white">Silksong</span></div>
+                        <span class="text-muted" style="font-size: 0.7rem;">1 hour ago</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-auto pt-3 text-center">
+                <button class="btn btn-sm btn-outline-secondary w-100" disabled>View Friends Feed (Soon)</button>
             </div>
         </div>
     </div>
+
 
 </div>
 {% endblock %}

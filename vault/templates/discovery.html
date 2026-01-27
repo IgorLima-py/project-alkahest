@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<!-- HERO SECTION: Featured Game -->
+<div class="position-relative w-100 rounded-4 overflow-hidden mb-5 border border-subtle" style="height: 400px;">
+    <!-- Background (Static for now, dynamic later) -->
+    <div style="background: url('https://images.igdb.com/igdb/image/upload/t_original/sc91k3.jpg') center/cover; position: absolute; inset: 0; filter: brightness(0.6);"></div>
+    <div style="background: linear-gradient(90deg, rgba(9,9,11,1) 0%, rgba(9,9,11,0.6) 50%, transparent 100%); position: absolute; inset: 0;"></div>
+
+    <div class="position-relative z-1 p-5 h-100 d-flex flex-column justify-content-center align-items-start text-white" style="max-width: 600px;">
+        <span class="badge bg-accent-primary text-white mb-3">FEATURED</span>
+        <h1 class="display-4 fw-bold font-heading mb-2">Elden Ring:<br>Shadow of the Erdtree</h1>
+        <p class="lead mb-4 text-light opacity-75">The highly anticipated expansion. Dive back into the Lands Between with new weapons, enemies, and lore.</p>
+        <div class="d-flex gap-3">
+            <button class="btn btn-white fw-bold px-4 text-dark">View Game</button>
+            <button class="btn btn-outline-light px-4">+ Wishlist</button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-5">
+    
+    <!-- LEFT COL: Trending & Top Rated (8 cols) -->
+    <div class="col-12 col-lg-8">
+        
+        <!-- Section: Trending -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold font-heading mb-0">Trending Now</h4>
+            <a href="#" class="text-muted small text-decoration-none">View All</a>
+        </div>
+        
+        <div class="row row-cols-2 row-cols-md-4 g-3 mb-5">
+            <!-- MOCK DATA LOOP -->
+            {% for i in "1234" %}
+            <div class="col">
+                <div class="game-poster w-100">
+                    <img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co49x5.jpg" class="poster-img">
+                    <div class="fw-bold text-white small mt-1">Baldur's Gate 3</div>
+                    <div class="small text-muted">RPG • 96 Score</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Section: Top Rated (Tabs) -->
+        <div class="d-flex align-items-center gap-4 mb-3">
+            <h4 class="fw-bold font-heading mb-0">Hall of Fame</h4>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-dark border-subtle text-white active">Critics Choice</button>
+                <button class="btn btn-sm btn-dark border-transparent text-muted">Users Choice</button>
+            </div>
+        </div>
+
+        <div class="b-card p-0 overflow-hidden">
+            <table class="table table-dark table-hover mb-0">
+                <thead>
+                    <tr class="text-muted small text-uppercase">
+                        <th class="ps-4">Rank</th>
+                        <th>Game Title</th>
+                        <th>Score</th>
+                        <th class="text-end pe-4">Platform</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="ps-4 text-accent-gold fw-bold">#1</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <img src="https://images.igdb.com/igdb/image/upload/t_thumb/co5xex.jpg" class="rounded" width="32">
+                                <span class="fw-bold">Sea of Stars</span>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">95</span></td>
+                        <td class="text-end pe-4 text-muted small">PC, PS5, NS</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 text-white fw-bold">#2</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <img src="https://images.igdb.com/igdb/image/upload/t_thumb/co1r7x.jpg" class="rounded" width="32">
+                                <span class="fw-bold">Hades</span>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">94</span></td>
+                        <td class="text-end pe-4 text-muted small">PC, PS5</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- RIGHT COL: Deals & Coming Soon (4 cols) -->
+    <div class="col-12 col-lg-4">
+        
+        <!-- Deals Widget -->
+        <div class="b-card border-success border-opacity-25 bg-success bg-opacity-5 mb-4">
+            <div class="d-flex align-items-center gap-2 mb-3 text-success">
+                <i data-lucide="tag" size="20"></i>
+                <h5 class="mb-0 fw-bold font-heading">Best Deals</h5>
+            </div>
+            
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex gap-3 align-items-center">
+                    <img src="https://images.igdb.com/igdb/image/upload/t_thumb/co2lbd.jpg" class="rounded" width="48">
+                    <div class="lh-1 flex-grow-1">
+                        <div class="fw-bold text-white small">Resident Evil 4</div>
+                        <div class="small text-muted mt-1">Steam</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold text-success">R$ 89</div>
+                        <div class="text-decoration-line-through text-muted small">R$ 169</div>
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-3 align-items-center">
+                    <img src="https://images.igdb.com/igdb/image/upload/t_thumb/co1n15.jpg" class="rounded" width="48">
+                    <div class="lh-1 flex-grow-1">
+                        <div class="fw-bold text-white small">Cyberpunk 2077</div>
+                        <div class="small text-muted mt-1">GOG</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold text-success">R$ 99</div>
+                        <div class="badge bg-success text-white small">-50%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn btn-outline-success w-100 btn-sm mt-3">View All Deals</button>
+        </div>
+
+        <!-- Coming Soon -->
+        <div class="b-card">
+            <h5 class="fw-bold font-heading mb-3">Coming Soon</h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex justify-content-between border-bottom border-subtle pb-2">
+                    <span class="text-white small fw-bold">GTA VI</span>
+                    <span class="text-muted small">2026</span>
+                </div>
+                <div class="d-flex justify-content-between border-bottom border-subtle pb-2">
+                    <span class="text-white small fw-bold">Monster Hunter Wilds</span>
+                    <span class="text-muted small">2026</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

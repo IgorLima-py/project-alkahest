@@ -6,39 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALKAHEST | Collection</title>
     
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- HTMX (Recomendado para UX fluida futura) -->
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
 
     <style>
         :root {
-            /* Palette - Nebula Glass */
             --bg-body: #09090b;      
             --bg-sidebar: #020202;   
             --bg-card: #121214;      
             --bg-hover: #27272a;     
-            
             --accent-primary: #7c3aed; 
             --accent-glow: rgba(124, 58, 237, 0.15);
-            --accent-cyan: #06b6d4;
-            --accent-rose: #f43f5e;
             --accent-gold: #fbbf24;
-            --accent-success: #22c55e;
-            
             --text-main: #f4f4f5;
             --text-muted: #a1a1aa;
-            
             --border-subtle: rgba(255, 255, 255, 0.08);
-            
             --radius-md: 8px;
             --radius-lg: 16px;
         }
@@ -48,121 +35,101 @@
             font-family: 'Inter', sans-serif;
             color: var(--text-main);
             overflow-x: hidden;
-            /* Nebula Gradient Subtle */
             background-image: radial-gradient(circle at 50% -20%, #1e1b4b 0%, var(--bg-body) 60%);
             background-attachment: fixed;
             min-height: 100vh;
         }
 
+        h1, h2, h3, h4, .font-heading { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.03em; }
 
-        h1, h2, h3, h4, .font-heading {
-            font-family: 'Space Grotesk', sans-serif;
-            letter-spacing: -0.03em;
-        }
-
-        /* --- LAYOUT --- */
-        .app-shell {
-            display: grid;
-            grid-template-columns: 260px 1fr;
-            min-height: 100vh;
-        }
-
+        /* LAYOUT */
+        .app-shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        
+        /* SIDEBAR (Desktop) */
         .sidebar {
             background-color: var(--bg-sidebar);
             border-right: 1px solid var(--border-subtle);
-            padding: 24px 12px;
+            padding: 24px 16px;
             position: sticky; top: 0; height: 100vh;
             display: flex; flex-direction: column;
             z-index: 100;
         }
 
-        /* --- COMPONENTS --- */
+        /* BRAND */
         .brand {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.25rem; font-weight: 700;
+            font-size: 1.4rem; font-weight: 700;
             color: white; text-decoration: none;
             display: flex; align-items: center; gap: 12px;
-            margin-bottom: 24px; padding-left: 12px;
+            margin-bottom: 32px; padding-left: 8px;
         }
 
-        .user-mini-card {
-            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md);
-            padding: 12px;
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 24px; cursor: pointer;
-            transition: border-color 0.2s;
-            text-decoration: none;
-        }
-        .user-mini-card:hover { border-color: rgba(255,255,255,0.15); }
-
+        /* NAV LINKS */
         .nav-section {
             font-size: 0.7rem; font-weight: 700; color: #52525b;
             text-transform: uppercase; letter-spacing: 0.05em;
-            margin: 16px 0 8px 12px;
+            margin: 20px 0 8px 12px;
         }
-
         .nav-link-custom {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 12px;
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 12px;
             color: var(--text-muted);
             font-size: 0.9rem; font-weight: 500;
-            border-radius: 6px; cursor: pointer;
+            border-radius: 8px; cursor: pointer;
             transition: all 0.2s; text-decoration: none;
         }
         .nav-link-custom:hover { color: white; background: var(--bg-hover); }
         .nav-link-custom.active { background: var(--accent-glow); color: var(--accent-primary); }
-        .nav-link-custom i { opacity: 0.7; }
-        .nav-link-custom.active i { opacity: 1; }
+        .nav-link-custom i { opacity: 0.7; transition: 0.2s; }
+        .nav-link-custom:hover i, .nav-link-custom.active i { opacity: 1; }
 
-        /* --- CARDS & GRID --- */
-        .b-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            position: relative; overflow: hidden;
-            height: 100%; /* Importante para Grid */
+        /* ADD GAME BUTTON (Highlighted) */
+        .btn-add-game {
+            background: linear-gradient(135deg, var(--accent-primary), #6d28d9);
+            color: white; border: none;
+            margin: 24px 0; justify-content: center;
+            font-weight: 600; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
         }
+        .btn-add-game:hover { color: white; filter: brightness(1.1); }
 
-        .game-poster {
-            width: 140px; flex-shrink: 0;
-            position: relative; cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .game-poster:hover { transform: translateY(-4px); }
-        
-        .poster-img {
-            width: 100%; aspect-ratio: 2/3;
-            object-fit: cover; border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            margin-bottom: 8px;
-            background-color: #222;
-        }
-
-        /* --- HEADER --- */
+        /* HEADER */
         .top-header {
             position: sticky; top: 0; z-index: 50;
-            background: rgba(9, 9, 11, 0.85);
-            backdrop-filter: blur(12px);
+            background: rgba(9, 9, 11, 0.85); backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-subtle);
             padding: 16px 32px;
             display: flex; justify-content: space-between; align-items: center;
         }
-        
         .search-input {
             background: #18181b; border: 1px solid var(--border-subtle);
             border-radius: 20px; padding: 8px 16px 8px 40px;
             color: white; width: 320px; transition: all 0.2s;
         }
-        .search-input:focus { outline: none; border-color: var(--accent-primary); width: 340px; }
+        .search-input:focus { outline: none; border-color: var(--accent-primary); width: 360px; }
 
-        /* Mobile */
+        /* XP BAR (Top Right) */
+        .xp-pill {
+            background: #18181b; border: 1px solid var(--border-subtle);
+            border-radius: 50px; padding: 4px 12px 4px 4px;
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer; transition: 0.2s;
+        }
+        .xp-pill:hover { border-color: var(--accent-primary); }
+
+        /* CARD UTILS */
+        .b-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px; position: relative; overflow: hidden; height: 100%;
+        }
+
+        /* MOBILE FIXES */
         @media (max-width: 992px) {
             .app-shell { grid-template-columns: 1fr; }
-            .sidebar { display: none; }
-            .top-header { padding: 16px; }
+            .sidebar { display: none; } /* Hide desktop sidebar */
+            .top-header { padding: 12px 16px; }
+            .search-input { width: 100%; }
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -171,98 +138,57 @@
 
 <div class="app-shell">
     
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <!-- Brand -->
-        <a href="{% url 'dashboard' %}" class="brand">
-            <!-- ALKA SVG -->
-            <div style="width: 32px; color: var(--accent-primary);">
-                <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
-                    <g fill="currentColor">
-                        <circle cx="400" cy="250" r="58" />
-                        <circle cx="400" cy="60" r="24" />
-                        <circle cx="400" cy="440" r="24" />
-                        <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(-20)" />
-                        <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(20)" />
-                    </g>
-                </svg>
-            </div>
-            <span>ALKA.GG</span>
-        </a>
-
-        <!-- User Mini Profile -->
-        {% if user.is_authenticated %}
-        <a href="{% url 'profile' %}" class="user-mini-card">
-            <img src="{% if user.profile.avatar_url %}{{ user.profile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=7c3aed&color=fff{% endif %}" class="rounded-circle" width="36" height="36">
-            <div class="lh-1">
-                <div class="fw-bold text-white small">{{ user.username }}</div>
-                <div class="d-flex align-items-center gap-1 mt-1">
-                    <i data-lucide="medal" size="10" class="text-warning"></i>
-                    <span class="text-warning fw-bold" style="font-size: 0.65rem; letter-spacing: 0.05em;">
-                        LVL {{ user.profile.stat_volume|default:"1" }}
-                    </span>
-                </div>
-            </div>
-        </a>
-        {% endif %}
-
-        <!-- Navigation -->
-        <div class="overflow-auto flex-grow-1 pe-2">
-            
-            <div class="nav-section">Main</div>
-            <a href="{% url 'dashboard' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                <i data-lucide="layout-grid" size="18"></i> Dashboard
-            </a>
-            <a href="#" class="nav-link-custom"> <!-- Placeholder Discovery -->
-                <i data-lucide="compass" size="18"></i> Discovery
-            </a>
-
-            <div class="nav-section">Library</div>
-            <a href="{% url 'library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'library' %}active{% endif %}">
-                <i data-lucide="gamepad-2" size="18"></i> My Games
-            </a>
-            <a href="{% url 'library' %}?status=backlog" class="nav-link-custom d-flex justify-content-between">
-                <div class="d-flex gap-2 align-items-center"><i data-lucide="layers" size="18"></i> Backlog</div>
-            </a>
-            <a href="{% url 'my_lists' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'my_lists' %}active{% endif %}">
-                <i data-lucide="scroll" size="18"></i> Lists
-            </a>
-
-            <div class="nav-section">System</div>
-            <a href="{% url 'add_game' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'add_game' %}active{% endif %}">
-                <i data-lucide="plus-circle" size="18"></i> Add Game
-            </a>
-            <a href="{% url 'logout' %}" class="nav-link-custom text-danger mt-4">
-                <i data-lucide="log-out" size="18"></i> Logout
-            </a>
-        </div>
-        
-        <!-- Footer Stats -->
-        <div class="mt-4 pt-3 border-top border-subtle">
-            <div class="d-flex justify-content-between text-muted small mb-1" style="font-size: 0.7rem;">
-                <span>System</span> <span class="text-success">● Online</span>
-            </div>
-        </div>
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="sidebar d-none d-lg-flex">
+        {% include 'includes/sidebar_content.html' %}
     </aside>
+
+    <!-- MOBILE OFFCANVAS SIDEBAR -->
+    <div class="offcanvas offcanvas-start bg-black text-white" tabindex="-1" id="mobileSidebar" style="width: 280px; border-right: 1px solid var(--border-subtle);">
+        <div class="offcanvas-body p-3 d-flex flex-column h-100">
+             {% include 'includes/sidebar_content.html' %}
+        </div>
+    </div>
 
     <!-- MAIN CONTENT -->
     <main class="d-flex flex-column" style="height: 100vh; overflow-y: auto;">
         
-        <!-- Header -->
         <header class="top-header">
-            <div style="position: relative;">
+            <!-- Mobile Toggle -->
+            <button class="btn btn-link text-white d-lg-none p-0 me-3" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+                <i data-lucide="menu" size="24"></i>
+            </button>
+
+            <!-- Search -->
+            <div class="position-relative d-none d-md-block">
                 <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px;"></i>
                 <form action="{% url 'library' %}" method="GET">
                     <input type="text" name="q" class="search-input" placeholder="Search games, lists, or users..." value="{{ request.GET.q }}">
                 </form>
             </div>
-            <div class="d-flex gap-3 align-items-center">
-                <a href="{% url 'add_game' %}" class="btn btn-sm btn-outline-secondary border-0 text-white"><i data-lucide="plus" size="20"></i></a>
+
+            <!-- User XP/Actions -->
+            <div class="d-flex gap-3 align-items-center ms-auto">
+                {% if user.is_authenticated %}
+                <a href="{% url 'profile' %}" class="text-decoration-none">
+                    <div class="xp-pill">
+                        <img src="{% if user.profile.avatar_url %}{{ user.profile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=7c3aed&color=fff{% endif %}" class="rounded-circle" width="32" height="32">
+                        <div class="d-flex flex-column lh-1">
+                            <span class="fw-bold text-white" style="font-size: 0.8rem;">{{ user.username }}</span>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="badge bg-warning text-dark border border-warning rounded-pill p-0 px-1" style="font-size: 0.6rem;">LVL {{ current_level|default:"42" }}</span>
+                                <div class="progress bg-dark border border-secondary" style="width: 60px; height: 4px;">
+                                    <div class="progress-bar bg-accent-primary" style="width: 75%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                {% endif %}
             </div>
         </header>
 
-        <!-- Content Injection -->
-        <div class="p-4 mx-auto w-100" style="max-width: 1600px;">
+        <div class="p-3 p-md-4 mx-auto w-100" style="max-width: 1600px;">
             {% block content %}{% endblock %}
         </div>
     </main>
@@ -273,6 +199,11 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         lucide.createIcons();
+        // Tooltips Initialization
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
     });
 </script>
 {% block extra_js %}{% endblock %}

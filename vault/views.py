@@ -606,3 +606,8 @@ def delete_tip_view(request, tip_id):
             return redirect('game_detail', game_id=entry.id)
         return redirect('library')
     return render(request, 'tips/delete_tip_confirm.html', {'tip': tip})
+
+# BLOCO X: DISCOVERY VIEW (PÁGINA EM BRANCO PARA FUTURO SOCIAL/RECOMENDAÇÕES)
+@login_required
+def discovery_view(request):
+    return render(request, 'discovery.html')

@@ -17,6 +17,7 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('add/', views.add_game_view, name='add_game'),
     path('export/', views.export_data_view, name='export_data'),
+    path('discovery/', views.discovery_view, name='discovery'),
     
     # Edição (CRUD)
     path('library/entry/edit/<uuid:entry_id>/', views.edit_library_entry_view, name='edit_library_entry'),

@@ -1,0 +1,61 @@
+<a href="{% url 'dashboard' %}" class="brand">
+    <div style="width: 32px; color: white;"> <!-- Logo Branco (h) -->
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <g fill="currentColor">
+                <circle cx="400" cy="250" r="58" />
+                <circle cx="400" cy="60" r="24" />
+                <circle cx="400" cy="440" r="24" />
+                <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(-20)" />
+                <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(20)" />
+            </g>
+        </svg>
+    </div>
+    <span>ALKAHEST</span> <!-- Nome corrigido (h) -->
+</a>
+
+<div class="d-flex flex-column flex-grow-1 overflow-auto pe-2">
+    <!-- ADD GAME (Destacado no Centro - i) -->
+    <a href="{% url 'add_game' %}" class="nav-link-custom btn-add-game">
+        <i data-lucide="plus-circle" size="20"></i> Add Game
+    </a>
+
+    <div class="nav-section">Main</div>
+    <a href="{% url 'dashboard' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i data-lucide="layout-grid" size="18"></i> Dashboard
+    </a>
+    <a href="#" class="nav-link-custom" data-bs-toggle="tooltip" title="Coming in Phase 2">
+        <i data-lucide="compass" size="18"></i> Discovery
+    </a>
+    <a href="#" class="nav-link-custom" data-bs-toggle="tooltip" title="See what friends are playing">
+        <i data-lucide="activity" size="18"></i> Activity Feed
+    </a>
+
+    <div class="nav-section">Library</div>
+    <a href="{% url 'library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'library' %}active{% endif %}">
+        <i data-lucide="gamepad-2" size="18"></i> My Games
+    </a>
+    <a href="{% url 'library' %}?status=backlog" class="nav-link-custom">
+        <i data-lucide="layers" size="18"></i> Backlog
+    </a>
+    <a href="{% url 'my_lists' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'my_lists' %}active{% endif %}">
+        <i data-lucide="scroll" size="18"></i> Lists
+    </a>
+    <a href="#" class="nav-link-custom" data-bs-toggle="tooltip" title="Collections Feature Coming Soon">
+        <i data-lucide="archive" size="18"></i> Collections
+    </a>
+
+    <div class="nav-section">Community</div>
+    <a href="#" class="nav-link-custom" data-bs-toggle="tooltip" title="Friends System Soon">
+        <i data-lucide="users" size="18"></i> Friends
+    </a>
+    <a href="#" class="nav-link-custom" data-bs-toggle="tooltip" title="Rivals Leaderboard Soon">
+        <i data-lucide="swords" size="18"></i> Rivals
+    </a>
+</div>
+
+<!-- Logout Isolado no Rodapé (i) -->
+<div class="mt-auto pt-3 border-top border-subtle">
+    <a href="{% url 'logout' %}" class="nav-link-custom text-danger">
+        <i data-lucide="log-out" size="18"></i> Logout
+    </a>
+</div>
