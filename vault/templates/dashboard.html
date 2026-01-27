@@ -12,7 +12,7 @@
     </div>
     <div class="col-12 col-lg-4 mt-3 mt-lg-0">
         <!-- Quick Stats Widget -->
-        <div class="b-card p-3 bg-dark border-subtle d-flex justify-content-around align-items-center">
+        <div class="b-card p-3 bg-dark border-subtle d-flex justify-content-around align-items-center shadow-lg">
              <div class="text-center">
                  <div class="h2 fw-bold text-white mb-0 font-monospace">{{ total_completed }}</div>
                  <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Completed</div>
@@ -76,93 +76,137 @@
     </div>
 </div>
 
-<!-- ACTIVITY & COMMUNITY SPLIT -->
+<!-- DASHBOARD GRID: ACTIVITY + TRENDING + SIDEBAR -->
 <div class="row g-4">
-    <!-- RECENT ACTIVITY (Left - 8 cols) -->
-    <div class="col-12 col-lg-8">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-             <h5 class="fw-bold font-heading mb-0 text-white">Recent Activity</h5>
-        </div>
-        
+    
+    <!-- LEFT COL: FRIEND ACTIVITY (6 Cols) -->
+    <div class="col-12 col-xl-6">
+        <h5 class="fw-bold font-heading mb-3 text-white">Friend Activity</h5>
         <div class="d-flex flex-column gap-3">
-            {% for review in recent_reviews %}
-            <div class="b-card p-3 hover-border-light transition-all d-flex gap-3">
-                <!-- Mini Cover -->
+            {% for item in community_pulse %}
+            <div class="b-card p-3 hover-border-light transition-all d-flex gap-3 position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 bottom-0 bg-{% if item.activity_type == 'review' %}accent-primary{% else %}warning{% endif %}" style="width: 3px;"></div>
+                
                 <div class="flex-shrink-0">
-                    <img src="{{ review.library_entry.platform_game.master_game.cover_url }}" 
-                         class="rounded shadow-sm" 
-                         style="width: 60px; height: 90px; object-fit: cover;">
+                    {% if item.activity_type == 'review' %}
+                        <img src="{{ item.library_entry.platform_game.master_game.cover_url }}" class="rounded shadow-sm" style="width: 60px; height: 90px; object-fit: cover;">
+                    {% else %}
+                        <img src="{{ item.platform_game.master_game.cover_url }}" class="rounded shadow-sm" style="width: 60px; height: 90px; object-fit: cover;">
+                    {% endif %}
                 </div>
                 
-                <!-- Content -->
                 <div class="flex-grow-1">
                     <div class="d-flex justify-content-between mb-1">
                         <div>
-                            <span class="fw-bold text-white">{{ review.user.username }}</span>
-                            <span class="text-muted small">reviewed</span>
-                            <a href="{% url 'game_detail' review.library_entry.id %}" class="text-accent-primary fw-bold text-decoration-none">{{ review.library_entry.platform_game.master_game.title }}</a>
+                            <span class="fw-bold text-white">{{ item.user.username }}</span>
+                            <span class="text-muted small">
+                                {% if item.activity_type == 'review' %}reviewed{% else %}started playing{% endif %}
+                            </span>
                         </div>
-                        <span class="text-muted small" style="font-size: 0.7rem;">{{ review.created_at|timesince }} ago</span>
+                        <span class="text-muted small" style="font-size: 0.7rem;">
+                            {% if item.created_at %}{{ item.created_at|timesince }}{% else %}{{ item.last_synced|timesince }}{% endif %} ago
+                        </span>
                     </div>
                     
-                    <div class="mb-2">
-                        {% if review.rating %}
-                        <div class="d-flex text-warning small">
+                    <h6 class="fw-bold text-white mb-1">
+                        {% if item.activity_type == 'review' %}
+                            {{ item.library_entry.platform_game.master_game.title }}
+                        {% else %}
+                            {{ item.platform_game.master_game.title }}
+                        {% endif %}
+                    </h6>
+
+                    {% if item.activity_type == 'review' %}
+                        <div class="d-flex text-warning small mb-2">
                             {% for i in "12345" %}
-                                <i data-lucide="star" size="12" fill="{% if forloop.counter <= review.rating %}currentColor{% else %}none{% endif %}"></i>
+                                <i data-lucide="star" size="12" fill="{% if forloop.counter <= item.rating %}currentColor{% else %}none{% endif %}"></i>
                             {% endfor %}
                         </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="p-2 bg-dark rounded border border-subtle text-light small fst-italic text-truncate" style="max-width: 100%;">
-                        "{{ review.text|striptags|truncatechars:120 }}"
-                    </div>
+                        <p class="small text-muted mb-0 fst-italic text-truncate">"{{ item.text|striptags }}"</p>
+                    {% else %}
+                        <span class="badge bg-warning text-dark border border-warning px-1 py-0 small mt-1">NEW JOURNEY</span>
+                    {% endif %}
                 </div>
             </div>
             {% empty %}
-            <div class="text-center text-muted py-4 small">No recent activity.</div>
+            <div class="text-center text-muted py-5 border border-dashed border-subtle rounded">
+                <p class="mb-0">Your friends are quiet. Too quiet.</p>
+                <a href="{% url 'social_hub' %}" class="btn btn-link btn-sm">Find people to follow</a>
+            </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- COMMUNITY PULSE / SIDE WIDGETS (Right - 4 cols) -->
-    <div class="col-12 col-lg-4">
-        <!-- Pulse Widget -->
-        <div class="b-card p-3 mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                 <h6 class="fw-bold text-white mb-0"><i data-lucide="activity" size="16" class="me-1 text-accent-primary"></i> Community Pulse</h6>
-                 <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-1 rounded-1" style="font-size: 0.6rem;">LIVE</span>
-            </div>
-            
-            <div class="d-flex flex-column gap-3">
-                <!-- Mock Items -->
-                <div class="d-flex gap-2 align-items-start">
-                    <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 24px; height: 24px; font-size: 0.7rem;">KR</div>
-                    <div class="lh-sm">
-                        <div class="small text-white"><span class="fw-bold">Kratos</span> started playing <span class="text-accent-primary">Hades II</span></div>
-                        <div class="text-muted" style="font-size: 0.65rem;">2 mins ago</div>
+    <!-- MIDDLE COL: TRENDING / HALL OF FAME (3 Cols) -->
+    <div class="col-12 col-lg-6 col-xl-3">
+        <h5 class="fw-bold font-heading mb-3 text-white">Trending Now</h5>
+        
+        <!-- Critic Choice (Mock) -->
+        <div class="mb-4">
+            <label class="small text-muted text-uppercase fw-bold mb-2 opacity-75">Critics' Choice</label>
+            <div class="d-flex flex-column gap-2">
+                {% for game in trending_games|slice:":3" %} 
+                <div class="d-flex align-items-center gap-2 p-2 rounded bg-dark border border-subtle hover-bg-hover transition-colors cursor-pointer">
+                    <div class="bg-dark fw-bold text-white border border-secondary rounded d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                        {{ forloop.counter }}
+                    </div>
+                    <div class="text-truncate flex-grow-1">
+                        <div class="text-white small fw-bold text-truncate">{{ game.title }}</div>
+                        <div class="text-accent-primary small" style="font-size: 0.7rem;">96 OpenCritic</div>
                     </div>
                 </div>
-                <div class="d-flex gap-2 align-items-start">
-                    <div class="bg-success rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 24px; height: 24px; font-size: 0.7rem;">ZE</div>
-                    <div class="lh-sm">
-                        <div class="small text-white"><span class="fw-bold">Zelda</span> reached <span class="text-warning">Lv. 50</span></div>
-                        <div class="text-muted" style="font-size: 0.65rem;">15 mins ago</div>
-                    </div>
-                </div>
+                {% empty %}
+                 <div class="text-muted small">No data yet.</div>
+                {% endfor %}
             </div>
         </div>
 
-        <!-- Add Game CTA -->
-        <div class="b-card p-4 text-center border-dashed border-secondary bg-transparent opacity-75 hover-opacity-100 transition-opacity">
-            <div class="mb-3 d-inline-block p-3 rounded-circle bg-dark border border-subtle">
-                <i data-lucide="plus" size="24" class="text-muted"></i>
+        <!-- Community Top (Mock) -->
+        <div>
+            <label class="small text-muted text-uppercase fw-bold mb-2 opacity-75">Community Top</label>
+            <div class="d-flex flex-column gap-2">
+                 <div class="d-flex align-items-center gap-2 p-2 rounded bg-dark border border-subtle opacity-75">
+                    <div class="text-warning fw-bold small">#1</div>
+                    <div class="text-white small text-truncate">Elden Ring</div>
+                 </div>
+                 <div class="d-flex align-items-center gap-2 p-2 rounded bg-dark border border-subtle opacity-75">
+                    <div class="text-warning fw-bold small">#2</div>
+                    <div class="text-white small text-truncate">Baldur's Gate 3</div>
+                 </div>
             </div>
-            <h6 class="text-white fw-bold">Expand Collection</h6>
-            <p class="small text-muted mb-3">Track a new adventure or update your backlog.</p>
-            <a href="{% url 'add_game' %}" class="btn btn-outline-light btn-sm w-100">Log Game</a>
         </div>
     </div>
+
+    <!-- RIGHT COL: WIDGETS (3 Cols) -->
+    <div class="col-12 col-lg-6 col-xl-3">
+        <!-- New Releases / Subscriptions (Mock) -->
+        <div class="b-card p-0 overflow-hidden mb-4 position-relative">
+            <img src="https://image.api.playstation.com/vulcan/ap/rnd/202310/1816/8c7c77c7c7c7c7.jpg" class="w-100 opacity-50" style="height: 120px; object-fit: cover;">
+            <div class="position-absolute bottom-0 start-0 w-100 p-3 bg-gradient-to-t from-black">
+                <span class="badge bg-success mb-1">GAME PASS</span>
+                <h6 class="fw-bold text-white mb-0 lh-1">New on Service</h6>
+                <div class="small text-white opacity-75">Indiana Jones and the Great Circle</div>
+            </div>
+        </div>
+
+        <!-- Deals Widget (Mock) -->
+        <div class="b-card p-3 border-success border-opacity-25 bg-success bg-opacity-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                 <h6 class="fw-bold text-white mb-0 text-uppercase small"><i data-lucide="tag" size="14" class="me-1"></i> Best Deals</h6>
+            </div>
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25 pb-2">
+                    <span class="text-white small">Cyberpunk 2077</span>
+                    <span class="text-success fw-bold small">-50%</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-white small">Hades</span>
+                    <span class="text-success fw-bold small">-40%</span>
+                </div>
+            </div>
+             <button class="btn btn-sm btn-outline-success w-100 mt-3">View All Deals</button>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
