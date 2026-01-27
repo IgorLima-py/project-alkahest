@@ -1,5 +1,6 @@
-<a href="{% url 'dashboard' %}" class="brand">
-    <div style="width: 32px; color: white;"> <!-- Logo Branco (h) -->
+<!-- templates/includes/sidebar_content.html -->
+<a href="{% url 'dashboard' %}" class="brand text-decoration-none">
+    <div style="width: 32px; color: var(--accent-primary);"> <!-- Logo com Accent -->
         <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
             <g fill="currentColor">
                 <circle cx="400" cy="250" r="58" />
@@ -10,23 +11,24 @@
             </g>
         </svg>
     </div>
-    <span>ALKAHEST</span> <!-- Nome corrigido (h) -->
+    <span class="tracking-tight fw-bold" style="font-family: 'Space Grotesk', sans-serif;">ALKA.GG</span>
 </a>
 
-<div class="d-flex flex-column flex-grow-1 overflow-auto pe-2">
-    <!-- ADD GAME (Destacado no Centro - i) -->
-    <a href="{% url 'add_game' %}" class="nav-link-custom btn-add-game">
-        <i data-lucide="plus-circle" size="20"></i> Add Game
-    </a>
+<div class="d-flex flex-column flex-grow-1 overflow-auto pe-2 custom-scrollbar">
+    
+    <!-- SEARCH (Mobile only - Desktop is in Header) -->
+    <div class="d-lg-none mb-3">
+        <input type="text" class="form-control bg-dark border-secondary text-white btn-sm" placeholder="Search...">
+    </div>
 
-    <div class="nav-section">Main</div>
+    <div class="nav-section mt-1">Main</div>
     <a href="{% url 'dashboard' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
         <i data-lucide="layout-grid" size="18"></i> Dashboard
     </a>
-    <a href="#" class="nav-link-custom" data-bs-toggle="tooltip" title="Coming in Phase 2">
+    <a href="{% url 'discovery' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'discovery' %}active{% endif %}">
         <i data-lucide="compass" size="18"></i> Discovery
     </a>
-    <a href="#" class="nav-link-custom" data-bs-toggle="tooltip" title="See what friends are playing">
+    <a href="#" class="nav-link-custom">
         <i data-lucide="activity" size="18"></i> Activity Feed
     </a>
 
@@ -34,28 +36,34 @@
     <a href="{% url 'library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'library' %}active{% endif %}">
         <i data-lucide="gamepad-2" size="18"></i> My Games
     </a>
-    <a href="{% url 'library' %}?status=backlog" class="nav-link-custom">
-        <i data-lucide="layers" size="18"></i> Backlog
-    </a>
     <a href="{% url 'my_lists' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'my_lists' %}active{% endif %}">
         <i data-lucide="scroll" size="18"></i> Lists
     </a>
-    <a href="#" class="nav-link-custom" data-bs-toggle="tooltip" title="Collections Feature Coming Soon">
+    <a href="#" class="nav-link-custom opacity-75" data-bs-toggle="tooltip" title="Coming Soon">
+        <i data-lucide="heart" size="18"></i> Wishlist
+    </a>
+    <a href="#" class="nav-link-custom opacity-75" data-bs-toggle="tooltip" title="Coming Soon">
         <i data-lucide="archive" size="18"></i> Collections
     </a>
 
     <div class="nav-section">Community</div>
-    <a href="#" class="nav-link-custom" data-bs-toggle="tooltip" title="Friends System Soon">
+    <a href="#" class="nav-link-custom opacity-75">
         <i data-lucide="users" size="18"></i> Friends
     </a>
-    <a href="#" class="nav-link-custom" data-bs-toggle="tooltip" title="Rivals Leaderboard Soon">
+    <a href="#" class="nav-link-custom opacity-75">
         <i data-lucide="swords" size="18"></i> Rivals
     </a>
+
+    <!-- ADD GAME BUTTON (Movido para baixo para menos intrusão visual mas fácil acesso) -->
+    <div class="mt-4 px-2">
+        <a href="{% url 'add_game' %}" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-lg glow-hover" style="background: var(--accent-primary); border: none;">
+            <i data-lucide="plus" size="16"></i> <span class="small">Log Game</span>
+        </a>
+    </div>
 </div>
 
-<!-- Logout Isolado no Rodapé (i) -->
 <div class="mt-auto pt-3 border-top border-subtle">
-    <a href="{% url 'logout' %}" class="nav-link-custom text-danger">
+    <a href="{% url 'logout' %}" class="nav-link-custom text-danger opacity-75 hover-opacity-100">
         <i data-lucide="log-out" size="18"></i> Logout
     </a>
 </div>
