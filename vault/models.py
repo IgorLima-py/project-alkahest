@@ -3,7 +3,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import User
 import markdown
-import bleach
+import nh3
 
 # BLOCO 2: PERFIL
 class UserProfile(models.Model):
@@ -130,10 +130,15 @@ class Review(models.Model):
 
     def save(self, *args, **kwargs):
         html = markdown.markdown(self.text)
-        # NOTA DE SEGURANÇA: bleach é deprecated, considere nh3 no futuro.
-        allowed_tags = ['b', 'i', 'strong', 'em', 'p', 'br', 'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'h1', 'h2', 'hr']
-        allowed_attrs = {'a': ['href', 'title']}
-        self.text_html = bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs)
+        allowed_tags = {'b', 'i', 'strong', 'em', 'p', 'br', 'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'h1', 'h2', 'hr'}
+        allowed_attrs = {
+            'a': {'href', 'title'},
+            'img': {'src', 'alt'} # Se quiser permitir imagens no futuro
+        }
+        
+        # Limpeza (Sanitização)
+        self.text_html = nh3.clean(html, tags=allowed_tags, attributes=allowed_attrs)
+        
         super().save(*args, **kwargs)
 
     def __str__(self):
