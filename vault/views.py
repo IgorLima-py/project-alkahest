@@ -1,4 +1,4 @@
-# BLOCO 1: IMPORTAÇÕES
+# BLOCO 0: IMPORTAÇÕES
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import F, Q, Sum, Count, Case, When, Value, FloatField
@@ -31,6 +31,43 @@ from .models import (
 
 # Utils
 from .utils_igdb import get_igdb_token 
+
+# BLOCO 1: DASHBOARD (RESUMO RÁPIDO)
+@login_required
+def dashboard_view(request):
+    user = request.user
+    
+    # Bento Grid: Jogos sendo jogados (com otimização select_related)
+    playing_games = UserLibraryEntry.objects.filter(
+        user=user, 
+        status='playing'
+    ).select_related('platform_game__master_game', 'platform_game__platform').order_by('-last_played')[:6]
+    
+    # Bento Grid: Reviews Recentes (com otimização select_related)
+    recent_reviews = Review.objects.select_related(
+        'user', 
+        'library_entry__platform_game__master_game'
+    ).order_by('-created_at')[:5]
+    
+    # Stats Rápidos (Agregação no Banco)
+    total_completed = UserLibraryEntry.objects.filter(user=user, status='completed').count()
+    
+    # Soma total de minutos jogados
+    total_minutes = UserLibraryEntry.objects.filter(user=user).aggregate(Sum('playtime_minutes'))['playtime_minutes__sum'] or 0
+    
+    # Counts simples
+    playing_count = UserLibraryEntry.objects.filter(user=user, status='playing').count()
+    backlog_count = UserLibraryEntry.objects.filter(user=user, status='backlog').count()
+    
+    context = {
+        'playing_games': playing_games,
+        'recent_reviews': recent_reviews,
+        'playing_count': playing_count,
+        'backlog_count': backlog_count,
+        'total_completed': total_completed,
+        'total_hours': round(total_minutes / 60, 1),
+    }
+    return render(request, 'dashboard.html', context)
 
 # BLOCO 2: BIBLIOTECA (FILTROS + PERF + UX)
 @login_required

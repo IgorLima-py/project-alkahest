@@ -120,3 +120,13 @@ STATIC_URL = 'static/'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'library' # Para onde vai depois de logar
 LOGOUT_REDIRECT_URL = 'login'  # Para onde vai depois de deslogar
+
+# URL para referenciar arquivos estáticos (CSS, JavaScript, Imagens)
+# Exemplo de uso no template: {% static 'vault/images/logo_white.svg' %}
+STATIC_URL = '/static/'
+
+# Diretórios adicionais onde o Django vai procurar por arquivos estáticos
+# Adicionamos a pasta 'static' que criamos na raiz do projeto.
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]

@@ -1,114 +1,301 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-br" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Alkahest</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Ícones -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <title>ALKAHEST | The Definitive Collection</title>
     
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
-        body { background-color: #0f0f0f; font-family: 'Segoe UI', sans-serif; }
-        
-        /* --- CARDS --- */
-        .card-game { 
-            transition: transform 0.2s; border: none; background: #1f1f1f; 
-        }
-        .card-game:hover { 
-            transform: translateY(-5px); cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
-        }
-        
-        /* --- BARRAS DE STATUS --- */
-        .status-bar { height: 4px; width: 100%; }
-        .bg-playing { background-color: #2ecc71; }
-        .bg-backlog { background-color: #f39c12; }
-        .bg-completed { background-color: #3498db; }
-        .bg-dropped { background-color: #e74c3c; }
-
-        /* --- CSS MAGIC: STAR RATING (INPUT) --- */
-        /* Isso faz o input de estrelas funcionar com meias estrelas */
-        .rate { display: inline-block; border: 0; }
-        .rate > input { display: none; }
-        .rate { float: left; } /* Garante alinhamento */
-        
-        .rate > label { 
-            float: right; 
-            color: #444; 
-            cursor: pointer; 
-            font-size: 1.8rem; 
-            padding: 0;
-            position: relative;
+        :root {
+            /* Palette V6 - "Nebula Glass" */
+            --bg-body: #09090b;      /* Zinc 950 */
+            --bg-sidebar: #020202;   
+            --bg-card: #121214;      
+            --bg-hover: #27272a;     
+            
+            --accent-primary: #7c3aed; /* Violet */
+            --accent-glow: rgba(124, 58, 237, 0.15);
+            --accent-cyan: #06b6d4;
+            --accent-rose: #f43f5e;
+            --accent-gold: #fbbf24;
+            
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --radius-md: 8px;
+            --radius-lg: 16px;
         }
 
-        /* Estrela Cheia */
-        .rate > label:before { 
-            content: "\F586"; /* Bootstrap Icon: star */
-            font-family: "bootstrap-icons";
-            display: inline-block;
-            padding: 0 2px;
-        }
-        
-        /* Meia Estrela (Sobreposta) */
-        .rate .half:before { 
-            content: "\F586"; /* Bootstrap Icon: star */
-            font-family: "bootstrap-icons";
-            position: absolute; 
-            left: 0; 
-            width: 50%; 
-            overflow: hidden; 
-            z-index: 1;
+        /* --- GLOBAL --- */
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            overflow-x: hidden;
+            /* Nebula Gradient fixo no fundo */
+            background-image: radial-gradient(circle at 50% -20%, #1e1b4b 0%, var(--bg-body) 60%);
+            background-attachment: fixed;
+            min-height: 100vh;
         }
 
-        /* Cores (Amarelo ao selecionar/hover) */
-        .rate > input:checked ~ label,
-        .rate > label:hover, 
-        .rate > label:hover ~ label { color: #ffc107; }
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -0.02em;
+        }
+
+        a { text-decoration: none; color: inherit; }
+
+        /* --- SHELL --- */
+        .app-shell {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-subtle);
+            padding: 24px 12px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .brand {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-left: 12px;
+            background: linear-gradient(90deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-mini-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .user-mini-card:hover { border-color: rgba(255,255,255,0.15); }
+
+        .nav-section {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #52525b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 16px 0 8px 12px;
+        }
+
+        .nav-link-custom {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 6px;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+        .nav-link-custom:hover { color: white; background: var(--bg-hover); }
         
-        .rate > input:checked + label:hover, 
-        .rate > input:checked ~ label:hover,
-        .rate > label:hover ~ input:checked ~ label, 
-        .rate > input:checked ~ label:hover ~ label { color: #cc9a06; }
+        /* Active State Logic */
+        .nav-link-custom.active { 
+            background: var(--accent-glow); 
+            color: var(--accent-primary); 
+            border: 1px solid rgba(124, 58, 237, 0.1);
+        }
+        .nav-link-custom i { opacity: 0.7; }
+        .nav-link-custom.active i { opacity: 1; }
+
+        /* --- HEADER --- */
+        .top-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(9, 9, 11, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-wrapper { position: relative; width: 320px; }
+        .search-input {
+            width: 100%;
+            background: #18181b;
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 8px 16px 8px 40px;
+            color: white;
+            font-size: 0.9rem;
+            transition: width 0.3s, border-color 0.3s;
+        }
+        .search-input:focus { outline: none; border-color: var(--accent-primary); }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+        /* --- BENTO & CARDS UTILS --- */
+        .b-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+        }
+
+        @media (max-width: 992px) {
+            .app-shell { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .top-header { padding: 16px; }
+        }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary mb-4">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/">
-                <i class="bi bi-box-seam-fill me-2"></i>ALKAHEST
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'library' %}">Biblioteca</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'my_lists' %}">Minhas Listas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Meu Perfil</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/admin">Admin</a></li>
-                </ul>
+<div class="app-shell">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <!-- Logo SVG Placeholder: Mande o código SVG que eu substituo aqui -->
+        <a href="/" class="brand text-decoration-none" style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 42px; height: 42px; color: var(--accent-primary);">
+                <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" 
+                    style="width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.5));">
+                    <g fill="currentColor">
+                        <!-- Núcleo central -->
+                        <circle cx="400" cy="250" r="58" />
+                        <!-- Eletrões -->
+                        <circle cx="400" cy="60" r="24" />
+                        <circle cx="400" cy="440" r="24" />
+                        <!-- Órbita 1 -->
+                        <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z"
+                            fill-rule="evenodd" transform="translate(400, 250) rotate(-20)" />
+                        <!-- Órbita 2 -->
+                        <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z"
+                            fill-rule="evenodd" transform="translate(400, 250) rotate(20)" />
+                    </g>
+                </svg>
+            </div>
+            <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.25rem; letter-spacing: -0.02em; color: white;">
+                ALKAHEST
+            </span>
+        </a>
 
-                <!-- Área de Ação e Busca -->
-                <div class="d-flex align-items-center ms-lg-3">
-                    <a href="{% url 'add_game' %}" class="btn btn-warning btn-sm me-2 flex-shrink-0">
-                        <i class="bi bi-plus-circle-fill"></i> Add Jogo
-                    </a>
-                    <form class="d-flex w-100" method="GET" action="/">
-                        <input class="form-control form-control-sm me-2 bg-dark text-light border-secondary" type="search" name="q" placeholder="Buscar na biblioteca..." value="{{ request.GET.q|default:'' }}" style="min-width: 200px;">
-                    </form>
+        <!-- User Mini Profile -->
+        {% if user.is_authenticated %}
+        <a href="{% url 'profile' %}" class="user-mini-card text-decoration-none">
+            <!-- Avatar Fallback Logic -->
+            <img src="{% if user.profile.avatar_url %}{{ user.profile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=8b5cf6&color=fff{% endif %}" 
+                 class="rounded-circle" width="36" height="36">
+            <div class="lh-1 overflow-hidden">
+                <div class="fw-bold text-white small text-truncate">{{ user.username }}</div>
+                <div class="d-flex align-items-center gap-1 mt-1">
+                    <i data-lucide="medal" size="10" class="text-warning"></i>
+                    <span class="text-warning fw-bold" style="font-size: 0.65rem; letter-spacing: 0.05em;">LVL {{ user.profile.stat_volume|default:"1" }}</span>
                 </div>
             </div>
+        </a>
+        {% endif %}
+
+        <div class="overflow-auto flex-grow-1 pe-2">
+            <div class="nav-section">Library</div>
+            
+            <a href="{% url 'library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'library' %}active{% endif %}">
+                <i data-lucide="gamepad-2" size="18"></i> My Games
+            </a>
+            
+            <a href="{% url 'my_lists' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'my_lists' %}active{% endif %}">
+                <i data-lucide="scroll" size="18"></i> Lists
+            </a>
+
+            <div class="nav-section">Discovery</div>
+            <a href="{% url 'add_game' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'add_game' %}active{% endif %}">
+                <i data-lucide="plus-circle" size="18"></i> Add Game
+            </a>
+
+            <div class="nav-section">System</div>
+            <a href="{% url 'profile' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                <i data-lucide="user" size="18"></i> Profile
+            </a>
+             <a href="{% url 'logout' %}" class="nav-link-custom">
+                <i data-lucide="log-out" size="18"></i> Logout
+            </a>
         </div>
-    </nav>
+    </aside>
 
-    <div class="container pb-5">
-        {% block content %}
-        {% endblock %}
-    </div>
+    <!-- MAIN CONTENT -->
+    <main class="d-flex flex-column" style="height: 100vh; overflow-y: auto;">
+        
+        <!-- HEADER -->
+        <header class="top-header">
+            <!-- Busca aponta para a Library -->
+            <form action="{% url 'library' %}" method="GET" class="search-wrapper">
+                <i data-lucide="search" class="search-icon" size="16"></i>
+                <input type="text" name="q" class="search-input" placeholder="Search your library..." value="{{ request.GET.q }}">
+            </form>
+            
+            <div class="d-flex gap-3 align-items-center">
+                <a href="{% url 'add_game' %}" class="btn btn-sm btn-outline-secondary border-0 text-white" title="Quick Add">
+                    <i data-lucide="plus" size="20"></i>
+                </a>
+                <div class="position-relative">
+                    <button class="btn btn-sm btn-outline-secondary border-0 text-white">
+                        <i data-lucide="bell" size="20"></i>
+                    </button>
+                    <!-- Notificação Dummy -->
+                    <span class="position-absolute top-0 end-0 p-1 bg-danger rounded-circle border border-dark"></span>
+                </div>
+            </div>
+        </header>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Dynamic Content Injection -->
+        <div class="p-4">
+            {% block content %}
+            {% endblock %}
+        </div>
+
+    </main>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Inicializa ícones Lucide
+    lucide.createIcons();
+</script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

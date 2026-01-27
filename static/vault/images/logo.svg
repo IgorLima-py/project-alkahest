@@ -1,0 +1,55 @@
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- 
+    === GUIA DE PERSONALIZAÇÃO ===
+    
+    Para alterar as espessuras, você precisa modificar a "Elipse Interna" (o recorte).
+    
+    1. ESPESSURA GERAL (Grossura):
+       - Altere o raio Y da elipse interna (atualmente 107.5).
+       - Quanto MENOR este número, mais grossa a órbita inteira fica.
+       - Quanto MAIOR (perto de 120), mais fina a órbita inteira fica.
+    
+    2. DIREÇÃO DA PARTE GROSSA (Onde fica o peso):
+       - Isto é controlado pela posição inicial "M" e pelos eixos.
+       - Atualmente: "M -335 -7.5". O "-7.5" é o deslocamento vertical (Y).
+       
+       COMO TESTAR OUTRAS POSIÇÕES:
+       - Para parte grossa EMBAIXO: Use Y negativo (ex: -7.5). (Configuração atual)
+       - Para parte grossa EM CIMA: Use Y positivo (ex: 7.5).
+       - Para parte grossa na PONTA ESQUERDA: Zere o Y e use X positivo (ex: M -327.5 0... e ajuste o centro das curvas).
+       - Regra geral: Empurre o buraco (elipse interna) na direção OPOSTA de onde você quer que fique grosso.
+  -->
+
+  <g fill="black">
+    <!-- Núcleo central -->
+    <circle cx="400" cy="250" r="58" />
+    
+    <!-- Eletrões -->
+    <circle cx="400" cy="60" r="24" />
+    <circle cx="400" cy="440" r="24" />
+    
+    <!-- 
+      CÁLCULO DAS ESPESSURAS ATUAIS:
+      Raio Externo Y: 120
+      Raio Interno Y: 107.5
+      Deslocamento Y: -7.5 (para cima)
+      
+      Resultado Topo: 120 - (107.5 deslocado 7.5 pra cima) = Borda de ~5px
+      Resultado Fundo: 120 - (107.5 deslocado 7.5 pra longe) = Borda de ~20px
+    -->
+
+    <!-- Órbita 1 (-20 graus) -->
+    <path d="
+             M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0
+             M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z"
+          fill-rule="evenodd" 
+          transform="translate(400, 250) rotate(-20)" />
+
+    <!-- Órbita 2 (+20 graus) -->
+    <path d="
+             M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0
+             M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z"
+          fill-rule="evenodd" 
+          transform="translate(400, 250) rotate(20)" />
+  </g>
+</svg>
