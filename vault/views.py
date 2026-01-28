@@ -4,99 +4,68 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import F, Q, Sum, Count, Case, When, Value, FloatField, CharField
 from django.core.paginator import Paginator
 from django.utils import timezone
-from decouple import config
-import requests
-import json
-import uuid
 from django.http import HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
 from itertools import chain
+import json
+import uuid
 
-# Formulários
+# Forms
 from .forms import ReviewForm, UserLibraryEntryForm, GameTipForm
 
 # Models
 from .models import (
-    UserLibraryEntry, 
-    UserAchievement, 
-    Review, 
-    GameTip, 
-    TipVote, 
-    GameList, 
-    GameListItem, 
-    MasterGame,
-    Platform,
-    PlatformGame,
-    UserProfile,
-    UserFollow,
-    User
+    UserLibraryEntry, UserAchievement, Review, GameTip, TipVote, 
+    GameList, GameListItem, MasterGame, Platform, PlatformGame,
+    UserProfile, UserFollow, User
 )
 
-# Utils
-from .utils_igdb import get_igdb_token 
+# Services (A Nova Camada Inteligente)
+from .services import fetch_and_update_game, get_igdb_token
 
-# === HELPER: ACTIVITY FEED (Definido antes do uso) ===
+# === HELPER: ACTIVITY FEED ===
 def get_community_pulse(user):
-    """
-    Busca atividades recentes (Jogos iniciados, Reviews, Platinas)
-    dos usuários que eu sigo + atividades globais relevantes.
-    """
-    # Quem eu sigo
     following_ids = list(UserFollow.objects.filter(follower=user).values_list('target_id', flat=True))
-    following_ids.append(user.id) # Inclui eu mesmo
-
-    # 1. Reviews recentes dessa galera
+    following_ids.append(user.id)
+    
     recent_reviews = Review.objects.filter(
         user_id__in=following_ids
     ).select_related('user', 'library_entry__platform_game__master_game').annotate(
         activity_type=Value('review', output_field=CharField())
     ).order_by('-created_at')[:5]
 
-    # 2. Jogos iniciados recentemente
     recent_starts = UserLibraryEntry.objects.filter(
-        user_id__in=following_ids,
-        status='playing'
+        user_id__in=following_ids, status='playing'
     ).select_related('user', 'platform_game__master_game').annotate(
         activity_type=Value('started', output_field=CharField())
     ).order_by('-last_synced')[:5]
 
-    # Merge simples
     activity_feed = sorted(
         chain(recent_reviews, recent_starts),
         key=lambda x: x.created_at if hasattr(x, 'created_at') else x.last_synced,
         reverse=True
     )[:7] 
-    
     return activity_feed
-
 
 # BLOCO 1: DASHBOARD
 @login_required
 def dashboard_view(request):
     user = request.user
-    
-    # Bento Grid: Jogos Jogando
     playing_games = UserLibraryEntry.objects.filter(
-        user=user, 
-        status='playing'
+        user=user, status='playing'
     ).select_related('platform_game__master_game', 'platform_game__platform').order_by('-last_played')[:6]
     
-    # Community Pulse Real
-    community_pulse = get_community_pulse(request.user)
-
-    # Reviews Globais Recentes
-    recent_reviews = Review.objects.select_related(
-        'user', 
-        'library_entry__platform_game__master_game'
-    ).order_by('-created_at')[:5]
+    community_pulse = get_community_pulse(user)
+    recent_reviews = Review.objects.select_related('user', 'library_entry__platform_game__master_game').order_by('-created_at')[:5]
     
-    # Stats Rápidos
-    total_completed = UserLibraryEntry.objects.filter(user=user, status='completed').count()
-    total_minutes = UserLibraryEntry.objects.filter(user=user).aggregate(Sum('playtime_minutes'))['playtime_minutes__sum'] or 0
-    playing_count = UserLibraryEntry.objects.filter(user=user, status='playing').count()
-    backlog_count = UserLibraryEntry.objects.filter(user=user, status='backlog').count()
+    stats = UserLibraryEntry.objects.filter(user=user).aggregate(
+        total_completed=Count('id', filter=Q(status='completed')),
+        total_minutes=Sum('playtime_minutes'),
+        playing_count=Count('id', filter=Q(status='playing')),
+        backlog_count=Count('id', filter=Q(status='backlog'))
+    )
     
-    # Mock Trending (substitua por lógica real futuramente)
+    # Trending (placeholder)
     trending_ids = Review.objects.values_list('library_entry__platform_game__master_game_id', flat=True)[:10]
     trending_games = MasterGame.objects.filter(id__in=trending_ids).distinct()[:4]
 
@@ -104,14 +73,13 @@ def dashboard_view(request):
         'playing_games': playing_games,
         'recent_reviews': recent_reviews,
         'community_pulse': community_pulse,
-        'playing_count': playing_count,
-        'backlog_count': backlog_count,
-        'total_completed': total_completed,
-        'total_hours': round(total_minutes / 60, 1),
+        'playing_count': stats['playing_count'],
+        'backlog_count': stats['backlog_count'],
+        'total_completed': stats['total_completed'],
+        'total_hours': round((stats['total_minutes'] or 0) / 60, 1),
         'trending_games': trending_games,
     }
     return render(request, 'dashboard.html', context)
-
 
 # BLOCO 2: BIBLIOTECA
 @login_required
@@ -119,11 +87,9 @@ def library_view(request):
     items_per_page = request.GET.get('per_page', 24)
     items_per_page = 9999 if items_per_page == 'all' else int(items_per_page)
 
-    base_query = UserLibraryEntry.objects.filter(user=request.user).select_related(
+    entries = UserLibraryEntry.objects.filter(user=request.user).select_related(
         'platform_game__master_game', 'platform_game__platform'
-    )
-    
-    base_query = base_query.annotate(
+    ).annotate(
         total_achievements=Count('platform_game__achievements', distinct=True),
         unlocked_achievements=Count(
             'platform_game__achievements__userachievement',
@@ -133,12 +99,9 @@ def library_view(request):
     ).annotate(
         achievement_percentage=Case(
             When(total_achievements__gt=0, then=(F('unlocked_achievements') * 100.0 / F('total_achievements'))),
-            default=Value(0.0),
-            output_field=FloatField()
+            default=Value(0.0), output_field=FloatField()
         )
     )
-
-    entries = base_query
 
     status_filter = request.GET.get('status')
     if status_filter: entries = entries.filter(status=status_filter)
@@ -147,44 +110,33 @@ def library_view(request):
     if platform_filter: entries = entries.filter(platform_game__platform__slug=platform_filter)
 
     sort_by = request.GET.get('sort', 'recent')
-    ordering_map = {
-        'name_asc': 'platform_game__master_game__title',
-        'playtime_desc': '-playtime_minutes',
-        'rating_desc': F('rating').desc(nulls_last=True),
-        'recent': F('last_played').desc(nulls_last=True),
-    }
-    order_expression = ordering_map.get(sort_by, F('last_played').desc(nulls_last=True))
-    entries = entries.order_by(order_expression)
-
+    if sort_by == 'name_asc': order = 'platform_game__master_game__title'
+    elif sort_by == 'playtime_desc': order = '-playtime_minutes'
+    elif sort_by == 'rating_desc': order = F('rating').desc(nulls_last=True)
+    else: order = F('last_played').desc(nulls_last=True)
+    
+    entries = entries.order_by(order)
     paginator = Paginator(entries, items_per_page)
     page_obj = paginator.get_page(request.GET.get('page'))
 
-    user_platforms_pks = base_query.values_list('platform_game__platform__pk', flat=True).distinct()
-    available_platforms = Platform.objects.filter(pk__in=user_platforms_pks).order_by('name')
+    platforms = Platform.objects.filter(platformgame__userlibraryentry__user=request.user).distinct().order_by('name')
 
     context = {
-        'page_obj': page_obj,
-        'total_games': paginator.count,
-        'platforms': available_platforms,
-        'current_params': request.GET.urlencode(),
-        'current_status': status_filter,
-        'current_platform': platform_filter,
-        'current_sort': sort_by,
-        'current_per_page': str(items_per_page),
+        'page_obj': page_obj, 'total_games': paginator.count, 'platforms': platforms,
+        'current_status': status_filter, 'current_platform': platform_filter, 'current_sort': sort_by
     }
     return render(request, 'library.html', context)
 
-
-# BLOCO 3: DETALHES DO JOGO
+# BLOCO 3: DETALHES DO JOGO (Agora com lógica de metadados ricos)
 @login_required
 def game_detail_view(request, game_id):
     entry = get_object_or_404(
         UserLibraryEntry.objects.select_related('platform_game__master_game', 'platform_game__platform'),
-        pk=game_id,
-        user=request.user
+        pk=game_id, user=request.user
     )
     master = entry.platform_game.master_game
 
+    # POST ACTIONS
     if request.method == 'POST':
         if 'toggle_favorite' in request.POST:
             entry.is_favorite = not entry.is_favorite
@@ -193,144 +145,63 @@ def game_detail_view(request, game_id):
 
         if 'create_review' in request.POST:
             rating_val = request.POST.get('rating')
-            rec_val = request.POST.get('is_recommended')
-            is_rec = True if rec_val == 'true' else (False if rec_val == 'false' else None)
-            
-            total_ach = entry.platform_game.achievements.count()
-            unlocked = UserAchievement.objects.filter(user=request.user, achievement__platform_game=entry.platform_game).count()
-            current_pct = (unlocked / total_ach * 100) if total_ach > 0 else 0
-
             Review.objects.create(
-                user=request.user,
-                library_entry=entry,
+                user=request.user, library_entry=entry,
                 text=request.POST.get('review_text'),
                 rating=float(rating_val) if rating_val else None,
-                is_recommended=is_rec,
+                is_recommended=request.POST.get('is_recommended') == 'on',
                 contains_spoilers=request.POST.get('contains_spoilers') == 'on',
-                is_replay=request.POST.get('is_replay') == 'on',
-                playtime_at_review=entry.playtime_minutes,
-                achievement_percent_snapshot=current_pct
+                playtime_at_review=entry.playtime_minutes
             )
-            
-            if rating_val: 
-                entry.rating = float(rating_val)
-            if is_rec is not None:
-                entry.is_recommended = is_rec
+            if rating_val: entry.rating = float(rating_val)
+            # Atualiza status rápido se vier do modal
+            new_status = request.POST.get('status')
+            if new_status: entry.status = new_status
             entry.save()
             return redirect('game_detail', game_id=game_id)
 
-        elif 'create_tip' in request.POST:
-            GameTip.objects.create(
-                user=request.user,
-                master_game=master,
-                text=request.POST.get('tip_text')
-            )
+        if 'create_tip' in request.POST:
+            GameTip.objects.create(user=request.user, master_game=master, text=request.POST.get('tip_text'))
             return redirect('game_detail', game_id=game_id)
 
-        elif 'vote_tip' in request.POST:
-            tip_id = request.POST.get('tip_id')
-            vote_val = int(request.POST.get('vote_value'))
-            tip = get_object_or_404(GameTip, pk=tip_id)
-            
-            existing_vote = TipVote.objects.filter(user=request.user, tip=tip).first()
-            if not existing_vote:
-                TipVote.objects.create(user=request.user, tip=tip, value=vote_val)
-                if vote_val == 1: tip.upvotes = F('upvotes') + 1
-                else: tip.downvotes = F('downvotes') + 1
-            elif existing_vote.value != vote_val:
-                if vote_val == 1:
-                    tip.upvotes = F('upvotes') + 1
-                    tip.downvotes = F('downvotes') - 1
-                else:
-                    tip.upvotes = F('upvotes') - 1
-                    tip.downvotes = F('downvotes') + 1
-                existing_vote.value = vote_val
-                existing_vote.save()
-            tip.save()
-            return redirect('game_detail', game_id=game_id)
-
-    total_achievements = entry.platform_game.achievements.count()
+    # VIEW DATA
+    total_ach = entry.platform_game.achievements.count()
     unlocked_ids = UserAchievement.objects.filter(
-        user=request.user, 
-        achievement__platform_game=entry.platform_game
+        user=request.user, achievement__platform_game=entry.platform_game
     ).values_list('achievement_id', flat=True)
-    percentage = (len(unlocked_ids) / total_achievements * 100) if total_achievements > 0 else 0
+    pct = (len(unlocked_ids) / total_ach * 100) if total_ach > 0 else 0
 
     user_reviews = Review.objects.filter(user=request.user, library_entry=entry).order_by('-created_at')
-    
-    all_tips = list(GameTip.objects.filter(master_game=master))
-    sorted_tips = sorted(all_tips, key=lambda t: t.score(), reverse=True)
-
+    tips = sorted(list(GameTip.objects.filter(master_game=master)), key=lambda t: t.score(), reverse=True)
     user_lists = GameList.objects.filter(user=request.user).order_by('-updated_at')
 
     context = {
-        'entry': entry,
-        'master': master,
-        'platform': entry.platform_game.platform,
-        'total_achievements': total_achievements,
-        'unlocked_achievements': len(unlocked_ids),
-        'percentage': round(percentage, 1),
-        'unlocked_ids': set(unlocked_ids),
-        'user_reviews': user_reviews,
-        'tips': sorted_tips,
-        'user_lists': user_lists,
+        'entry': entry, 'master': master, 'platform': entry.platform_game.platform,
+        'total_achievements': total_ach, 'unlocked_achievements': len(unlocked_ids),
+        'percentage': pct, 'unlocked_ids': set(unlocked_ids),
+        'user_reviews': user_reviews, 'tips': tips, 'user_lists': user_lists
     }
     return render(request, 'game_detail.html', context)
-
 
 # BLOCO 4: PERFIL
 @login_required
 def profile_view(request):
     user = request.user
-    profile, created = UserProfile.objects.get_or_create(user=user)
-    library = UserLibraryEntry.objects.filter(user=user)
+    profile, _ = UserProfile.objects.get_or_create(user=user)
     
-    total_games = library.count()
-    
-    # Cálculos em memória
-    total_playtime_minutes = library.aggregate(Sum('playtime_minutes'))['playtime_minutes__sum'] or 0
-    total_hours = round(total_playtime_minutes / 60, 1)
-    
+    # Recalculando Stats Rápido (Ideal mover para signal ou job async)
     total_xp = UserAchievement.objects.filter(user=user).aggregate(Sum('achievement__xp_value'))['achievement__xp_value__sum'] or 0
-    total_achievements_unlocked = UserAchievement.objects.filter(user=user).count()
-
-    current_level = 1 + int(total_xp / 1000)
-    xp_progress = total_xp - ((current_level - 1) * 1000)
-    level_progress_percent = (xp_progress / 1000) * 100
-
-    # Atualiza stats do gráfico (apenas em memória ou via save controlado)
-    started_games = library.exclude(status='backlog').count()
-    completed_games = library.filter(status='completed').count()
-    
     profile.stat_volume = min(int((total_xp / 50000) * 100), 100)
-    profile.stat_skill = min(int((completed_games / started_games) * 100), 100) if started_games > 0 else 0
-    unique_platforms = library.values('platform_game__platform').distinct().count()
-    profile.stat_variety = min(int((unique_platforms / 5) * 100), 100)
-    
-    social_count = Review.objects.filter(user=user).count() + GameTip.objects.filter(user=user).count()
-    profile.stat_social = min(int((social_count / 20) * 100), 100)
-    profile.stat_speed = min(int((completed_games / total_games) * 100), 100) if total_games > 0 else 0
-    profile.save() # Ok, mantivemos o save aqui por simplicidade, mas o ideal é mover depois.
-    
-    platform_stats = library.values('platform_game__platform__name').annotate(count=Count('id')).order_by('-count')
+    profile.save()
 
     context = {
-        'user': user,
-        'profile': profile,
-        'total_games': total_games,
-        'completed_games': completed_games,
-        'total_hours': total_hours,
-        'achievements_count': total_achievements_unlocked,
+        'user': user, 'profile': profile,
         'total_xp': total_xp,
-        'current_level': current_level,
-        'level_progress_percent': level_progress_percent,
-        'xp_current': xp_progress,
-        'platform_stats': platform_stats,
+        'total_games': UserLibraryEntry.objects.filter(user=user).count()
     }
     return render(request, 'profile.html', context)
 
-
-# BLOCO 5: ADICIONAR JOGO
+# BLOCO 5: ADICIONAR JOGO (Lógica Nova Inteligente)
 @login_required
 def add_game_view(request):
     platforms = Platform.objects.all().order_by('name')
@@ -338,48 +209,51 @@ def add_game_view(request):
     search_query = ""
 
     if request.method == 'POST':
+        # BUSCA
         if 'search_query' in request.POST:
             search_query = request.POST.get('search_query')
-            CLIENT_ID = config('TWITCH_CLIENT_ID')
-            access_token = get_igdb_token()
-            if access_token:
-                try:
-                    headers = {'Client-ID': CLIENT_ID, 'Authorization': f'Bearer {access_token}'}
-                    q = f'search "{search_query}"; fields name, cover.url, first_release_date; limit 20;'
-                    response = requests.post('https://api.igdb.com/v4/games', headers=headers, data=q)
-                    results = response.json()
-                    if isinstance(results, list):
-                        for res in results:
-                            if 'cover' in res:
-                                res['cover']['url'] = 'https:' + res['cover']['url'].replace('t_thumb', 't_cover_big')
-                except Exception as e:
-                    print(f"ERRO API IGDB: {e}")
+            
+            # Detecção de ID vs Nome
+            # Se for só números, assume ID do IGDB
+            igdb_id = int(search_query) if search_query.isdigit() else None
+            
+            # Chama o Service Inteligente (ele busca no IGDB e salva/atualiza o MasterGame Local)
+            master = fetch_and_update_game(igdb_id=igdb_id, search_name=search_query if not igdb_id else None)
+            
+            if master:
+                # Retorna como lista para o template iterar
+                results = [master]
+            else:
+                # Se o service não achar (ex: nome muito genérico ou erro), tenta busca raw só pra mostrar lista
+                # Mas o ideal é que o service lide com isso.
+                # Por hora, se o service retornar None, é pq não achou nada exato.
+                pass
 
-        elif 'add_game_id' in request.POST:
-            igdb_id = int(request.POST.get('add_game_id'))
-            title = request.POST.get('game_title')
-            cover_url = request.POST.get('cover_url')
+        # ADICIONAR À BIBLIOTECA
+        elif 'add_master_id' in request.POST:
+            master_id = request.POST.get('add_master_id') # ID local do nosso banco (UUID)
             platform_slug = request.POST.get('platform_slug')
             status = request.POST.get('status')
             
-            master, _ = MasterGame.objects.update_or_create(
-                igdb_id=igdb_id, defaults={'title': title, 'cover_url': cover_url}
-            )
+            master = get_object_or_404(MasterGame, id=master_id)
             platform = get_object_or_404(Platform, slug=platform_slug)
-            p_game, _ = PlatformGame.objects.get_or_create(
-                platform=platform, external_id=str(igdb_id),
-                defaults={'master_game': master, 'external_title': title}
+            
+            # Cria vinculo PlatformGame se não existir
+            pg, _ = PlatformGame.objects.get_or_create(
+                master_game=master, platform=platform,
+                defaults={'external_id': f"manual_{uuid.uuid4()}", 'external_title': master.title}
             )
+            
             entry, created = UserLibraryEntry.objects.get_or_create(
-                user=request.user, platform_game=p_game, defaults={'status': status}
+                user=request.user, platform_game=pg, defaults={'status': status}
             )
             if not created:
                 entry.status = status
                 entry.save()
+                
             return redirect('game_detail', game_id=entry.id)
 
     return render(request, 'add_game.html', {'platforms': platforms, 'results': results, 'search_query': search_query})
-
 
 # BLOCO 6: LISTAS
 @login_required
