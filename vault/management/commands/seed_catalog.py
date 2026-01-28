@@ -24,17 +24,20 @@ class Command(BaseCommand):
         parser.add_argument('--offset', type=int, default=0, help='Pular os primeiros N jogos (útil para continuar de onde parou)')
 
     def _ensure_stores_exist(self):
-        """Garante que as lojas suportadas existam no banco antes de começar."""
+        """Garante que as lojas suportadas existam no banco, baseando-se no ID do IGDB (imutável)."""
         self.stdout.write("Verificando cadastro de lojas...")
         for igdb_id, data in self.IGDB_STORE_MAP.items():
-            Store.objects.get_or_create(
-                slug=data['slug'],
+            # Tenta pegar pelo ID do IGDB primeiro (o mais seguro)
+            store, created = Store.objects.update_or_create(
+                igdb_category_id=igdb_id,
                 defaults={
-                    'name': data['name'],
-                    'igdb_category_id': igdb_id
+                    'slug': data['slug'],
+                    'name': data['name']
                 }
             )
-
+            if created:
+                self.stdout.write(f" -> Loja criada: {data['name']}")
+    
     def handle(self, *args, **options):
         start_time = time.time()
         amount = options['amount']
