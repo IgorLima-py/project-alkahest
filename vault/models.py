@@ -292,3 +292,70 @@ class UserFollow(models.Model):
 
     def __str__(self):
         return f"{self.follower.username} follows {self.target.username}"
+    
+
+    # ==========================================
+# BLOCO 10: MARKETPLACE & PREÇOS (Project Alkahest)
+# ==========================================
+
+class Store(models.Model):
+    id = models.AutoField(primary_key=True)
+    slug = models.CharField(max_length=50, unique=True, db_index=True)
+    name = models.CharField(max_length=100)
+    
+    # Mapeamento para o 'category' do IGDB para facilitar a busca
+    igdb_category_id = models.IntegerField(null=True, blank=True, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class GameStoreLink(models.Model):
+    """
+    Conecta um MasterGame a uma Loja Específica.
+    Ex: Elden Ring (MasterGame) -> Steam (Store) -> AppID 1245620
+    Esta é a tabela que o robô de preços vai usar como fila.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    master_game = models.ForeignKey(MasterGame, on_delete=models.CASCADE, related_name='store_links')
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='game_links')
+    
+    external_id = models.CharField(max_length=255, db_index=True, help_text="AppID da Steam, ConceptID da PSN, etc")
+    
+    # Controle de Fila do Robô
+    last_checked_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('store', 'external_id')
+        ordering = ['last_checked_at']
+
+    def __str__(self):
+        return f"{self.master_game.title} on {self.store.name}"
+
+class PriceHistory(models.Model):
+    """
+    Histórico imutável de preços.
+    O robô só insere aqui se o preço MUDOU.
+    """
+    CURRENCY_CHOICES = (('BRL', 'Real'), ('USD', 'Dólar'), ('EUR', 'Euro'))
+    
+    id = models.BigAutoField(primary_key=True)
+    link = models.ForeignKey(GameStoreLink, on_delete=models.CASCADE, related_name='price_history')
+    
+    price_regular = models.DecimalField(max_digits=10, decimal_places=2, help_text="Preço cheio sem desconto")
+    price_final = models.DecimalField(max_digits=10, decimal_places=2, help_text="Preço final para o consumidor (com desconto)")
+    
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='BRL', db_index=True)
+    
+    is_free = models.BooleanField(default=False)
+    is_on_sale = models.BooleanField(default=False)
+    is_subscription = models.BooleanField(default=False, help_text="Ex: GamePass, PS Plus Extra")
+    
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['link', 'timestamp']),
+        ]
+        verbose_name_plural = "Price Histories"
+        ordering = ['-timestamp']
