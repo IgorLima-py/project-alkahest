@@ -64,7 +64,8 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
     if not data or 'id' not in data[0]: 
         return None
     
-    return _process_and_save_game(data[0])
+    master, created = _process_and_save_game(data)
+    return master
 
 # Funções auxiliares de limpeza (mantidas iguais)
 def _sanitize_light(name):
@@ -166,4 +167,4 @@ def _process_and_save_game(data):
             'parent': parent_obj, 
         }
     )
-    return master_game
+    return master_game, created

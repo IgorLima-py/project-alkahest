@@ -83,18 +83,18 @@ class Command(BaseCommand):
             current_offset = offset + processed_count
             
             query_parts = [
-                f"fields {fields};",
-                # Filtro simples: Jogos principais/DLCs populares
-                "where category = (0,8,9,10) & total_rating_count > 10;",
-                "sort total_rating_count desc;",
+                f"fields {fields};", 
+                # Removi o filtro de rating e category temporariamente
+                # "where category = (0,8,9,10) & total_rating_count > 10;", 
+                "sort id desc;", # Ordenação simples por ID para pegar os últimos adicionados
                 f"limit {current_limit};",
                 f"offset {current_offset};"
             ]
-            # Junta tudo numa linha só, removendo quebras de linha perigosas
+            
             body = " ".join(query_parts)
             
-            # Debug visual para garantir que a query está bonita
-            self.stdout.write(f"Querying IGDB: Offset {current_offset}...")
+            # DEBUG: Vamos ver EXATAMENTE o que estamos enviando
+            self.stdout.write(f"--- QUERY ENVIADA: {body} ---")
 
             data = igdb_api_request('games', body)
             
