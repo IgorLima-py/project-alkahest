@@ -67,44 +67,55 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
         return None
 
 def _process_and_save_game(data):
-    """Parsing robusto dos novos campos"""
+    """Parsing robusto dos novos campos com proteção de Foreign Key"""
     
-    # 1. Imagens (Prioriza Artwork para background, se não tiver, usa Screenshot)
+    # 1. Imagens
     cover_url = 'https:' + data['cover']['url'].replace('t_thumb', 't_cover_big') if 'cover' in data else None
     
     artworks = ['https:' + img['url'].replace('t_thumb', 't_1080p') for img in data.get('artworks', [])]
     screenshots = ['https:' + img['url'].replace('t_thumb', 't_1080p') for img in data.get('screenshots', [])]
     
-    # Lógica da capa de fundo (Hero): Tenta Artwork -> Screenshot -> Capa normal
+    # Hero Background Logic
     background_url = artworks[0] if artworks else (screenshots[0] if screenshots else cover_url)
 
-    videos = [v['video_id'] for v in data.get('videos', [])] # IDs do Youtube
+    videos = [v['video_id'] for v in data.get('videos', [])]
 
-    # 2. Listas de Texto Simples
+    # 2. Listas de Texto
     genres = [x['name'] for x in data.get('genres', [])]
     themes = [x['name'] for x in data.get('themes', [])]
     modes = [x['name'] for x in data.get('game_modes', [])]
     perspectives = [x['name'] for x in data.get('player_perspectives', [])]
     engines = [x['name'] for x in data.get('game_engines', [])]
     franchises = [x['name'] for x in data.get('franchises', [])]
-    collection = data.get('collection', {}).get('name') # Série (ex: Uncharted Collection)
+    collection = data.get('collection', {}).get('name')
 
-    # 3. Relações (IDs)
-    similar_ids = data.get('similar_games', []) # Lista de IDs (Int)
-    dlc_ids = data.get('dlcs', []) # Lista de IDs (Int)
+    # 3. Relações (IDs simples)
+    similar_ids = data.get('similar_games', []) 
+    dlc_ids = data.get('dlcs', [])
 
-    # 4. Processamento de Idiomas (Transformar a bagunça do IGDB em algo legível)
+    # === CORREÇÃO CRÍTICA DO PARENT (FOREIGN KEY) ===
+    # O IGDB manda o ID Inteiro. O Django quer o UUID do objeto.
+    # Se o pai não existir no banco local, ignoramos a relação para não dar Crash.
+    parent_obj = None
+    igdb_parent_id = data.get('parent_game')
+    
+    if igdb_parent_id:
+        # Tenta achar o MasterGame local que tem esse igdb_id
+        try:
+            parent_obj = MasterGame.objects.get(igdb_id=igdb_parent_id)
+        except MasterGame.DoesNotExist:
+            parent_obj = None # Pai não importado ainda, segue a vida sem linkar
+
+    # 4. Idiomas
     languages = {"Audio": [], "Subtitles": [], "Interface": []}
     if 'language_supports' in data:
         for lang_obj in data['language_supports']:
             try:
                 l_name = lang_obj.get('language', {}).get('name')
-                l_type = lang_obj.get('language_support_type', {}).get('name') # Audio, Subtitles, Interface
-                if l_name and l_type:
-                    if l_type in languages:
-                        languages[l_type].append(l_name)
+                l_type = lang_obj.get('language_support_type', {}).get('name')
+                if l_name and l_type and l_type in languages:
+                    languages[l_type].append(l_name)
             except: continue
-    # Remove duplicatas
     for k in languages: languages[k] = list(set(languages[k]))
 
     # 5. Companies
@@ -122,7 +133,7 @@ def _process_and_save_game(data):
         defaults={
             'title': data['name'],
             'slug': data.get('slug', slugify(data['name'])),
-            'status': data.get('status', 0), # 0 = Released
+            'status': data.get('status', 0),
             'summary': nh3.clean(data.get('summary', '')),
             'storyline': nh3.clean(data.get('storyline', '')),
             'release_date': datetime.fromtimestamp(data['first_release_date']).date() if 'first_release_date' in data else None,
@@ -148,17 +159,13 @@ def _process_and_save_game(data):
             'dlcs': dlc_ids,
             'supported_languages': languages,
             
-            # Hierarquia
+            # Hierarquia Corrigida
             'category': data.get('category', 0),
-            'parent_id': data.get('parent_game'),
+            'parent': parent_obj, # Passamos o OBJETO, não o ID
         }
     )
     
-    # Nota: External IDs eu mantive a lógica simplificada anterior, 
-    # se quiser adicionar mais sites (Twitch, Wikipedia), é só expandir o loop de websites.
-    
     return master_game
-
 
 # ==========================================
 # SERVIÇO 2: LÓGICA DE NEGÓCIO (RADAR/STATS)
