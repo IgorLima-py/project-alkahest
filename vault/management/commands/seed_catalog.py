@@ -83,10 +83,16 @@ class Command(BaseCommand):
             current_offset = offset + processed_count
             
             query_parts = [
-                f"fields {fields};", 
-                # Removi o filtro de rating e category temporariamente
-                # "where category = (0,8,9,10) & total_rating_count > 10;", 
-                "sort id desc;", # Ordenação simples por ID para pegar os últimos adicionados
+                f"fields {fields};",
+                # Filtro: Jogos Principais (0) + Remakes (8) + Remasters (9)
+                # Rating Count > 100 (Filtra jogos de nicho demais)
+                # Themes != (42) (Tenta excluir Erotica, o ID do tema Erotica é 42 no IGDB)
+                "where category = (0,8,9) & total_rating_count > 100 & themes != (42);", 
+                
+                # ORDENAÇÃO É A CHAVE:
+                # Ordenar por QUEM TEM MAIS VOTOS. Isso garante GTA V, Witcher, Elden Ring no topo.
+                "sort total_rating_count desc;", 
+                
                 f"limit {current_limit};",
                 f"offset {current_offset};"
             ]
