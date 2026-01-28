@@ -1,80 +1,79 @@
-import requests
+# vault/utils_igdb.py
+import logging
 import time
-from django.core.cache import cache
+import requests
 from decouple import config
+from django.core.cache import cache
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+logger = logging.getLogger(__name__)
+
+# Configurações Globais
+BASE_URL = "https://api.igdb.com/v4"
+TOKEN_URL = "https://id.twitch.tv/oauth2/token"
+CLIENT_ID = config('TWITCH_CLIENT_ID')
+CLIENT_SECRET = config('TWITCH_CLIENT_SECRET')
+
+# Sessão persistente (Melhora performance SSL em 3x)
+session = requests.Session()
+retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+session.mount('https://', HTTPAdapter(max_retries=retries))
+
+class IGDBError(Exception):
+    pass
 
 def get_igdb_token():
-    # Tenta pegar do cache primeiro
     token = cache.get('igdb_access_token')
     if token:
         return token
 
-    print("--- [DEBUG] Solicitando NOVO Token Twitch ---")
-    url = 'https://id.twitch.tv/oauth2/token'
-    client_id = config('TWITCH_CLIENT_ID', default='')
-    client_secret = config('TWITCH_CLIENT_SECRET', default='')
-
-    if not client_id or not client_secret:
-        print("!!! [ERRO FATAL] TWITCH_CLIENT_ID ou SECRET não encontrados no .env !!!")
-        return None
-
-    params = {
-        'client_id': client_id,
-        'client_secret': client_secret,
-        'grant_type': 'client_credentials'
-    }
-    
+    logger.info("Solicitando novo token IGDB...")
     try:
-        response = requests.post(url, params=params)
-        print(f"--- [DEBUG] Status Token: {response.status_code}")
-        
-        if response.status_code != 200:
-            print(f"!!! [ERRO TOKEN] Resposta: {response.text}")
-            return None
-
-        data = response.json()
+        res = session.post(TOKEN_URL, params={
+            'client_id': CLIENT_ID,
+            'client_secret': CLIENT_SECRET,
+            'grant_type': 'client_credentials'
+        }, timeout=10)
+        res.raise_for_status()
+        data = res.json()
         token = data['access_token']
-        expires_in = data.get('expires_in', 3600)
-        cache.set('igdb_access_token', token, timeout=expires_in - 60)
+        # Cache com buffer de 60s
+        cache.set('igdb_access_token', token, timeout=data['expires_in'] - 60)
         return token
     except Exception as e:
-        print(f"!!! [ERRO EXCEÇÃO] Falha ao obter token: {e}")
+        logger.critical(f"Falha fatal na auth IGDB: {e}")
         return None
 
+# Decorator de Retry para Rate Limit (429) e Erros de Rede
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type((requests.RequestException, IGDBError))
+)
 def igdb_api_request(endpoint, body):
     token = get_igdb_token()
     if not token:
-        return None
+        raise IGDBError("Sem token de autenticação")
 
-    client_id = config('TWITCH_CLIENT_ID')
     headers = {
-        'Client-ID': client_id,
+        'Client-ID': CLIENT_ID,
         'Authorization': f'Bearer {token}',
         'Accept': 'application/json'
     }
-    url = f"https://api.igdb.com/v4/{endpoint}"
 
-    print(f"--- [DEBUG] Request IGDB para: {url} ---")
-    # print(f"--- [DEBUG] Query Body: {body}") # Descomente se quiser ver a query exata
+    # Pausa preventiva de segurança (Evita burst que bane IP)
+    time.sleep(0.25) 
 
-    for attempt in range(3):
-        try:
-            response = requests.post(url, headers=headers, data=body)
-            
-            if response.status_code != 200:
-                print(f"!!! [ERRO API] Status: {response.status_code}")
-                print(f"!!! [ERRO API] Corpo: {response.text}")
-            
-            if response.status_code == 429:
-                time.sleep(1)
-                continue
-                
-            response.raise_for_status()
-            return response.json()
-            
-        except requests.exceptions.RequestException as e:
-            print(f"!!! [ERRO REQUEST] Tentativa {attempt+1}: {e}")
-            if attempt == 2: return None
-            time.sleep(1)
-            
-    return None
+    response = session.post(f"{BASE_URL}/{endpoint}", headers=headers, data=body, timeout=15)
+
+    if response.status_code == 429:
+        logger.warning("Rate Limit atingido. O Tenacity vai tentar de novo...")
+        raise requests.exceptions.RequestException("Rate Limit 429")
+    
+    if response.status_code != 200:
+        logger.error(f"Erro IGDB {response.status_code}: {response.text}")
+        response.raise_for_status()
+
+    return response.json()
