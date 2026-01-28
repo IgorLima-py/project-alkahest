@@ -11,40 +11,26 @@ from .utils_igdb import get_igdb_token
 # SERVIÇO 1: INTEGRAÇÃO IGDB (IMPORTAÇÃO)
 # ==========================================
 
-def fetch_and_update_game(igdb_id=None, search_name=None):
+def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
     """
-    Busca um jogo no IGDB e atualiza/cria no banco local.
-    Prioridade: ID > Nome
+    Busca um jogo no IGDB.
+    Prioridade: IGDB ID > Steam ID > Nome
     """
     token = get_igdb_token()
-    if not token:
-        return None
+    if not token: return None
 
     client_id = config('TWITCH_CLIENT_ID')
     headers = {'Client-ID': client_id, 'Authorization': f'Bearer {token}'}
     
-    # ADICIONEI: screenshots.url, themes.name, aggregated_rating
     fields = (
         "name, slug, status, category, parent_game, "
         "summary, storyline, first_release_date, "
-        
-        # Multimídia
         "cover.url, screenshots.url, artworks.url, videos.video_id, "
-        
-        # Empresas e Tech
         "involved_companies.company.name, involved_companies.developer, involved_companies.publisher, "
         "game_engines.name, "
-        
-        # Categorização
         "genres.name, themes.name, game_modes.name, player_perspectives.name, "
-        
-        # Relações
         "collection.name, franchises.name, similar_games, dlcs, "
-        
-        # Idiomas (Query complexa, trazendo nome da lingua e tipo de suporte)
         "language_supports.language.name, language_supports.language_support_type.name, "
-        
-        # Links Externos
         "websites.url, websites.category"
     )
 
@@ -52,6 +38,9 @@ def fetch_and_update_game(igdb_id=None, search_name=None):
     
     if igdb_id:
         query_body = f'fields {fields}; where id = {igdb_id};'
+    elif steam_id:
+        # BUSCA INFALÍVEL: Pede o jogo que tem esse ID na Steam (category 13)
+        query_body = f'fields {fields}; where external_games.uid = "{steam_id}" & external_games.category = 13; limit 1;'
     elif search_name:
         safe_name = search_name.replace('"', '').replace(';', '') 
         query_body = f'search "{safe_name}"; fields {fields}; limit 1;'
@@ -62,6 +51,13 @@ def fetch_and_update_game(igdb_id=None, search_name=None):
         response = requests.post('https://api.igdb.com/v4/games', headers=headers, data=query_body)
         data = response.json()
         
+        # Se buscou por Steam ID e não achou, tenta fallback por nome se fornecido
+        if not data and steam_id and search_name:
+             safe_name = search_name.replace('"', '').replace(';', '') 
+             query_body = f'search "{safe_name}"; fields {fields}; limit 1;'
+             response = requests.post('https://api.igdb.com/v4/games', headers=headers, data=query_body)
+             data = response.json()
+
         if not data or 'id' not in data[0]: return None
         
         return _process_and_save_game(data[0])
