@@ -19,24 +19,63 @@ class UserProfile(models.Model):
         return f"Perfil de {self.user.username}"
 
 # BLOCO 3: MASTER GAME
+class GameCategory(models.IntegerChoices):
+    MAIN_GAME = 0, 'Main Game'
+    DLC_ADDON = 1, 'DLC/Addon'
+    EXPANSION = 2, 'Expansion'
+    BUNDLE = 3, 'Bundle'
+    STANDALONE_EXPANSION = 4, 'Standalone Expansion'
+    MOD = 5, 'Mod'
+    EPISODE = 6, 'Episode'
+    SEASON = 7, 'Season'
+    REMAKE = 8, 'Remake'
+    REMASTER = 9, 'Remaster'
+    EXPANDED_GAME = 10, 'Expanded Game'
+    PORT = 11, 'Port'
+    FORK = 12, 'Fork'
+    PACK = 13, 'Pack'
+    UPDATE = 14, 'Update'
 class MasterGame(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     igdb_id = models.BigIntegerField(unique=True, db_index=True)
+    
+    # Hierarquia e Categoria
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children', db_index=True)
+    category = models.IntegerField(choices=GameCategory.choices, default=GameCategory.MAIN_GAME)
+    
     title = models.CharField(max_length=255, db_index=True)
+    slug = models.SlugField(max_length=255, blank=True, null=True) # Útil para URLs amigáveis
+    
+    # Metadados Ricos (JSON é mais performático que criar 5 tabelas novas agora)
+    summary = models.TextField(blank=True, null=True)
     cover_url = models.URLField(blank=True, null=True)
     release_date = models.DateField(blank=True, null=True)
-    genres = models.JSONField(default=list)
     
+    genres = models.JSONField(default=list, blank=True)        # Ex: ["RPG", "Adventure"]
+    developers = models.JSONField(default=list, blank=True)    # Ex: ["CD Projekt Red"]
+    publishers = models.JSONField(default=list, blank=True)    # Ex: ["Bandai Namco"]
+    game_engines = models.JSONField(default=list, blank=True)  # Ex: ["REDengine 3"]
+    
+    # O "Santo Graal" do Sync: IDs de outras lojas
+    # Ex: {"steam": "292030", "psn": "CUSA00001", "retroachievements": "123"}
+    external_ids = models.JSONField(default=dict, blank=True) 
+
+    updated_at = models.DateTimeField(auto_now=True) # Saber quando atualizamos por último
+
     def __str__(self):
         return self.title
 
-class Platform(models.Model):
+class PlatformGame(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    slug = models.CharField(max_length=50, unique=True)
-    name = models.CharField(max_length=50)
+    master_game = models.ForeignKey(MasterGame, on_delete=models.CASCADE, related_name='platforms')
+    platform = models.ForeignKey('Platform', on_delete=models.CASCADE)
     
-    def __str__(self):
-        return self.name
+    # Identificadores específicos da plataforma
+    external_id = models.CharField(max_length=255) # Ex: AppID da Steam
+    external_title = models.CharField(max_length=255) # Título como aparece na loja
+    
+    class Meta:
+        unique_together = ('platform', 'external_id')
 
 class PlatformGame(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -58,8 +97,9 @@ class UserLibraryEntry(models.Model):
         ('backlog', 'Backlog'),
         ('playing', 'Jogando'),
         ('completed', 'Zerado'),
-        ('dropped', 'Largado'),
-    ]
+        ('dropped', 'Largado'),]
+    
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='backlog', db_index=True)
     playtime_minutes = models.IntegerField(default=0)
     last_played = models.DateTimeField(blank=True, null=True, db_index=True)
