@@ -1,20 +1,15 @@
 import requests
 import nh3
+import re
 from datetime import datetime
 from decouple import config
 from django.utils.text import slugify
-from django.db.models import Sum, Count # Imports que seu Radar usava
-from .models import MasterGame, GameCategory, UserAchievement, Review, GameTip, UserLibraryEntry
+from .models import MasterGame, GameCategory, GameStatus
 from .utils_igdb import get_igdb_token
-
-# ==========================================
-# SERVIÇO 1: INTEGRAÇÃO IGDB (IMPORTAÇÃO)
-# ==========================================
 
 def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
     """
-    Busca um jogo no IGDB.
-    Prioridade: IGDB ID > Steam ID > Nome
+    Busca Jogo no IGDB (Cascata de Tentativas).
     """
     token = get_igdb_token()
     if not token: return None
@@ -22,6 +17,7 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
     client_id = config('TWITCH_CLIENT_ID')
     headers = {'Client-ID': client_id, 'Authorization': f'Bearer {token}'}
     
+    # Query de campos completa
     fields = (
         "name, slug, status, category, parent_game, "
         "summary, storyline, first_release_date, "
@@ -34,53 +30,108 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
         "websites.url, websites.category"
     )
 
-    query_body = ""
-    
+    data = []
+
+    # 1. TENTATIVA: ID IGDB DIRETO
     if igdb_id:
-        query_body = f'fields {fields}; where id = {igdb_id};'
-    elif steam_id:
-        # BUSCA INFALÍVEL: Pede o jogo que tem esse ID na Steam (category 13)
-        query_body = f'fields {fields}; where external_games.uid = "{steam_id}" & external_games.category = 13; limit 1;'
-    elif search_name:
-        safe_name = search_name.replace('"', '').replace(';', '') 
-        query_body = f'search "{safe_name}"; fields {fields}; limit 1;'
+        query = f'fields {fields}; where id = {igdb_id};'
+        data = _igdb_request(query, headers)
+
+    # 2. TENTATIVA: STEAM ID (Link Oficial)
+    if not data and steam_id:
+        # Category 13 = Steam. Tenta achar o jogo exato linkado.
+        query = f'fields {fields}; where external_games.uid = "{steam_id}" & external_games.category = 13; limit 1;'
+        data = _igdb_request(query, headers)
+
+    if not data and search_name:
+        # Limpeza básica de segurança (tira aspas)
+        safe_name_raw = search_name.replace('"', '').replace(';', '')
+
+        # 3. TENTATIVA: NOME EXATO (Como veio da Steam)
+        # Ex: "The Witcher: Enhanced Edition Director's Cut"
+        # Pode falhar se o IGDB não tiver "Director's Cut" no nome.
+        query = f'search "{safe_name_raw}"; fields {fields}; limit 1;'
+        data = _igdb_request(query, headers)
+
+        # 4. TENTATIVA: NOME "LEVE" (Remove lixo, mas MANTE EDIÇÃO)
+        # Transforma "Rainbow Six® Siege X" -> "Rainbow Six Siege"
+        # Transforma "Witcher: EE Director's Cut" -> "Witcher: EE"
+        if not data:
+            semi_clean = _sanitize_light(safe_name_raw)
+            if semi_clean != safe_name_raw:
+                print(f"   (Service) Tentando nome ajustado: '{semi_clean}'")
+                query = f'search "{semi_clean}"; fields {fields}; limit 1;'
+                data = _igdb_request(query, headers)
+
+        # 5. TENTATIVA: NOME "BASE" (Remove Edição) -> Último recurso
+        # Transforma "Witcher: Enhanced Edition" -> "Witcher"
+        # Só pra garantir que não fica sem capa.
+        if not data:
+            base_clean = _sanitize_heavy(safe_name_raw)
+            if base_clean != semi_clean and base_clean != safe_name_raw:
+                print(f"   (Service) Fallback para jogo base: '{base_clean}'")
+                query = f'search "{base_clean}"; fields {fields}; limit 1;'
+                data = _igdb_request(query, headers)
+
+    if not data or 'id' not in data[0]: return None
     
-    if not query_body: return None
+    return _process_and_save_game(data[0])
 
+def _igdb_request(body, headers):
     try:
-        response = requests.post('https://api.igdb.com/v4/games', headers=headers, data=query_body)
-        data = response.json()
-        
-        # Se buscou por Steam ID e não achou, tenta fallback por nome se fornecido
-        if not data and steam_id and search_name:
-             safe_name = search_name.replace('"', '').replace(';', '') 
-             query_body = f'search "{safe_name}"; fields {fields}; limit 1;'
-             response = requests.post('https://api.igdb.com/v4/games', headers=headers, data=query_body)
-             data = response.json()
+        response = requests.post('https://api.igdb.com/v4/games', headers=headers, data=body)
+        res_json = response.json()
+        if isinstance(res_json, list) and res_json: return res_json
+        return []
+    except: return []
 
-        if not data or 'id' not in data[0]: return None
-        
-        return _process_and_save_game(data[0])
+def _sanitize_light(name):
+    """Limpa apenas lixo (símbolos, 'Director's Cut', 'X'), mantendo GOTY/Enhanced"""
+    # 1. Remove TM, R, Copyright
+    name = re.sub(r'[®™©]', '', name)
+    
+    # 2. Remove sufixos que geralmente atrapalham a busca exata no IGDB
+    # "Director's Cut" as vezes atrapalha se o IGDB cadastrou só "Enhanced Edition"
+    useless_suffixes = [
+        r'\s*director\'s cut.*', 
+        r'\s*digital deluxe.*', 
+        r'\s*premium edition.*',
+        r'\s*bonus edition.*',
+        r'\s+X$' # O caso do Rainbow Six Siege X
+    ]
+    for suffix in useless_suffixes:
+        name = re.sub(suffix, '', name, flags=re.IGNORECASE)
+    
+    return name.strip()
 
-    except Exception as e:
-        print(f"Erro no Service IGDB: {e}")
-        return None
+def _sanitize_heavy(name):
+    """Limpeza agressiva para achar o jogo base (Fallback final)"""
+    name = _sanitize_light(name) # Começa limpando o lixo
+    
+    # Remove as edições principais para sobrar só o título base
+    edition_suffixes = [
+        r'\s*goty.*', r'\s*game of the year.*', 
+        r'\s*enhanced edition.*', 
+        r'\s*remastered.*', r'\s*remake.*',
+        r'\s*complete edition.*',
+        r'\s*bundle.*'
+    ]
+    for suffix in edition_suffixes:
+        name = re.sub(suffix, '', name, flags=re.IGNORECASE)
+
+    return name.strip()
 
 def _process_and_save_game(data):
     """Parsing robusto dos novos campos com proteção de Foreign Key"""
     
-    # 1. Imagens
     cover_url = 'https:' + data['cover']['url'].replace('t_thumb', 't_cover_big') if 'cover' in data else None
     
     artworks = ['https:' + img['url'].replace('t_thumb', 't_1080p') for img in data.get('artworks', [])]
     screenshots = ['https:' + img['url'].replace('t_thumb', 't_1080p') for img in data.get('screenshots', [])]
-    
-    # Hero Background Logic
     background_url = artworks[0] if artworks else (screenshots[0] if screenshots else cover_url)
 
     videos = [v['video_id'] for v in data.get('videos', [])]
 
-    # 2. Listas de Texto
     genres = [x['name'] for x in data.get('genres', [])]
     themes = [x['name'] for x in data.get('themes', [])]
     modes = [x['name'] for x in data.get('game_modes', [])]
@@ -89,24 +140,18 @@ def _process_and_save_game(data):
     franchises = [x['name'] for x in data.get('franchises', [])]
     collection = data.get('collection', {}).get('name')
 
-    # 3. Relações (IDs simples)
     similar_ids = data.get('similar_games', []) 
     dlc_ids = data.get('dlcs', [])
 
-    # === CORREÇÃO CRÍTICA DO PARENT (FOREIGN KEY) ===
-    # O IGDB manda o ID Inteiro. O Django quer o UUID do objeto.
-    # Se o pai não existir no banco local, ignoramos a relação para não dar Crash.
+    # Proteção de Foreign Key
     parent_obj = None
     igdb_parent_id = data.get('parent_game')
-    
     if igdb_parent_id:
-        # Tenta achar o MasterGame local que tem esse igdb_id
         try:
             parent_obj = MasterGame.objects.get(igdb_id=igdb_parent_id)
         except MasterGame.DoesNotExist:
-            parent_obj = None # Pai não importado ainda, segue a vida sem linkar
+            parent_obj = None 
 
-    # 4. Idiomas
     languages = {"Audio": [], "Subtitles": [], "Interface": []}
     if 'language_supports' in data:
         for lang_obj in data['language_supports']:
@@ -118,7 +163,6 @@ def _process_and_save_game(data):
             except: continue
     for k in languages: languages[k] = list(set(languages[k]))
 
-    # 5. Companies
     developers = []
     publishers = []
     for involved in data.get('involved_companies', []):
@@ -127,7 +171,6 @@ def _process_and_save_game(data):
             if involved.get('developer'): developers.append(c_name)
             if involved.get('publisher'): publishers.append(c_name)
 
-    # 6. Salvar
     master_game, created = MasterGame.objects.update_or_create(
         igdb_id=data['id'],
         defaults={
@@ -137,15 +180,11 @@ def _process_and_save_game(data):
             'summary': nh3.clean(data.get('summary', '')),
             'storyline': nh3.clean(data.get('storyline', '')),
             'release_date': datetime.fromtimestamp(data['first_release_date']).date() if 'first_release_date' in data else None,
-            
-            # Imagens
             'cover_url': cover_url,
             'background_url': background_url,
             'artworks': artworks,
             'screenshots': screenshots,
             'videos': videos,
-            
-            # Dados Ricos
             'developers': developers,
             'publishers': publishers,
             'game_engines': engines,
@@ -158,59 +197,9 @@ def _process_and_save_game(data):
             'similar_games': similar_ids,
             'dlcs': dlc_ids,
             'supported_languages': languages,
-            
-            # Hierarquia Corrigida
             'category': data.get('category', 0),
-            'parent': parent_obj, # Passamos o OBJETO, não o ID
+            'parent': parent_obj, 
         }
     )
     
     return master_game
-
-# ==========================================
-# SERVIÇO 2: LÓGICA DE NEGÓCIO (RADAR/STATS)
-# ==========================================
-
-class RadarChartService:
-    def __init__(self, user):
-        self.user = user
-
-    def calculate_stats(self):
-        """
-        Calcula os 5 pilares do Death Stranding Chart.
-        """
-        stats = {
-            'volume': 0, 'skill': 0, 'variety': 0, 'social': 0, 'speed': 0
-        }
-
-        # 1. VOLUME (XP)
-        total_xp = UserAchievement.objects.filter(user=self.user).aggregate(Sum('achievement__xp_value'))['achievement__xp_value__sum'] or 0
-        stats['volume'] = min((total_xp / 100000) * 100, 100)
-
-        # 2. SKILL (% Completude)
-        games_started = UserLibraryEntry.objects.filter(user=self.user, status__in=['playing', 'completed', 'dropped'])
-        completed_count = games_started.filter(status='completed').count()
-        total_started = games_started.count()
-        if total_started > 0:
-            stats['skill'] = (completed_count / total_started) * 100
-
-        # 3. VARIETY (Gêneros únicos)
-        # Agora que temos genres no MasterGame, podemos calcular de verdade!
-        # Isso é um pouco pesado, melhor fazer via SQL puro ou denormalização futura,
-        # mas por enquanto, Python set resolve para volumes baixos.
-        entries = UserLibraryEntry.objects.filter(user=self.user).select_related('platform_game__master_game')
-        unique_genres = set()
-        for entry in entries:
-            for g in entry.platform_game.master_game.genres:
-                unique_genres.add(g)
-        
-        # Digamos que 10 gêneros diferentes = 100% variety
-        stats['variety'] = min((len(unique_genres) / 10) * 100, 100)
-
-        # 4. SOCIAL
-        review_likes = Review.objects.filter(user=self.user).aggregate(Sum('likes_count'))['likes_count__sum'] or 0
-        tip_upvotes = GameTip.objects.filter(user=self.user).aggregate(Sum('upvotes'))['upvotes__sum'] or 0
-        total_social = review_likes + tip_upvotes
-        stats['social'] = min((total_social / 500) * 100, 100)
-
-        return stats
