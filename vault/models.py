@@ -4,11 +4,15 @@ from django.contrib.auth.models import User
 import markdown
 import nh3
 
-# BLOCO 2: PERFIL
+# ==========================================
+# BLOCO 1: PERFIL DO USUÁRIO
+# ==========================================
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     bio = models.TextField(blank=True, max_length=500)
     avatar_url = models.URLField(blank=True, null=True)
+    
+    # Stats gamificados (0-100)
     stat_volume = models.IntegerField(default=0)
     stat_skill = models.IntegerField(default=0)
     stat_variety = models.IntegerField(default=0)
@@ -18,7 +22,21 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"Perfil de {self.user.username}"
 
-# BLOCO 3: MASTER GAME
+# ==========================================
+# BLOCO 2: PLATAFORMAS (Movido para cima para evitar NameError)
+# ==========================================
+class Platform(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    slug = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return self.name
+
+# ==========================================
+# BLOCO 3: JOGO MESTRE (METADADOS RICOS)
+# ==========================================
+
 class GameCategory(models.IntegerChoices):
     MAIN_GAME = 0, 'Main Game'
     DLC_ADDON = 1, 'DLC/Addon'
@@ -35,59 +53,87 @@ class GameCategory(models.IntegerChoices):
     FORK = 12, 'Fork'
     PACK = 13, 'Pack'
     UPDATE = 14, 'Update'
+
+class GameStatus(models.IntegerChoices):
+    RELEASED = 0, 'Released'
+    ALPHA = 2, 'Alpha'
+    BETA = 3, 'Beta'
+    EARLY_ACCESS = 4, 'Early Access'
+    OFFLINE = 5, 'Offline'
+    CANCELLED = 6, 'Cancelled'
+    RUMORED = 7, 'Rumored'
+    DELISTED = 8, 'Delisted'
+
 class MasterGame(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     igdb_id = models.BigIntegerField(unique=True, db_index=True)
     
-    # Hierarquia e Categoria
-    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children', db_index=True)
-    category = models.IntegerField(choices=GameCategory.choices, default=GameCategory.MAIN_GAME)
-    
+    # --- Identidade & Hierarquia ---
     title = models.CharField(max_length=255, db_index=True)
-    slug = models.SlugField(max_length=255, blank=True, null=True) # Útil para URLs amigáveis
+    slug = models.SlugField(max_length=255, blank=True, null=True)
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
+    category = models.IntegerField(choices=GameCategory.choices, default=GameCategory.MAIN_GAME)
+    status = models.IntegerField(choices=GameStatus.choices, default=GameStatus.RELEASED)
     
-    # Metadados Ricos (JSON é mais performático que criar 5 tabelas novas agora)
-    summary = models.TextField(blank=True, null=True)
-    cover_url = models.URLField(blank=True, null=True)
+    # --- Multimídia ---
+    cover_url = models.URLField(blank=True, null=True) # Capa vertical (Poster)
+    background_url = models.URLField(blank=True, null=True) # Hero Image (Artwork/Screenshot)
+    
+    artworks = models.JSONField(default=list, blank=True) 
+    screenshots = models.JSONField(default=list, blank=True)
+    videos = models.JSONField(default=list, blank=True) # IDs do YouTube
+    
+    # --- Texto & Lore ---
+    summary = models.TextField(blank=True, null=True) # Resumo curto
+    storyline = models.TextField(blank=True, null=True) # Enredo completo
+    
+    # --- Metadados Técnicos ---
     release_date = models.DateField(blank=True, null=True)
+    developers = models.JSONField(default=list, blank=True)
+    publishers = models.JSONField(default=list, blank=True)
+    game_engines = models.JSONField(default=list, blank=True)
     
-    genres = models.JSONField(default=list, blank=True)        # Ex: ["RPG", "Adventure"]
-    developers = models.JSONField(default=list, blank=True)    # Ex: ["CD Projekt Red"]
-    publishers = models.JSONField(default=list, blank=True)    # Ex: ["Bandai Namco"]
-    game_engines = models.JSONField(default=list, blank=True)  # Ex: ["REDengine 3"]
+    # --- Classificação & Estilo ---
+    genres = models.JSONField(default=list, blank=True)
+    themes = models.JSONField(default=list, blank=True) # Sci-fi, Horror...
+    game_modes = models.JSONField(default=list, blank=True) # Single, Multi, Co-op
+    player_perspectives = models.JSONField(default=list, blank=True) # FPS, TPS...
     
-    # O "Santo Graal" do Sync: IDs de outras lojas
-    # Ex: {"steam": "292030", "psn": "CUSA00001", "retroachievements": "123"}
-    external_ids = models.JSONField(default=dict, blank=True) 
-
-    updated_at = models.DateTimeField(auto_now=True) # Saber quando atualizamos por último
+    # --- Relações ---
+    collection = models.CharField(max_length=255, blank=True, null=True) # Nome da Série
+    franchises = models.JSONField(default=list, blank=True) 
+    similar_games = models.JSONField(default=list, blank=True) # Lista de IDs
+    dlcs = models.JSONField(default=list, blank=True) # Lista de IDs
+    
+    # --- Localização ---
+    supported_languages = models.JSONField(default=dict, blank=True)
+    
+    # --- IDs Externos (O Santo Graal do Sync) ---
+    external_ids = models.JSONField(default=dict, blank=True) # Steam, PSN, etc.
+    
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.title
 
-class PlatformGame(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    master_game = models.ForeignKey(MasterGame, on_delete=models.CASCADE, related_name='platforms')
-    platform = models.ForeignKey('Platform', on_delete=models.CASCADE)
-    
-    # Identificadores específicos da plataforma
-    external_id = models.CharField(max_length=255) # Ex: AppID da Steam
-    external_title = models.CharField(max_length=255) # Título como aparece na loja
-    
-    class Meta:
-        unique_together = ('platform', 'external_id')
-
+# ==========================================
+# BLOCO 4: JOGO VINCULADO À PLATAFORMA
+# ==========================================
 class PlatformGame(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     master_game = models.ForeignKey(MasterGame, on_delete=models.CASCADE, related_name='platforms')
     platform = models.ForeignKey(Platform, on_delete=models.CASCADE)
+    
+    # Dados específicos da loja (Ex: AppID Steam 292030)
     external_id = models.CharField(max_length=255)
     external_title = models.CharField(max_length=255)
     
     class Meta:
         unique_together = ('platform', 'external_id')
 
-# BLOCO 4: LIBRARY
+# ==========================================
+# BLOCO 5: BIBLIOTECA DO USUÁRIO
+# ==========================================
 class UserLibraryEntry(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='library', db_index=True)
@@ -97,9 +143,9 @@ class UserLibraryEntry(models.Model):
         ('backlog', 'Backlog'),
         ('playing', 'Jogando'),
         ('completed', 'Zerado'),
-        ('dropped', 'Largado'),]
+        ('dropped', 'Largado'),
+    ]
     
-
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='backlog', db_index=True)
     playtime_minutes = models.IntegerField(default=0)
     last_played = models.DateTimeField(blank=True, null=True, db_index=True)
@@ -109,19 +155,22 @@ class UserLibraryEntry(models.Model):
     is_favorite = models.BooleanField(default=False)
     is_recommended = models.BooleanField(null=True, blank=True)
     
-    # NOVOS CAMPOS (Fase 1 - Preço/Moeda)
+    # Campos Financeiros
     price_paid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=3, default='BRL', blank=True)
     
-    review_text = models.TextField(blank=True, null=True) # Legado
-    review_date = models.DateTimeField(null=True, blank=True) # Legado
+    # Campos Legado (serão depreciados pelo sistema de Review)
+    review_text = models.TextField(blank=True, null=True) 
+    review_date = models.DateTimeField(null=True, blank=True)
 
     @property
     def playtime_hours(self):
         if self.playtime_minutes: return round(self.playtime_minutes / 60, 1)
         return 0
 
-# BLOCO 5: ACHIEVEMENTS
+# ==========================================
+# BLOCO 6: CONQUISTAS
+# ==========================================
 class Achievement(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     platform_game = models.ForeignKey(PlatformGame, on_delete=models.CASCADE, related_name='achievements')
@@ -141,7 +190,9 @@ class UserAchievement(models.Model):
     class Meta:
         unique_together = ('user', 'achievement')
 
-# BLOCO 6: REVIEWS
+# ==========================================
+# BLOCO 7: REVIEWS
+# ==========================================
 class Review(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
@@ -160,6 +211,7 @@ class Review(models.Model):
     is_replay = models.BooleanField(default=False)
     language = models.CharField(max_length=10, default='pt-br')
     
+    # Snapshot: Estatísticas no momento da review
     achievement_percent_snapshot = models.FloatField(default=0.0)
     date_started = models.DateField(null=True, blank=True)
     date_finished = models.DateField(null=True, blank=True)
@@ -170,6 +222,7 @@ class Review(models.Model):
     likes_count = models.IntegerField(default=0)
 
     def save(self, *args, **kwargs):
+        # Sanitização de segurança (XSS protection)
         html = markdown.markdown(self.text)
         allowed_tags = {'b', 'i', 'strong', 'em', 'p', 'br', 'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'h1', 'h2', 'hr'}
         allowed_attrs = {'a': {'href', 'title'}, 'img': {'src', 'alt'}}
@@ -179,7 +232,9 @@ class Review(models.Model):
     def __str__(self):
         return f"Review de {self.user} - {self.library_entry.platform_game.master_game.title}"
 
-# BLOCO 7: DICAS & LISTAS
+# ==========================================
+# BLOCO 8: DICAS & LISTAS
+# ==========================================
 class GameTip(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tips')
@@ -207,7 +262,7 @@ class GameList(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     likes_count = models.IntegerField(default=0)
-    is_public = models.BooleanField(default=True) # Novo (Segurança)
+    is_public = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self): return self.title
@@ -220,7 +275,9 @@ class GameListItem(models.Model):
     class Meta:
         ordering = ['order']
 
-# BLOCO 8: SOCIAL (Fase 2 - ESTE É O BLOCO QUE FALTAVA)
+# ==========================================
+# BLOCO 9: SOCIAL (FOLLOW SYSTEM)
+# ==========================================
 class UserFollow(models.Model):
     follower = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
     target = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
