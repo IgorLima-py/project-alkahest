@@ -21,7 +21,8 @@ from .models import (
 )
 
 # Services (A Nova Camada Inteligente)
-from .services import fetch_and_update_game, get_igdb_token
+from .services import fetch_and_update_game
+from .utils_igdb import get_igdb_token
 
 # === HELPER: ACTIVITY FEED ===
 def get_community_pulse(user):
