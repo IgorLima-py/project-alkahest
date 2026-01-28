@@ -82,13 +82,19 @@ class Command(BaseCommand):
             current_limit = min(batch_size, amount - processed_count)
             current_offset = offset + processed_count
             
-            body = f"""
-                fields {fields};
-                where (category = (0,8,9,10,1,2,4)) & (external_games.category = ({store_ids})) & (total_rating_count > 5);
-                sort total_rating_count desc;
-                limit {current_limit};
-                offset {current_offset};
-            """
+            query_parts = [
+                f"fields {fields};",
+                # Filtro simples: Jogos principais/DLCs populares
+                "where category = (0,8,9,10) & total_rating_count > 10;",
+                "sort total_rating_count desc;",
+                f"limit {current_limit};",
+                f"offset {current_offset};"
+            ]
+            # Junta tudo numa linha só, removendo quebras de linha perigosas
+            body = " ".join(query_parts)
+            
+            # Debug visual para garantir que a query está bonita
+            self.stdout.write(f"Querying IGDB: Offset {current_offset}...")
 
             data = igdb_api_request('games', body)
             

@@ -2,6 +2,8 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+print(f"DEBUG: Diretório atual de execução: {os.getcwd()}")
+print(f"DEBUG: Arquivo .env existe aqui? {os.path.exists('.env')}")
 
 
 def main():
