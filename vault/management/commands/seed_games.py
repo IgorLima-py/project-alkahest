@@ -1,49 +1,57 @@
 # vault/management/commands/seed_games.py
+
+from django.core.management.base import BaseCommand
 import requests
 import time
-from django.core.management.base import BaseCommand
-from django.db import transaction
 from decouple import config
-from vault.models import MasterGame, Store, GameStoreLink # NOVO: Importamos Store e GameStoreLink
+from django.db import transaction
+
+# --- ADIÇÃO 1: NOSSOS NOVOS MODELS ---
+from vault.models import MasterGame, Store, GameStoreLink 
 from vault.utils_igdb import get_igdb_token
 from vault.services import _process_and_save_game
 
 class Command(BaseCommand):
-    help = 'Busca e enriquece o catálogo com dados do IGDB, incluindo jogos e links de lojas.'
+    help = 'Importa e enriquece os Top X jogos do IGDB, incluindo links de lojas.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--amount', type=int, default=100, help='Quantidade de jogos para processar')
+        parser.add_argument('--amount', type=int, default=100, help='Quantidade de jogos para importar')
 
-    @transaction.atomic # Garante que as operações sejam seguras
+    @transaction.atomic # Adicionado para segurança das operações no banco
     def handle(self, *args, **options):
         amount = options['amount']
-        self.stdout.write(f"Iniciando enriquecimento de {amount} jogos...")
+        self.stdout.write(f"Iniciando importação de {amount} jogos...")
 
         token = get_igdb_token()
-        if not token:
-            self.stdout.write(self.style.ERROR("Não foi possível obter o token do IGDB. Abortando."))
-            return
-            
         client_id = config('TWITCH_CLIENT_ID')
         headers = {'Client-ID': client_id, 'Authorization': f'Bearer {token}'}
 
-        # NOVO: Adicionamos os campos de lojas externas à sua lista de campos original
-        base_fields = "name, slug, external_games.category, external_games.uid" # Adicionamos o essencial aqui
-        # Você pode adicionar os outros campos que já tinha, se quiser, mas para o link, isso basta
+        # SUA LISTA DE CAMPOS ORIGINAL + O CAMPO ESSENCIAL 'external_games'
+        fields = (
+            "name, slug, status, category, parent_game, "
+            "summary, storyline, first_release_date, "
+            "cover.url, screenshots.url, artworks.url, videos.video_id, "
+            "involved_companies.company.name, involved_companies.developer, involved_companies.publisher, "
+            "game_engines.name, "
+            "genres.name, themes.name, game_modes.name, player_perspectives.name, "
+            "collection.name, franchises.name, similar_games, dlcs, "
+            "language_supports.language.name, language_supports.language_support_type.name, "
+            "websites.url, websites.category, "
+            "external_games.category, external_games.uid" # O CAMPO ADICIONADO
+        )
         
+        # Pega as lojas que já cadastramos no banco
+        supported_stores = {s.igdb_category_id: s for s in Store.objects.filter(igdb_category_id__isnull=False)}
+
         limit = 50 
         offset = 0
         total_processed = 0
 
-        # Pega as lojas que cadastramos no passo anterior
-        supported_stores = {s.igdb_category_id: s for s in Store.objects.filter(igdb_category_id__isnull=False)}
-        
         while total_processed < amount:
             current_limit = min(limit, amount - total_processed)
             
-            # Usando a sua query que já funciona, mas pedindo os campos extras
             body = (
-                f"fields id, {base_fields}; "
+                f"fields id, {fields}; "
                 f"where category = (0,8,9,10) & total_rating_count > 50 & themes != (42); " 
                 f"sort total_rating_count desc; "
                 f"limit {current_limit}; offset {offset};"
@@ -51,45 +59,49 @@ class Command(BaseCommand):
 
             try:
                 response = requests.post('https://api.igdb.com/v4/games', headers=headers, data=body)
-                response.raise_for_status() # Lança um erro se a resposta não for 200 OK
+                response.raise_for_status() # Lança erro se a resposta não for 200 OK
                 data = response.json()
-
+                
                 if not data:
-                    self.stdout.write(self.style.WARNING("Não há mais jogos a serem processados."))
+                    self.stdout.write(self.style.WARNING("Não há mais jogos que correspondam aos critérios."))
                     break
 
                 for game_data in data:
-                    # 1. Cria ou atualiza o MasterGame (como você já fazia)
-                    master_game, created = MasterGame.objects.update_or_create(
-                        igdb_id=game_data['id'],
-                        defaults={'title': game_data.get('name', 'N/A')}
-                    )
-                    if created:
-                        self.stdout.write(f"  -> Jogo Mestre criado: {master_game.title}")
-
-                    # 2. NOVO: Loop para criar os GameStoreLinks
-                    for external_link in game_data.get('external_games', []):
-                        store_category = external_link.get('category')
-                        if store_category in supported_stores:
-                            store_obj = supported_stores[store_category]
-                            
-                            _, link_created = GameStoreLink.objects.get_or_create(
-                                store=store_obj,
-                                external_id=external_link['uid'],
-                                defaults={'master_game': master_game}
-                            )
-                            
-                            if link_created:
-                                self.stdout.write(self.style.SUCCESS(f"     -> Link para {store_obj.name} adicionado a '{master_game.title}'"))
+                    if 'id' in game_data:
+                        # 1. SALVA O MASTERGAME (Sua função original)
+                        # Assumimos que _process_and_save_game retorna o objeto MasterGame
+                        master_game = _process_and_save_game(game_data)
+                        
+                        # --- ADIÇÃO 2: O BLOCO QUE SALVA OS LINKS ---
+                        if master_game: # Só prossiga se o jogo foi salvo corretamente
+                            for external_link in game_data.get('external_games', []):
+                                store_category = external_link.get('category')
+                                if store_category in supported_stores:
+                                    store_obj = supported_stores[store_category]
+                                    
+                                    _, link_created = GameStoreLink.objects.get_or_create(
+                                        store=store_obj,
+                                        external_id=external_link['uid'],
+                                        defaults={'master_game': master_game}
+                                    )
+                                    
+                                    if link_created:
+                                        self.stdout.write(self.style.SUCCESS(f"     -> Link para {store_obj.name} adicionado a '{master_game.title}'"))
+                        # --- FIM DA ADIÇÃO ---
+                    else:
+                        print(f"PULADO (Dados inválidos): {game_data}")
                 
                 total_processed += len(data)
                 offset += len(data)
-                self.stdout.write(f"Processados {total_processed}/{amount} jogos...")
+                self.stdout.write(self.style.SUCCESS(f"Processados {total_processed}/{amount} jogos..."))
                 
                 time.sleep(0.3) 
 
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f"Erro fatal no batch: {e}"))
+            except requests.exceptions.RequestException as e:
+                self.stdout.write(self.style.ERROR(f"Erro na requisição: {e}"))
+                # Para depuração, vamos ver o que a API respondeu
+                if e.response is not None:
+                    self.stdout.write(self.style.ERROR(f"Resposta da API: {e.response.text}"))
                 break
 
-        self.stdout.write(self.style.SUCCESS("Enriquecimento do catálogo concluído!"))
+        self.stdout.write(self.style.SUCCESS("Importação concluída!"))
