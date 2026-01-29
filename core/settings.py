@@ -23,6 +23,8 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 
 # Application definition
 INSTALLED_APPS = [
+    'vault',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -36,12 +38,9 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.openid', 
+    'allauth.socialaccount.providers.openid',
     'allauth.socialaccount.providers.steam',
-    'django_ratelimit', # Adicionado explicitamente pois estamos usando nos views
-
-    # App do projeto
-    'vault',  
+    'django_ratelimit',
 ]
 
 SITE_ID = 1
