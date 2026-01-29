@@ -210,7 +210,7 @@
             {% endif %}
         </div>
 
-        <!-- SCREENSHOTS GALLERY (Novo) -->
+        <!-- SCREENSHOTS GALLERY -->
         {% if master.screenshots %}
         <div class="mb-5">
             <h5 class="fw-bold text-white mb-3 font-heading">Gallery</h5>
@@ -305,9 +305,9 @@
             </div>
         </div>
 
-        <!-- REVIEWS / JOURNAL -->
+        <!-- REVIEWS / JOURNAL (USER) -->
         <div class="mb-5">
-            <h5 class="fw-bold font-heading mb-3 text-white">Journal Entries</h5>
+            <h5 class="fw-bold font-heading mb-3 text-white">Your Journal</h5>
             {% for review in user_reviews %}
             <div class="b-card p-4 mb-3 bg-dark border border-subtle rounded-3 hover-lift transition-all">
                 <div class="d-flex justify-content-between mb-2">
@@ -351,6 +351,77 @@
             </div>
             {% endfor %}
         </div>
+
+        <!-- =========================================================
+             NOVA SEÇÃO: COMMUNITY REVIEWS
+             ========================================================= -->
+        <div class="mb-5">
+            <h5 class="fw-bold font-heading mb-3 text-white border-top border-secondary border-opacity-25 pt-4 d-flex justify-content-between align-items-center">
+                <span>Community Reviews</span>
+                {% if community_reviews %}
+                <span class="badge bg-dark border border-subtle text-muted fw-normal">{{ community_reviews.count }}</span>
+                {% endif %}
+            </h5>
+
+            <div class="d-flex flex-column gap-3">
+                {% for review in community_reviews %}
+                <div class="d-flex gap-3 bg-dark border border-subtle rounded-3 p-3">
+                    <!-- Avatar Column -->
+                    <div class="flex-shrink-0 text-center">
+                        <img src="{{ review.user.profile.avatar_url|default:'https://ui-avatars.com/api/?background=random&name='|add:review.user.username }}" 
+                             class="rounded-circle border border-secondary" width="40" height="40">
+                    </div>
+
+                    <!-- Content Column -->
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div>
+                                <h6 class="mb-0 text-white fw-bold small">{{ review.user.username }}</h6>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if review.rating %}
+                                    <div class="d-flex text-warning" style="font-size: 0.65rem;">
+                                        {% for i in "12345" %}
+                                            <i data-lucide="star" size="10" fill="{% if forloop.counter <= review.rating %}currentColor{% else %}none{% endif %}"></i>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <span class="text-muted" style="font-size: 0.65rem;">{{ review.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Likes (Placeholder Visual) -->
+                            <div class="d-flex align-items-center gap-1 text-muted small">
+                                <i data-lucide="heart" size="12"></i>
+                                <span style="font-size: 0.7rem;">{{ review.likes_count }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Review Text (Spoiler Protected) -->
+                        <div class="text-light opacity-90 small lh-sm">
+                            {% if review.contains_spoilers %}
+                                <div class="p-2 bg-black rounded border border-danger border-opacity-25 text-danger small fst-italic">
+                                    <i data-lucide="eye-off" size="12" class="me-1"></i> Spoiler hidden. 
+                                    <span class="text-muted text-decoration-underline cursor-pointer">Click to reveal</span>
+                                </div>
+                            {% else %}
+                                <div class="text-truncate-3-lines">
+                                    {{ review.text_html|safe|truncatewords_html:30 }}
+                                </div>
+                                {% if review.text|length > 150 %}
+                                <a href="#" class="small text-muted text-decoration-none">Read more</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 border border-dashed border-subtle rounded text-muted small opacity-50">
+                    No reviews from the community yet.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
     </div>
 
     <!-- =========================================================
@@ -369,7 +440,6 @@
         <div class="mb-4">
             <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">DLCs & Addons</label>
             <div class="list-group list-group-flush rounded border border-subtle">
-                <!-- Mostra apenas contagem por enquanto pois temos apenas IDs -->
                 <div class="list-group-item bg-dark text-muted small py-2">
                     <i data-lucide="package" size="12" class="me-1"></i>
                     {{ master.dlcs|length }} items linked via IGDB
@@ -378,7 +448,7 @@
         </div>
         {% endif %}
         
-        <!-- Similar Games (Placeholder Logic) -->
+        <!-- Similar Games -->
         {% if master.similar_games %}
         <div class="mb-4">
             <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Similar Games</label>
@@ -388,7 +458,7 @@
         </div>
         {% endif %}
 
-        <!-- Price Widget (Placeholder) -->
+        <!-- Price Widget -->
         <div class="b-card border-success border-opacity-25 bg-success bg-opacity-5 position-relative overflow-hidden rounded-3 p-3">
             <div class="position-absolute top-0 end-0 p-1">
                  <span class="badge bg-success text-white" style="font-size: 0.6rem;">DEAL</span>
@@ -499,11 +569,16 @@
 <style>
     .hover-white:hover { color: white !important; }
     .bg-card { background-color: #1a1a1a; }
-    /* Utilitário para Scrollbar em galerias */
     .custom-scrollbar::-webkit-scrollbar { height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #1a1a1a; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #666; }
+    .text-truncate-3-lines {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
 </style>
 
 {% endblock %}

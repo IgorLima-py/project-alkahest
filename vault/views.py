@@ -182,11 +182,13 @@ def game_detail_view(request, game_id):
     pct = (len(unlocked_ids) / total_ach * 100) if total_ach > 0 else 0
 
     user_reviews = Review.objects.filter(user=request.user, library_entry=entry).order_by('-created_at')
+    community_reviews = Review.objects.filter(library_entry__platform_game__master_game=master).exclude(user=request.user).select_related('user__profile').order_by('-likes_count', '-created_at')[:10]
     tips = sorted(list(GameTip.objects.filter(master_game=master)), key=lambda t: t.score(), reverse=True)
     user_lists = GameList.objects.filter(user=request.user).order_by('-updated_at')
 
     context = {
         'entry': entry, 'master': master, 'platform': entry.platform_game.platform,
+        'community_reviews': community_reviews,
         'total_achievements': total_ach, 'unlocked_achievements': len(unlocked_ids),
         'percentage': pct, 'unlocked_ids': set(unlocked_ids),
         'user_reviews': user_reviews, 'tips': tips, 'user_lists': user_lists
