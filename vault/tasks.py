@@ -1,5 +1,7 @@
 from celery import shared_task
+import csv
 import uuid
+import io
 from django.contrib.auth.models import User
 from allauth.socialaccount.models import SocialAccount
 from decouple import config
