@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-u3sytmum_ro&3y6*at3ub!o++z8ey0+&pw--sojh4-y^wq8(%n'
+SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -76,7 +76,7 @@ SOCIALACCOUNT_PROVIDERS = {
     'steam': {
         'APP': {
             'client_id': '12345', # Não usado pela Steam, mas requerido pelo formato
-            'secret': 'SUA_API_KEY_AQUI', # Coloque sua API Key no .env e puxe com config()
+            'secret': config('STEAM_API_KEY'), 
             'key': ''
         }
     }
