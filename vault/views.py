@@ -155,20 +155,37 @@ def game_detail_view(request, game_id):
             return redirect('game_detail', game_id=game_id)
 
         if 'create_review' in request.POST:
-            # USAR O FORM PARA SANITIZAR!
-            form = ReviewForm(request.POST) 
+            # Instancia o form com os dados do POST
+            form = ReviewForm(request.POST)
+            
             if form.is_valid():
                 review = form.save(commit=False)
                 review.user = request.user
                 review.library_entry = entry
-                review.playtime_at_review = entry.playtime_minutes
-                review.save() # Aqui o nh3 do Model entra em ação tbm
                 
-                # Atualiza rating da entry
-                if review.rating:
-                    entry.rating = review.rating
-                    entry.save()
-            return redirect('game_detail', game_id=game_id)
+                # Snapshot do tempo de jogo no momento da review
+                review.playtime_at_review = entry.playtime_minutes
+                
+                review.save() # Salva a Review
+                
+                # Atualiza a nota e o status na Library Entry também
+                entry.rating = review.rating
+                
+                # Se o usuário mudou o status no modal, atualiza aqui
+                new_status = form.cleaned_data.get('status') # Atenção: 'status' não é campo do Review, precisamos tratar separado se ele vier no POST mas não no Form
+                # CORREÇÃO: O campo 'status' está no HTML mas não no ReviewForm (ele é do UserLibraryEntry).
+                # Pegamos 'status' direto do request.POST
+                status_val = request.POST.get('status')
+                if status_val:
+                    entry.status = status_val
+                
+                entry.save()
+                
+                print("✅ Review Salva com Sucesso!")
+                return redirect('game_detail', game_id=game_id)
+            else:
+                # DEBUG: Isso vai mostrar no terminal porque não salvou
+                print("❌ Erro no Form:", form.errors)
 
         if 'create_tip' in request.POST:
             GameTip.objects.create(user=request.user, master_game=master, text=request.POST.get('tip_text'))
