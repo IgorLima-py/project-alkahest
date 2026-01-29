@@ -1,44 +1,46 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from allauth.account.views import LoginView as AllauthLoginView # Importação da View Híbrida (Email/User)
 from django_ratelimit.decorators import ratelimit
 from vault import views
-from vault.views import set_language_view, notifications_check_view, notifications_mark_read_view
-
+from vault.views import set_language_view
 
 urlpatterns = [
     # ==========================================
-    # ADMIN & AUTH
+    # ADMIN & CONFIG
     # ==========================================
     path('admin/', admin.site.urls),
 
-    # --- I18N ---
+    # --- I18N (Troca de Idioma) ---
     path('i18n/set/', set_language_view, name='set_language'),
-    
-    # Allauth (Steam, Social Login)
-    #path('accounts/', include('allauth.urls')), 
 
-    # Login Customizado com Rate Limit (10 tentativas por hora por IP)
-    # Protege contra Bruteforce Attack
+    # ==========================================
+    # AUTHENTICATION (ALLAUTH + CUSTOM)
+    # ==========================================
+    # Rotas padrão do Allauth (Necessário para Steam, Signup, Password Reset)
+    # CRÍTICO: Isso ativa as tags {% provider_login_url %} e {% url 'account_signup' %}
+    path('accounts/', include('allauth.urls')),
+
+    # Login Customizado (Sobrescreve a rota padrão com Rate Limit e Template Dark)
+    # Usamos AllauthLoginView para garantir que o formulário aceite "Username ou Email"
     path('login/', ratelimit(key='ip', rate='10/h', block=True)(
-    auth_views.LoginView.as_view(template_name='account/login.html') 
-), name='login'),
+        AllauthLoginView.as_view(template_name='account/login.html')
+    ), name='login'),
 
+    # Logout (Simples)
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    
-    
-
 
     # ==========================================
     # CORE DASHBOARD
     # ==========================================
-    path('', views.dashboard_view, name='dashboard'), 
-    
+    path('', views.dashboard_view, name='dashboard'),
+
     # ==========================================
     # BIBLIOTECA & JOGOS
     # ==========================================
     path('library/', views.library_view, name='library'),
-    path('add/', views.add_game_view, name='add_game'), # "add" vem antes de IDs dinâmicos por segurança
+    path('add/', views.add_game_view, name='add_game'), # "add" antes de IDs dinâmicos
     
     # Detalhe do Jogo (UUID)
     path('game/<uuid:game_id>/', views.game_detail_view, name='game_detail'),
@@ -47,29 +49,26 @@ urlpatterns = [
     path('library/entry/edit/<uuid:entry_id>/', views.edit_library_entry_view, name='edit_library_entry'),
 
     # ==========================================
-    # PERFIL & CONFIGURAÇÕES (LGPD)
+    # PERFIL & SETTINGS (LGPD)
     # ==========================================
     path('profile/', views.profile_view, name='profile'),
-    
-    # Configurações de Dados (LGPD) - Rotas Novas
-    path('settings/export/', views.request_export_view, name='request_export'), # Dispara a task de exportar
-    path('settings/delete/', views.delete_account_view, name='delete_account'), # Soft delete da conta
+    path('settings/export/', views.request_export_view, name='request_export'), # Task Async
+    path('settings/delete/', views.delete_account_view, name='delete_account'), # Soft Delete
 
     # ==========================================
     # REVIEWS & TIPS (CRUD)
     # ==========================================
     path('review/edit/<uuid:review_id>/', views.edit_review_view, name='edit_review'),
     path('review/delete/<uuid:review_id>/', views.delete_review_view, name='delete_review'),
-    
+
     path('tip/edit/<uuid:tip_id>/', views.edit_tip_view, name='edit_tip'),
     path('tip/delete/<uuid:tip_id>/', views.delete_tip_view, name='delete_tip'),
 
     # ==========================================
     # LISTAS (USER LISTS)
     # ==========================================
-    # Ordem: Específicas (create) antes das Dinâmicas (uuid)
     path('lists/', views.my_lists_view, name='my_lists'),
-    path('lists/create/', views.create_list_view, name='create_list'), 
+    path('lists/create/', views.create_list_view, name='create_list'),
     path('lists/<uuid:list_id>/', views.list_detail_view, name='list_detail'),
     path('lists/add/<uuid:game_id>/', views.add_to_list_view, name='add_to_list'),
 
@@ -86,6 +85,5 @@ urlpatterns = [
     # ==========================================
     path('api/notifications/check/', views.notifications_check_view, name='notifications_check'),
     path('api/notifications/read/', views.notifications_mark_read_view, name='notifications_read'),
-    path('i18n/set/', views.set_language_view, name='set_language'),
     path('api/sync/steam/', views.trigger_steam_sync_view, name='trigger_steam_sync'),
 ]

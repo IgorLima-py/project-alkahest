@@ -41,11 +41,26 @@
                 </div>
 
                 <!-- FORM (COM AS 3 CORREÇÕES) -->
-                <form method="post" action="{% url 'account_login' %}" class="d-flex flex-column gap-3">
+                <form method="post" action="" class="d-flex flex-column gap-3">
                     {% csrf_token %}
                     
+                    <!-- EXIBIR ERROS DE LOGIN (Senha errada, etc) -->
+                    {% if form.errors %}
+                        <div class="alert alert-danger py-2 small">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
                     <div>
-                        <label class="form-label small fw-bold text-muted ms-1">USUÁRIO</label>
+                        <label class="form-label small fw-bold text-muted ms-1">USUÁRIO OU EMAIL</label>
+                        <!-- O name='login' é fundamental para o Allauth Híbrido -->
                         <input type="text" name="login" placeholder="Username ou Email" class="form-control bg-dark text-white border-secondary py-2 rounded-3" required>
                     </div>
                     
