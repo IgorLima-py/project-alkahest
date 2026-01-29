@@ -331,42 +331,65 @@ def enrich_library_task():
 
 @shared_task
 def export_user_data_task(user_id):
-    """Gera dump JSON e salva no Storage (Local ou S3)"""
+    """
+    Gera um arquivo ZIP contendo CSVs da Biblioteca e Reviews.
+    Formato amigável para Excel/Google Sheets.
+    """
     try:
         user = User.objects.get(id=user_id)
         
-        data = {
-            'profile': {'username': user.username, 'date_joined': str(user.date_joined)},
-            'library': [],
-            'reviews': []
-        }
+        # 1. Preparar CSV da Biblioteca
+        lib_buffer = io.StringIO()
+        writer_lib = csv.writer(lib_buffer)
+        writer_lib.writerow(['Title', 'Platform', 'Status', 'Rating', 'Playtime (Minutes)', 'Last Played', 'Date Added'])
         
-        # Otimização: iterator() para não estourar memória se tiver mil jogos
-        for entry in UserLibraryEntry.objects.filter(user=user).select_related('platform_game__master_game'):
-            data['library'].append({
-                'game': entry.platform_game.master_game.title,
-                'status': entry.status,
-                'rating': entry.rating,
-                'playtime_minutes': entry.playtime_minutes
-            })
+        # Otimização: select_related para evitar N+1
+        library = UserLibraryEntry.objects.filter(user=user).select_related('platform_game__master_game', 'platform_game__platform')
+        
+        for entry in library:
+            writer_lib.writerow([
+                entry.platform_game.master_game.title,
+                entry.platform_game.platform.name,
+                entry.status,
+                entry.rating or '',
+                entry.playtime_minutes,
+                entry.last_played.strftime('%Y-%m-%d') if entry.last_played else '',
+                entry.last_synced.strftime('%Y-%m-%d')
+            ])
             
-        for review in Review.objects.filter(user=user):
-            data['reviews'].append({
-                'game': review.library_entry.platform_game.master_game.title,
-                'text': review.text,
-                'rating': review.rating,
-                'date': str(review.created_at)
-            })
-            
-        # Salva arquivo
-        file_content = json.dumps(data, indent=2)
-        filename = f"exports/user_{user_id}_{int(time.time())}.json"
-        path = default_storage.save(filename, ContentFile(file_content))
+        # 2. Preparar CSV de Reviews
+        rev_buffer = io.StringIO()
+        writer_rev = csv.writer(rev_buffer)
+        writer_rev.writerow(['Game', 'Date', 'Rating', 'Review Text', 'Recommended', 'Spoilers'])
         
-        return f"Export salvo em: {path}"
+        reviews = Review.objects.filter(user=user).select_related('library_entry__platform_game__master_game')
         
+        for rev in reviews:
+            writer_rev.writerow([
+                rev.library_entry.platform_game.master_game.title,
+                rev.created_at.strftime('%Y-%m-%d'),
+                rev.rating or '',
+                rev.text, # Texto original em Markdown
+                'Yes' if rev.is_recommended else 'No',
+                'Yes' if rev.contains_spoilers else 'No'
+            ])
+
+        # 3. Criar o ZIP em memória
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            zip_file.writestr(f'alkahest_library_{user.username}.csv', lib_buffer.getvalue())
+            zip_file.writestr(f'alkahest_reviews_{user.username}.csv', rev_buffer.getvalue())
+        
+        # 4. Salvar no Storage
+        filename = f"exports/{user.username}_export_{int(time.time())}.zip"
+        path = default_storage.save(filename, ContentFile(zip_buffer.getvalue()))
+        
+        return f"Export CSV/ZIP salvo em: {path}"
+
     except User.DoesNotExist:
         return "User not found"
+    except Exception as e:
+        return f"Erro no export: {str(e)}"
 
 @shared_task
 def delete_user_account_task(user_id):

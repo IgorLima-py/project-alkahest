@@ -461,11 +461,51 @@ def trigger_steam_sync_view(request):
 
 
 @login_required
-@ratelimit(key='user', rate='1/h', block=True) # 1 export por hora
+@ratelimit(key='user', rate='50/h', block=True) # Aumentei para 10/h para você testar sem travar
 def request_export_view(request):
-    export_user_data_task.delay(request.user.id)
-    # Em HTMX ou AJAX, retornaria um toast. Aqui um redirect simples.
-    return redirect('profile')
+    user = request.user
+    
+    # 1. Preparar CSV da Biblioteca
+    lib_buffer = io.StringIO()
+    writer_lib = csv.writer(lib_buffer)
+    writer_lib.writerow(['Title', 'Platform', 'Status', 'Rating', 'Playtime (Min)', 'Last Played'])
+    
+    library = UserLibraryEntry.objects.filter(user=user).select_related('platform_game__master_game', 'platform_game__platform')
+    for entry in library:
+        writer_lib.writerow([
+            entry.platform_game.master_game.title,
+            entry.platform_game.platform.name,
+            entry.status,
+            entry.rating or '',
+            entry.playtime_minutes,
+            str(entry.last_played or '')
+        ])
+        
+    # 2. Preparar CSV de Reviews
+    rev_buffer = io.StringIO()
+    writer_rev = csv.writer(rev_buffer)
+    writer_rev.writerow(['Game', 'Date', 'Rating', 'Review Text', 'Recommended'])
+    
+    reviews = Review.objects.filter(user=user).select_related('library_entry__platform_game__master_game')
+    for rev in reviews:
+        writer_rev.writerow([
+            rev.library_entry.platform_game.master_game.title,
+            rev.created_at.strftime('%Y-%m-%d'),
+            rev.rating or '',
+            rev.text,
+            'Yes' if rev.is_recommended else 'No'
+        ])
+
+    # 3. Zipar tudo em Bytes
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        zip_file.writestr(f'alkahest_library.csv', lib_buffer.getvalue())
+        zip_file.writestr(f'alkahest_reviews.csv', rev_buffer.getvalue())
+    
+    # 4. Retornar como Download
+    response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename="alkahest_export_{user.username}_{int(time.time())}.zip"'
+    return response
 
 @login_required
 def delete_account_view(request):

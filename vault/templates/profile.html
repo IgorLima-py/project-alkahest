@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load static %}
 
 {% block content %}
-<!-- === PROFILE HEADER (Refatorado) === -->
+<!-- === PROFILE HEADER === -->
 <div class="position-relative mb-4">
     <!-- Banner com Gradiente Suave -->
     <div style="height: 250px; background: linear-gradient(180deg, rgba(76, 29, 149, 1) 0%, rgba(9, 9, 11, 1) 100%); border-bottom: 1px solid var(--border-subtle); border-radius: 0 0 24px 24px;"></div>
@@ -11,10 +12,11 @@
         <div class="d-flex flex-column align-items-center text-center">
             <!-- Avatar com Borda e Nível -->
             <div class="position-relative mb-3 group">
-                <img src="{{ user.profile.avatar_url|default:'https://ui-avatars.com/api/?name='|add:user.username }}" 
+                <!-- Fallback para UI Avatars se não tiver imagem -->
+                <img src="{{ user.profile.avatar_url|default:'https://ui-avatars.com/api/?background=random&name='|add:user.username }}" 
                      class="rounded-circle shadow-lg bg-dark cursor-pointer transition-transform hover-scale" 
                      width="140" height="140" 
-                     style="border: 6px solid var(--bg-body);">
+                     style="border: 6px solid var(--bg-body); object-fit: cover;">
                 
                 <span class="position-absolute bottom-0 start-50 translate-middle-x badge bg-dark border border-warning text-warning rounded-pill px-3 py-1 shadow-lg mt-2 fw-bold font-monospace" style="bottom: -10px;">
                     LVL {{ current_level|default:"1" }}
@@ -25,46 +27,68 @@
             <h1 class="display-5 fw-bold text-white mb-1 font-heading d-flex align-items-center justify-content-center gap-2">
                 {{ user.username }}
                 {% if user.is_staff %}
-                <!-- TAG PRO DOURADA (Item 16) -->
+                <!-- TAG PRO DOURADA -->
                 <span class="badge bg-warning text-dark border border-warning shadow-sm fw-bold fs-6" 
                       style="background: linear-gradient(45deg, #FFD700, #DAA520); color: #422006 !important; text-shadow: 0px 1px 0px rgba(255,255,255,0.4);">
                     PRO
                 </span>
                 {% endif %}
             </h1>
-            <p class="text-muted mb-3 fst-italic" style="max-width: 500px;">"{{ user.profile.bio|default:'Just another digital traveler.' }}"</p>
+            <p class="text-muted mb-3 fst-italic" style="max-width: 500px;">
+                "{{ user.profile.bio|default:'Just another digital traveler.' }}"
+            </p>
             
             <!-- Stats Pills -->
             <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
                 <div class="badge bg-dark border border-subtle text-light fw-normal p-2 px-3">
-                    <span class="fw-bold text-white">{{ total_games }}</span> Games
+                    <span class="fw-bold text-white">{{ total_games|default:"0" }}</span> Games
                 </div>
                 <div class="badge bg-dark border border-subtle text-light fw-normal p-2 px-3">
-                    <span class="fw-bold text-white">{{ achievements_count }}</span> Achievements
+                    <span class="fw-bold text-white">{{ achievements_count|default:"0" }}</span> Achievements
                 </div>
                 <div class="badge bg-dark border border-subtle text-light fw-normal p-2 px-3">
-                    <span class="fw-bold text-accent-primary">{{ total_xp|intcomma }}</span> XP
+                    <span class="fw-bold text-accent-primary">{{ total_xp|default:"0"|intcomma }}</span> XP
                 </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="d-flex gap-2 align-items-center">
-                <!-- BOTÃO SYNC (Novo) -->
-                <!-- hx-post: Chama a URL sem recarregar a tela -->
-                <!-- hx-swap="outerHTML": Substitui o botão pelo HTML que o servidor devolver (spinner) -->
+                <!-- BOTÃO SYNC (HTMX) -->
                 <button class="btn btn-sm btn-outline-warning text-warning d-flex align-items-center gap-2"
                         hx-post="{% url 'trigger_steam_sync' %}" 
                         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                         hx-swap="outerHTML">
                     <i data-lucide="refresh-cw" size="16"></i> 
-                    <span>Sync</span>
+                    <span>Sync Steam</span>
                 </button>
 
-
-                <button class="btn btn-sm btn-outline-secondary text-white hover-white d-flex align-items-center gap-2">
-                    <i data-lucide="settings" size="16"></i> Config
-                </button>
+                <!-- DROPDOWN CONFIG (LGPD INTEGRADO) -->
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary text-white hover-white d-flex align-items-center gap-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i data-lucide="settings" size="16"></i> Config
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark shadow-lg border-secondary">
+                        <li><h6 class="dropdown-header text-uppercase small fw-bold">Privacidade & Dados</h6></li>
+                        
+                        <!-- Ação: Exportar Dados -->
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'request_export' %}">
+                                <i data-lucide="download" size="14"></i> Baixar meus dados (ZIP/CSV)
+                            </a>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider border-secondary"></li>
+                        
+                        <!-- Ação: Deletar Conta (Trigger Modal) -->
+                        <li>
+                            <button class="dropdown-item text-danger d-flex align-items-center gap-2 fw-bold" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                                <i data-lucide="trash-2" size="14"></i> Excluir Conta
+                            </button>
+                        </li>
+                    </ul>
+                </div>
                 
+                <!-- Botão Visual de Edição (Placeholder para Fase 5) -->
                 <button class="btn btn-sm btn-primary fw-bold shadow-lg bg-gradient-to-r from-accent-primary to-purple-600 border-0">
                     Edit Profile
                 </button>
@@ -152,8 +176,36 @@
                  <span class="badge bg-dark border border-subtle text-white">{{ stat.count }}</span>
              </div>
              {% empty %}
-             <span class="text-muted small">No platform data.</span>
+             <span class="text-muted small">No platform data available.</span>
              {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- === MODAL DELEÇÃO DE CONTA (LGPD) === -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border border-danger">
+            <div class="modal-header border-danger border-opacity-25">
+                <h5 class="modal-title text-danger fw-bold">Zona de Perigo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i data-lucide="alert-triangle" size="48" class="text-danger mb-3"></i>
+                <h4 class="text-white fw-bold">Tem certeza?</h4>
+                <p class="text-muted mb-4">
+                    Essa ação vai deletar sua biblioteca, histórico de preços e anonimizar suas reviews. <br>
+                    <strong>Essa ação não pode ser desfeita.</strong>
+                </p>
+                
+                <form action="{% url 'delete_account' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-3">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger fw-bold">Sim, deletar minha conta</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -162,6 +214,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // Inicializa Lucide Icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
         const ctx = document.getElementById('radarChart');
         if (ctx) {
             new Chart(ctx, {
@@ -171,11 +228,11 @@
                     datasets: [{
                         label: 'Stats',
                         data: [
-                            {{ profile.stat_volume }}, 
-                            {{ profile.stat_skill }}, 
-                            {{ profile.stat_variety }}, 
-                            {{ profile.stat_social }}, 
-                            {{ profile.stat_speed }}
+                            {{ user.profile.stat_volume|default:0 }}, 
+                            {{ user.profile.stat_skill|default:0 }}, 
+                            {{ user.profile.stat_variety|default:0 }}, 
+                            {{ user.profile.stat_social|default:0 }}, 
+                            {{ user.profile.stat_speed|default:0 }}
                         ],
                         backgroundColor: 'rgba(124, 58, 237, 0.2)',
                         borderColor: '#7c3aed',
