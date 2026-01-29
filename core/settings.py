@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import dj_database_url
 from decouple import config 
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -135,3 +137,35 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+
+# ==========================================
+# CACHE & REDIS CONFIGURATION
+# ==========================================
+# Se não tiver Redis local rodando, vai falhar. Garanta que o serviço está up.
+# Em produção, usaremos a variável REDIS_URL.
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1')
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            # Ignora erros de conexão para não derrubar o site se o cache cair
+            'IGNORE_EXCEPTIONS': True, 
+        }
+    }
+}
+
+# ==========================================
+# CELERY CONFIGURATION
+# ==========================================
+CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE  # Usa o mesmo do Django
+
+# Retry de conexão na inicialização do worker
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True

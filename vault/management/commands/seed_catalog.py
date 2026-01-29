@@ -1,141 +1,113 @@
 # vault/management/commands/seed_catalog.py
 import sys
+import requests
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from vault.models import Store, GameStoreLink
+from vault.models import Store, GameStoreLink, MasterGame
 from vault.services import _process_and_save_game
-from vault.utils_igdb import igdb_api_request, IGDBError
+from vault.utils_igdb import get_igdb_token, CLIENT_ID, BASE_URL
 
 class Command(BaseCommand):
-    help = 'Popula o catálogo buscando os jogos mais populares do IGDB dinamicamente.'
-
-    # Mapeamento Oficial IGDB (external_games.category) -> Slug da sua Loja
-    IGDB_CATEGORY_MAP = {
-        1: 'steam',
-        5: 'gog',
-        26: 'epic-games',
-        # PSN/Xbox via external_games são instáveis, mantemos PC por enquanto
-    }
+    help = 'Seed em 2 Etapas: IDs Primeiro (Leve), Detalhes Depois (Pesado).'
 
     def add_arguments(self, parser):
-        parser.add_argument('--amount', type=int, default=50, help='Quantidade de jogos para importar')
-        parser.add_argument('--offset', type=int, default=0, help='Pular os primeiros N jogos (útil para continuar de onde parou)')
-
-    def _ensure_stores_exist(self):
-        """Garante que as lojas existam no DB antes de linkar"""
-        stores_data = [
-            {'slug': 'steam', 'name': 'Steam', 'igdb_id': 1},
-            {'slug': 'gog', 'name': 'GOG.com', 'igdb_id': 5},
-            {'slug': 'epic-games', 'name': 'Epic Games Store', 'igdb_id': 26},
-            {'slug': 'xbox', 'name': 'Microsoft Store', 'igdb_id': 11},
-            {'slug': 'playstation', 'name': 'PlayStation Store', 'igdb_id': 36},
-        ]
-        created_count = 0
-        for s in stores_data:
-            obj, created = Store.objects.get_or_create(
-                slug=s['slug'],
-                defaults={'name': s['name'], 'igdb_category_id': s['igdb_id']}
-            )
-            if created: created_count += 1
-        
-        if created_count > 0:
-            self.stdout.write(self.style.SUCCESS(f"Lojas inicializadas: {created_count} criadas."))
+        parser.add_argument('--amount', type=int, default=10)
+        parser.add_argument('--offset', type=int, default=0)
 
     def handle(self, *args, **options):
-        total_amount = options['amount']
-        current_offset = options['offset']
-        batch_size = 50 # IGDB aceita até 500, mas 50 é mais seguro para processar sem estourar memória
+        amount = options['amount']
+        offset = options['offset']
+        token = get_igdb_token()
         
-        self._ensure_stores_exist()
+        if not token: return
+
+        # 1. Configura Lojas (Steam, PSN, etc)
+        active_stores = {}
+        for s in [{'slug': 'steam', 'id': 1}, {'slug': 'gog', 'id': 5}, 
+                  {'slug': 'epic', 'id': 26}, {'slug': 'xbox', 'id': 11}, 
+                  {'slug': 'psn', 'id': 36}]:
+            obj, _ = Store.objects.get_or_create(slug=s['slug'], defaults={'igdb_category_id': s['id'], 'name': s['slug'].upper()})
+            active_stores[s['id']] = obj
+
+        headers = {'Client-ID': CLIENT_ID, 'Authorization': f'Bearer {token}', 'Accept': 'application/json'}
+
+        # ==============================================================================
+        # ETAPA 1: Conseguir apenas os IDs (Operação Ultra Leve)
+        # ==============================================================================
+        self.stdout.write("--- 1. Obtendo IDs dos Jogos Populares ---")
         
-        # Carrega lojas em memória para acesso rápido
-        active_stores = {
-            s.igdb_category_id: s 
-            for s in Store.objects.filter(igdb_category_id__in=self.IGDB_CATEGORY_MAP.keys())
-        }
-
-        self.stdout.write(f"--- INICIANDO SEED: Top {total_amount} Jogos (Offset: {current_offset}) ---")
-
-        fields = (
-            "name, slug, status, category, parent_game, "
-            "summary, storyline, first_release_date, "
-            "cover.url, screenshots.url, artworks.url, videos.video_id, "
-            "involved_companies.company.name, involved_companies.developer, involved_companies.publisher, "
-            "game_engines.name, "
-            "genres.name, themes.name, game_modes.name, player_perspectives.name, "
-            "collection.name, franchises.name, similar_games, dlcs, "
-            "language_supports.language.name, language_supports.language_support_type.name, "
-            "websites.url, websites.category, "
-            "external_games.category, external_games.uid" # CRUCIAL para preços
+        # Pedimos APENAS o ID. Isso o IGDB consegue ordenar sem travar.
+        body_ids = (
+            f"fields id; " 
+            f"where category = 0 & themes != (42); " # Sem Erotica
+            f"sort follows desc; " 
+            f"limit {amount}; "
+            f"offset {offset};"
         )
-
-        processed_count = 0
-
-        while processed_count < total_amount:
-            # Calcula o tamanho do batch atual (pode ser menor na última iteração)
-            fetch_limit = min(batch_size, total_amount - processed_count)
+        
+        resp = requests.post(f"{BASE_URL}/games", headers=headers, data=body_ids)
+        
+        if resp.status_code != 200:
+            self.stdout.write(self.style.ERROR(f"Erro ao pegar IDs: {resp.text}"))
+            return
             
-            # Query IGDB: Ordena por seguidores (proxy de popularidade)
-            # category = 0 garante que pegamos apenas "Main Games" (evita DLCs soltas por enquanto)
-            body = (
-                f"fields {fields}; "
-                f"where category = 0 & themes != (42); " # themes!=42 remove Erotica
-                f"sort follows desc; " 
-                f"limit {fetch_limit}; "
-                f"offset {current_offset};"
-            )
+        id_list_data = resp.json()
+        if not id_list_data:
+            self.stdout.write(self.style.ERROR("Nenhum ID retornado. O offset pode estar muito alto."))
+            return
 
-            try:
-                self.stdout.write(f"Baixando batch: {fetch_limit} jogos (Offset: {current_offset})...")
-                games_data = igdb_api_request('games', body)
-                
-                if not games_data:
-                    self.stdout.write(self.style.WARNING("IGDB não retornou mais dados. Fim da lista."))
-                    break
+        # Transforma em lista simples: [1020, 1942, 333, ...]
+        target_ids = [str(item['id']) for item in id_list_data]
+        ids_str = ",".join(target_ids)
+        
+        self.stdout.write(self.style.SUCCESS(f"-> IDs Capturados: {len(target_ids)}"))
 
-                # Processamento Atômico por Jogo (Se um falhar, não quebra o script todo)
-                for game_data in games_data:
-                    try:
-                        with transaction.atomic():
-                            # 1. Salva o MasterGame (Usa sua função do services.py)
-                            master_game, created = _process_and_save_game(game_data)
+        # ==============================================================================
+        # ETAPA 2: O Método "Original" (Busca por ID Específico)
+        # ==============================================================================
+        self.stdout.write("--- 2. Baixando Detalhes (Igual ao seu script original) ---")
+
+        # Agora usamos a query pesada, mas segura porque filtramos por ID
+        fields = (
+            "name, slug, total_rating_count, category, summary, storyline, "
+            "cover.url, screenshots.url, artworks.url, "
+            "genres.name, themes.name, first_release_date, "
+            "external_games.uid, external_games.category" # <--- O QUE IMPORTA
+        )
+        
+        body_details = f"fields {fields}; where id = ({ids_str}); limit {amount};"
+        
+        resp_details = requests.post(f"{BASE_URL}/games", headers=headers, data=body_details)
+        games_data = resp_details.json()
+
+        # ==============================================================================
+        # ETAPA 3: Salvar
+        # ==============================================================================
+        count_new = 0
+        count_links = 0
+        
+        with transaction.atomic():
+            for game in games_data:
+                try:
+                    # Salva MasterGame
+                    master, created = _process_and_save_game(game)
+                    if created: count_new += 1
+                    
+                    # Salva Links
+                    if 'external_games' in game:
+                        for ext in game['external_games']:
+                            cat = ext.get('category')
+                            uid = ext.get('uid')
                             
-                            # 2. Cria Links de Loja (Apenas para as lojas que mapeamos)
-                            links_created = 0
-                            external_games = game_data.get('external_games', [])
-                            if external_games:
-                                for ext in external_games:
-                                    cat_id = ext.get('category')
-                                    uid = ext.get('uid')
-                                    
-                                    # Se a categoria do IGDB bater com uma das nossas lojas mapeadas
-                                    if cat_id in active_stores and uid:
-                                        store_obj = active_stores[cat_id]
-                                        
-                                        # Cria o Link
-                                        _, link_created = GameStoreLink.objects.update_or_create(
-                                            master_game=master_game,
-                                            store=store_obj,
-                                            defaults={'external_id': uid} # UID da Steam/Epic/GOG
-                                        )
-                                        if link_created: links_created += 1
+                            if cat in active_stores and uid:
+                                _, link_created = GameStoreLink.objects.update_or_create(
+                                    master_game=master,
+                                    store=active_stores[cat],
+                                    external_id=uid
+                                )
+                                if link_created: count_links += 1
+                                
+                except Exception as e:
+                    print(f"Erro {game.get('name')}: {e}")
 
-                            # Feedback visual discreto
-                            status_char = "+" if created else "."
-                            if links_created > 0: status_char += f"[{links_created}L]"
-                            self.stdout.write(status_char, ending="")
-                            sys.stdout.flush()
-
-                    except Exception as e:
-                        self.stdout.write(self.style.ERROR(f"\nErro no jogo {game_data.get('name')}: {e}"))
-
-                # Atualiza contadores
-                processed_count += len(games_data)
-                current_offset += len(games_data)
-                self.stdout.write("") # Quebra de linha após os pontinhos
-
-            except IGDBError as e:
-                self.stdout.write(self.style.ERROR(f"Erro Crítico na API: {e}"))
-                break
-
-        self.stdout.write(self.style.SUCCESS(f"\n--- CONCLUÍDO! {processed_count} jogos processados. ---"))
+        self.stdout.write(self.style.SUCCESS(f"Fim! {count_new} jogos criados, {count_links} links gerados."))

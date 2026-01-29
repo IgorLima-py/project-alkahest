@@ -90,10 +90,14 @@ def _sanitize_heavy(name):
 
 # Função de Processamento (Mantida igual mas sem a request dentro)
 def _process_and_save_game(data):
-    # ... (Copie a sua função _process_and_save_game original para cá, ela está perfeita)
-    # ... Apenas certifique-se que ela usa o MasterGame importado lá em cima
-    
-    # [Vou resumir a parte que não muda para economizar espaço, mas você deve manter tudo]
+    # --- CORREÇÃO OBRIGATÓRIA AQUI ---
+    # Se data for uma lista (ex: [{...}]), pegamos o primeiro item.
+    if isinstance(data, list):
+        if not data: return None, False # Lista vazia, sai fora
+        data = data[0] # Transforma lista em dicionário
+    # ---------------------------------
+
+    # Agora data é um dicionário {}, então .get() vai funcionar!
     cover_url = 'https:' + data['cover']['url'].replace('t_thumb', 't_cover_big') if 'cover' in data else None
     
     artworks = ['https:' + img['url'].replace('t_thumb', 't_1080p') for img in data.get('artworks', [])]
