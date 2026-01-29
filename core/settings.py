@@ -42,13 +42,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
-    'django.contrib.sites',  # <-- Vírgula aqui
+    'django.contrib.sites',
 
     # Third-party
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.steam',  # <--- AQUI ESTAVA O ERRO (Faltava essa vírgula)
+
+    'allauth.socialaccount.providers.openid', 
+    'allauth.socialaccount.providers.steam',
 
     'vault',  # App do projeto
 ]
