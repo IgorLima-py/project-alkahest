@@ -54,10 +54,12 @@
                 <!-- hx-swap="outerHTML": Substitui o botão pelo HTML que o servidor devolver (spinner) -->
                 <button class="btn btn-sm btn-outline-warning text-warning d-flex align-items-center gap-2"
                         hx-post="{% url 'trigger_steam_sync' %}" 
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                         hx-swap="outerHTML">
                     <i data-lucide="refresh-cw" size="16"></i> 
                     <span>Sync</span>
                 </button>
+
 
                 <button class="btn btn-sm btn-outline-secondary text-white hover-white d-flex align-items-center gap-2">
                     <i data-lucide="settings" size="16"></i> Config
