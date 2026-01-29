@@ -581,10 +581,16 @@ def notifications_check_view(request):
     # Se o request for HTMX, podemos retornar um partial HTML do badge
     if request.headers.get('HX-Request'):
         if unread_count == 0:
-            return HttpResponse("") # Retorna nada para esconder o badge
-        return HttpResponse(f'<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unread_count}</span>')
-    
-    return HttpResponse(json.dumps({'unread': unread_count}), content_type='application/json')
+            return HttpResponse("") 
+        
+        # HTML FORÇANDO O VISUAL VERMELHO
+        html = f"""
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light">
+            {unread_count}
+            <span class="visually-hidden">unread messages</span>
+        </span>
+        """
+        return HttpResponse(html)
 
 @login_required
 def notifications_mark_read_view(request):
