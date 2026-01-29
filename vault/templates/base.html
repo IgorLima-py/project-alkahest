@@ -176,6 +176,32 @@
             <!-- User XP/Actions -->
             <div class="d-flex gap-3 align-items-center ms-auto">
                 {% if user.is_authenticated %}
+                
+                <!-- === NOTIFICATION BELL (NOVO) === -->
+                <!-- O hx-trigger dispara o polling a cada 30s -->
+                <div class="position-relative" 
+                     hx-get="{% url 'notifications_check' %}" 
+                     hx-trigger="load, every 30s" 
+                     hx-target="#notification-badge" 
+                     hx-swap="innerHTML">
+                    
+                    <a href="#" class="text-muted hover-white transition-colors p-1 d-block" data-bs-toggle="dropdown">
+                        <i data-lucide="bell" size="20"></i>
+                    </a>
+                    
+                    <!-- O Badge será injetado aqui pelo HTMX se houver notificações -->
+                    <span id="notification-badge"></span>
+                    
+                    <!-- Dropdown Placeholder (Fase 4 - Pode popular via HTMX depois) -->
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" style="width: 300px;">
+                        <li><h6 class="dropdown-header">Notificações</h6></li>
+                        <li><p class="text-center text-muted small py-3">Nenhuma notificação nova.</p></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item small text-center" href="#">Ver todas</a></li>
+                    </ul>
+                </div>
+                <!-- ============================ -->
+
                 <a href="{% url 'profile' %}" class="text-decoration-none">
                     <div class="xp-pill">
                         <img src="{% if user.profile.avatar_url %}{{ user.profile.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=7c3aed&color=fff{% endif %}" class="rounded-circle" width="32" height="32">
@@ -192,11 +218,13 @@
                 </a>
                 {% else %}
                 <!-- Botão Login caso não esteja logado -->
-                <a href="{% url 'login' %}" class="btn btn-sm btn-outline-light">Login</a>
+                <a href="{% url 'account_login' %}" class="btn btn-sm btn-outline-light">Login</a>
+                <a href="{% url 'account_signup' %}" class="btn btn-sm btn-primary">Sign Up</a>
                 {% endif %}
             </div>
         </header>
         {% endblock %}
+
 
         <!-- ONDE O CONTEÚDO DAS PÁGINAS ENTRA -->
         <div class="p-3 p-md-4 mx-auto w-100" style="max-width: 1600px;">

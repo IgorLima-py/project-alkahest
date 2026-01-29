@@ -13,6 +13,8 @@ from django.http import HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
 from django.views.decorators.http import require_POST
 from django_ratelimit.decorators import ratelimit
+from django.utils.translation import activate
+from django.conf import settings
 from itertools import chain
 from core.celery import app
 import json
@@ -25,7 +27,7 @@ from .forms import ReviewForm, UserLibraryEntryForm, GameTipForm
 from .models import (
     UserLibraryEntry, UserAchievement, Review, GameTip, TipVote, 
     GameList, GameListItem, MasterGame, Platform, PlatformGame,
-    UserProfile, UserFollow, User, 
+    UserProfile, UserFollow, User, Notification
 )
 
 from .tasks import sync_steam_library_task, delete_user_account_task, export_user_data_task
@@ -539,3 +541,55 @@ def delete_account_view(request):
         logout(request)
         return redirect('login')
     return render(request, 'settings/delete_confirm.html')
+
+# ==========================================
+# BLOCO 10: API & UTILS (Addendum Fase 4)
+# ==========================================
+
+@login_required
+def set_language_view(request):
+    """
+    Endpoint para trocar idioma via POST/HTMX.
+    Salva na sessão e no perfil (se existir).
+    """
+    lang_code = request.POST.get('language')
+    next_url = request.POST.get('next', '/')
+    
+    if lang_code and lang_code in dict(settings.LANGUAGES).keys():
+        activate(lang_code)
+        request.session[settings.LANGUAGE_COOKIE_NAME] = lang_code
+        
+        # Persistência no Perfil (se você adicionou o campo sugerido anteriormente)
+        if hasattr(request.user, 'profile'):
+            request.user.profile.language_preference = lang_code
+            request.user.profile.save(update_fields=['language_preference'])
+            
+    response = redirect(next_url)
+    response.set_cookie(settings.LANGUAGE_COOKIE_NAME, lang_code)
+    return response
+
+@login_required
+def notifications_check_view(request):
+    """
+    Endpoint leve para Polling (HTMX).
+    Retorna apenas JSON com count para atualizar o badge.
+    """
+    # Performance: count() é mais rápido que carregar objetos
+    # O indice composto [recipient, is_read] criado no model garante O(1) aqui.
+    unread_count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+    
+    # Se o request for HTMX, podemos retornar um partial HTML do badge
+    if request.headers.get('HX-Request'):
+        if unread_count == 0:
+            return HttpResponse("") # Retorna nada para esconder o badge
+        return HttpResponse(f'<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unread_count}</span>')
+    
+    return HttpResponse(json.dumps({'unread': unread_count}), content_type='application/json')
+
+@login_required
+def notifications_mark_read_view(request):
+    """Marca tudo como lido ao abrir o dropdown"""
+    if request.method == "POST":
+        Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+        return HttpResponse("OK")
+    return HttpResponse(status=405)

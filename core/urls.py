@@ -1,14 +1,19 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from django_ratelimit.decorators import ratelimit # <--- Necessário pip install django-ratelimit
+from django_ratelimit.decorators import ratelimit
 from vault import views
+from vault.views import set_language_view, notifications_check_view, notifications_mark_read_view
+
 
 urlpatterns = [
     # ==========================================
     # ADMIN & AUTH
     # ==========================================
     path('admin/', admin.site.urls),
+
+    # --- I18N ---
+    path('i18n/set/', set_language_view, name='set_language'),
     
     # Allauth (Steam, Social Login)
     path('accounts/', include('allauth.urls')), 
@@ -21,6 +26,9 @@ urlpatterns = [
 
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     
+    
+
+
     # ==========================================
     # CORE DASHBOARD
     # ==========================================
@@ -76,5 +84,8 @@ urlpatterns = [
     # ==========================================
     # API / ASYNC ACTIONS
     # ==========================================
+    path('api/notifications/check/', views.notifications_check_view, name='notifications_check'),
+    path('api/notifications/read/', views.notifications_mark_read_view, name='notifications_read'),
+    path('i18n/set/', views.set_language_view, name='set_language'),
     path('api/sync/steam/', views.trigger_steam_sync_view, name='trigger_steam_sync'),
 ]

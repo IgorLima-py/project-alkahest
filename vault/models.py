@@ -3,6 +3,8 @@ from django.db import models
 from django.contrib.auth.models import User
 import markdown
 import nh3
+from django.utils.translation import gettext_lazy as _
+
 
 # ==========================================
 # BLOCO 1: PERFIL DO USUÁRIO
@@ -359,3 +361,43 @@ class PriceHistory(models.Model):
         ]
         verbose_name_plural = "Price Histories"
         ordering = ['-timestamp']
+
+
+# ==========================================
+# BLOCO 11: SISTEMA DE NOTIFICAÇÕES (Fase 4)
+# ==========================================
+
+class NotificationType(models.TextChoices):
+    SYSTEM = 'system', _('Sistema')
+    SOCIAL_FOLLOW = 'follow', _('Novo Seguidor')
+    SOCIAL_LIKE = 'like', _('Curtida')
+    PRICE_ALERT = 'price', _('Alerta de Preço')
+    GAME_RELEASE = 'release', _('Lançamento')
+
+class Notification(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', db_index=True)
+    
+    # Tipo para permitir filtragem e ícones diferentes no front
+    notification_type = models.CharField(
+        max_length=20, 
+        choices=NotificationType.choices, 
+        default=NotificationType.SYSTEM
+    )
+    
+    title = models.CharField(max_length=255) # Ex: "Elden Ring está em promoção!"
+    message = models.TextField(blank=True)   # Ex: "Desconto de 50% na Steam."
+    link_url = models.CharField(max_length=500, blank=True) # Ação ao clicar (HTMX target)
+    
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            # Índice composto crítico para performance do badge (count unread)
+            models.Index(fields=['recipient', 'is_read']),
+        ]
+
+    def __str__(self):
+        return f"{self.recipient.username} - {self.get_notification_type_display()}"
