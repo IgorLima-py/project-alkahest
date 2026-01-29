@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="container-fluid d-flex align-items-center justify-content-center" style="min-height: 100vh; position: fixed; top: 0; left: 0; background-color: var(--bg-body); z-index: 2000;">
+    <div class="row justify-content-center w-100">
+        <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+            
+            <div class="text-center mb-5">
+                <h1 class="font-heading fw-bold text-white mb-2">Quase lá...</h1>
+                <p class="text-muted">Confirme seu usuário para finalizar.</p>
+            </div>
+
+            <div class="p-4 bg-black border border-secondary rounded-4 shadow-lg">
+                <p class="text-white small mb-4">
+                    Você autenticou com <strong>{{ account.get_provider.name }}</strong> com sucesso. 
+                    Escolha como quer ser chamado no Alkahest:
+                </p>
+
+                <form class="signup d-flex flex-column gap-3" id="signup_form" method="post" action="{% url 'socialaccount_signup' %}">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger small py-2">
+                            {{ form.non_field_errors }}
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <div>{{ field.label }}: {{ error }}</div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div>
+                        <label class="form-label small fw-bold text-muted ms-1">NOME DE USUÁRIO</label>
+                        <!-- Renderização manual do campo username para manter estilo -->
+                        <input type="text" name="username" value="{{ form.username.value|default:'' }}" class="form-control bg-dark text-white border-secondary py-2 rounded-3" required>
+                        <div class="form-text text-muted small mt-1">{{ form.username.help_text }}</div>
+                    </div>
+
+                    <!-- Campos ocultos necessários (email, etc) -->
+                    {% for field in form %}
+                        {% if field.name != 'username' %}
+                            {{ field.as_hidden }}
+                        {% endif %}
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-primary fw-bold py-2 rounded-3 mt-3" style="background: var(--accent-primary); border: none;">
+                        FINALIZAR CADASTRO &raquo;
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

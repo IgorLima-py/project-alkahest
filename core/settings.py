@@ -58,9 +58,12 @@ SOCIALACCOUNT_ADAPTER = 'vault.adapters.AlkahestSocialAdapter'
 
 # --- Allauth Configuration (Cadastro Híbrido Seguro) ---
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_EMAIL_REQUIRED = True
 
 # CORREÇÃO: Adicione o asterisco (*) para indicar obrigatoriedade
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*'] 
