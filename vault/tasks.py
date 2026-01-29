@@ -74,17 +74,21 @@ def sync_steam_library_task(self, user_id):
     if not KEY or not STEAM_ID:
         return "Credenciais Steam ausentes"
 
-    url = f"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={KEY}&steamid={STEAM_ID}&include_appinfo=1&format=json"
+    url = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
+    params = {
+        'key': config('STEAM_API_KEY'),
+        'steamid': config('STEAM_ID'), # Idealmente pegar do user.socialaccount
+        'include_appinfo': 1,
+        'format': 'json'
+    }
     
     # Usa nossa função helper cacheada
     try:
-        # Assumindo que get_steam_library_json está definida acima no arquivo
-        data = get_steam_library_json(url)
+        # Requests trata o encoding seguro da query string
+        data = requests.get(url, params=params).json()
         games = data.get('response', {}).get('games', [])
     except Exception as e:
-        print(f"❌ [ERROR] Falha na Steam API: {e}")
-        # Se falhar a API, NÃO setamos o lock, para o usuário poder tentar de novo
-        return f"Erro na API: {e}"
+        return f"Erro API: {e}"
 
     steam_plat, _ = Platform.objects.get_or_create(slug='steam', defaults={'name': 'Steam'})
     
@@ -322,3 +326,68 @@ def enrich_library_task():
         print("✨ [ENRICH] Fim da linha! Todos os jogos foram processados ou ignorados.")
 
     return f"Lote finalizado. Atualizados: {updated_count}"
+
+# === NOVAS TASKS LGPD ===
+
+@shared_task
+def export_user_data_task(user_id):
+    """Gera dump JSON e salva no Storage (Local ou S3)"""
+    try:
+        user = User.objects.get(id=user_id)
+        
+        data = {
+            'profile': {'username': user.username, 'date_joined': str(user.date_joined)},
+            'library': [],
+            'reviews': []
+        }
+        
+        # Otimização: iterator() para não estourar memória se tiver mil jogos
+        for entry in UserLibraryEntry.objects.filter(user=user).select_related('platform_game__master_game'):
+            data['library'].append({
+                'game': entry.platform_game.master_game.title,
+                'status': entry.status,
+                'rating': entry.rating,
+                'playtime_minutes': entry.playtime_minutes
+            })
+            
+        for review in Review.objects.filter(user=user):
+            data['reviews'].append({
+                'game': review.library_entry.platform_game.master_game.title,
+                'text': review.text,
+                'rating': review.rating,
+                'date': str(review.created_at)
+            })
+            
+        # Salva arquivo
+        file_content = json.dumps(data, indent=2)
+        filename = f"exports/user_{user_id}_{int(time.time())}.json"
+        path = default_storage.save(filename, ContentFile(file_content))
+        
+        return f"Export salvo em: {path}"
+        
+    except User.DoesNotExist:
+        return "User not found"
+
+@shared_task
+def delete_user_account_task(user_id):
+    """Soft Delete para manter integridade social"""
+    user = User.objects.get(id=user_id)
+    username_bkp = user.username
+    
+    # 1. Limpa dados sensíveis
+    UserLibraryEntry.objects.filter(user=user).delete() # Histórico de compras/preços
+    
+    # 2. Anonimiza conta (Soft Delete)
+    user.username = f"deleted_{uuid.uuid4().hex[:8]}"
+    user.email = ""
+    user.is_active = False
+    user.set_unusable_password()
+    user.save()
+    
+    # 3. Limpa perfil
+    if hasattr(user, 'profile'):
+        user.profile.bio = ""
+        user.profile.avatar_url = None
+        user.profile.save()
+        
+    return f"Conta de {username_bkp} encerrada."

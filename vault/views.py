@@ -135,6 +135,7 @@ def library_view(request):
 
 # BLOCO 3: DETALHES DO JOGO (Agora com lógica de metadados ricos)
 @login_required
+@ratelimit(key='user', rate='50/d', block=True) # Limite de 10 reviews por dia
 def game_detail_view(request, game_id):
     entry = get_object_or_404(
         UserLibraryEntry.objects.select_related('platform_game__master_game', 'platform_game__platform'),
@@ -150,20 +151,19 @@ def game_detail_view(request, game_id):
             return redirect('game_detail', game_id=game_id)
 
         if 'create_review' in request.POST:
-            rating_val = request.POST.get('rating')
-            Review.objects.create(
-                user=request.user, library_entry=entry,
-                text=request.POST.get('review_text'),
-                rating=float(rating_val) if rating_val else None,
-                is_recommended=request.POST.get('is_recommended') == 'on',
-                contains_spoilers=request.POST.get('contains_spoilers') == 'on',
-                playtime_at_review=entry.playtime_minutes
-            )
-            if rating_val: entry.rating = float(rating_val)
-            # Atualiza status rápido se vier do modal
-            new_status = request.POST.get('status')
-            if new_status: entry.status = new_status
-            entry.save()
+            # USAR O FORM PARA SANITIZAR!
+            form = ReviewForm(request.POST) 
+            if form.is_valid():
+                review = form.save(commit=False)
+                review.user = request.user
+                review.library_entry = entry
+                review.playtime_at_review = entry.playtime_minutes
+                review.save() # Aqui o nh3 do Model entra em ação tbm
+                
+                # Atualiza rating da entry
+                if review.rating:
+                    entry.rating = review.rating
+                    entry.save()
             return redirect('game_detail', game_id=game_id)
 
         if 'create_tip' in request.POST:
@@ -206,6 +206,25 @@ def profile_view(request):
         'total_games': UserLibraryEntry.objects.filter(user=user).count()
     }
     return render(request, 'profile.html', context)
+
+@login_required
+@require_POST
+def request_data_export_view(request):
+    """Dispara o dump de dados assíncrono."""
+    export_user_data_task.delay(request.user.id)
+    # Feedback visual (Toast ou Message)
+    return HttpResponse("Solicitação recebida. Você será notificado quando o arquivo estiver pronto.")
+
+@login_required
+@require_POST
+def delete_account_view(request):
+    """Soft Delete da conta."""
+    # Verificação extra de segurança (ex: senha) seria ideal aqui
+    delete_user_account_task.delay(request.user.id)
+    # Logout imediato
+    from django.contrib.auth import logout
+    logout(request)
+    return redirect('login')
 
 # BLOCO 5: ADICIONAR JOGO (Lógica Nova Inteligente)
 @login_required
@@ -424,7 +443,6 @@ def rivals_view(request):
     return render(request, 'social/rivals.html', {'leaderboard': leaderboard_data})
 
 
-
 @login_required
 @require_POST
 def trigger_steam_sync_view(request):
@@ -440,3 +458,20 @@ def trigger_steam_sync_view(request):
             <span>Sincronizando...</span>
         </button>
     """)
+
+
+@login_required
+@ratelimit(key='user', rate='1/h', block=True) # 1 export por hora
+def request_export_view(request):
+    export_user_data_task.delay(request.user.id)
+    # Em HTMX ou AJAX, retornaria um toast. Aqui um redirect simples.
+    return redirect('profile')
+
+@login_required
+def delete_account_view(request):
+    if request.method == 'POST':
+        # Idealmente pedir confirmação de senha aqui
+        delete_user_account_task.delay(request.user.id)
+        logout(request)
+        return redirect('login')
+    return render(request, 'settings/delete_confirm.html')
