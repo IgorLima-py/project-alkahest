@@ -1,4 +1,5 @@
 from celery import shared_task
+import uuid
 from django.contrib.auth.models import User
 from allauth.socialaccount.models import SocialAccount
 from decouple import config
@@ -397,7 +398,7 @@ def delete_user_account_task(user_id):
     print(f"💀 [DELETE] Iniciando exclusão do User ID {user_id}")
     try:
         user = User.objects.get(id=user_id)
-        
+
         SocialAccount.objects.filter(user=user).delete()
         
         # 1. Limpeza da Biblioteca (Mantendo Reviews)

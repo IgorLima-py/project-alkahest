@@ -73,7 +73,11 @@
 </div>
 
 <div class="mt-auto pt-3 border-top border-subtle">
-    <a href="{% url 'logout' %}" class="nav-link-custom text-danger opacity-75 hover-opacity-100">
-        <i data-lucide="log-out" size="18"></i> Logout
-    </a>
+    <form action="{% url 'logout' %}" method="post" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-link text-danger text-decoration-none p-0 d-flex align-items-center gap-2">
+            <i data-lucide="log-out" size="20"></i>
+            <span>Sair</span>
+        </button>
+    </form>
 </div>
