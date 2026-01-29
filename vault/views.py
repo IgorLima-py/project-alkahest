@@ -1,4 +1,8 @@
 # BLOCO 0: IMPORTAÇÕES
+import io
+import csv
+import zipfile
+import time
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import F, Q, Sum, Count, Case, When, Value, FloatField, CharField
