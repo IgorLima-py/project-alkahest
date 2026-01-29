@@ -198,6 +198,7 @@
                         <li><p class="text-center text-muted small py-3">Nenhuma notificação nova.</p></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item small text-center" href="#">Ver todas</a></li>
+                        <li><button class="dropdown-item text-success" hx-post="{% url 'notifications_read' %}" hx-swap="none">Marcar todas como lida</button></li>
                     </ul>
                 </div>
                 <!-- ============================ -->
