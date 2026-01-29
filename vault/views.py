@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
 from django.views.decorators.http import require_POST
+from django_ratelimit.decorators import ratelimit
 from itertools import chain
 from core.celery import app
 import json
@@ -411,25 +412,15 @@ def rivals_view(request):
     following_ids = list(UserFollow.objects.filter(follower=request.user).values_list('target_id', flat=True))
     following_ids.append(request.user.id)
     
-    leaderboard_data = []
-    # Busca perfis com otimização
-    profiles = UserProfile.objects.filter(user_id__in=following_ids).select_related('user')
-    
-    for profile in profiles:
-        total_xp = UserAchievement.objects.filter(user=profile.user).aggregate(Sum('achievement__xp_value'))['achievement__xp_value__sum'] or 0
-        
-        # Correção do Erro B: Calcular nível aqui no Python
-        level = 1 + int(total_xp / 1000) 
+    leaderboard_data = UserProfile.objects.filter(
+        user_id__in=following_ids
+    ).select_related('user').annotate(
+        total_xp=Sum('user__userachievement__achievement__xp_value', default=0),
+        games_completed=Count('user__library', filter=Q(user__library__status='completed'))
+    ).order_by('-total_xp')
 
-        leaderboard_data.append({
-            'user': profile.user,
-            'xp': total_xp,
-            'level': level, # Passando o nível pronto
-            'games_completed': UserLibraryEntry.objects.filter(user=profile.user, status='completed').count(),
-            'avatar': profile.avatar_url
-        })
-    
-    leaderboard_data.sort(key=lambda x: x['xp'], reverse=True)
+    # Ajuste no template: iterar direto sobre 'leaderboard_data'
+    # Nível pode ser calculado no template ou via property no Model (melhor)
     return render(request, 'social/rivals.html', {'leaderboard': leaderboard_data})
 
 
