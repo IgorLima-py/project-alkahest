@@ -75,6 +75,9 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 # Para desenvolvimento: Imprime emails no terminal
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+LOGOUT_REDIRECT_URL = 'login' # Ou 'dashboard' se quiser que caia na home pública
+
+
 # Provider Configuration
 SOCIALACCOUNT_PROVIDERS = {
     'steam': {

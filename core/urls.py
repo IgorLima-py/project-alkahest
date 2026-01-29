@@ -24,12 +24,12 @@ urlpatterns = [
 
     # Login Customizado (Sobrescreve a rota padrão com Rate Limit e Template Dark)
     # Usamos AllauthLoginView para garantir que o formulário aceite "Username ou Email"
-    path('login/', ratelimit(key='ip', rate='10/h', block=True)(
+    path('login/', ratelimit(key='ip', rate='100/h', block=True)(
         AllauthLoginView.as_view(template_name='account/login.html')
     ), name='login'),
 
     # Logout (Simples)
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
 
     # ==========================================
     # CORE DASHBOARD
