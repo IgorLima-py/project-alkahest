@@ -16,13 +16,13 @@ urlpatterns = [
     path('i18n/set/', set_language_view, name='set_language'),
     
     # Allauth (Steam, Social Login)
-    path('accounts/', include('allauth.urls')), 
+    #path('accounts/', include('allauth.urls')), 
 
     # Login Customizado com Rate Limit (10 tentativas por hora por IP)
     # Protege contra Bruteforce Attack
     path('login/', ratelimit(key='ip', rate='10/h', block=True)(
-        auth_views.LoginView.as_view(template_name='login.html')
-    ), name='login'),
+    auth_views.LoginView.as_view(template_name='account/login.html') 
+), name='login'),
 
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     

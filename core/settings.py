@@ -67,7 +67,7 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*'] 
 
 LOGIN_REDIRECT_URL = 'dashboard'
-LOGIN_URL = 'account_login'
+LOGIN_URL = '/login/'
 
 # Para desenvolvimento: Imprime emails no terminal
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
