@@ -178,27 +178,38 @@
                 {% if user.is_authenticated %}
                 
                 <!-- === NOTIFICATION BELL (NOVO) === -->
-                <!-- O hx-trigger dispara o polling a cada 30s -->
                 <div class="position-relative" 
-                     hx-get="{% url 'notifications_check' %}" 
-                     hx-trigger="load, every 30s" 
-                     hx-target="#notification-badge" 
-                     hx-swap="innerHTML">
-                    
+                    hx-get="{% url 'notifications_check' %}" 
+                    hx-trigger="load, every 30s" 
+                    hx-target="#notification-badge" 
+                    hx-swap="innerHTML">
+
                     <a href="#" class="text-muted hover-white transition-colors p-1 d-block" data-bs-toggle="dropdown">
                         <i data-lucide="bell" size="20"></i>
                     </a>
                     
-                    <!-- O Badge será injetado aqui pelo HTMX se houver notificações -->
-                    <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle"></span>
+                    <!-- Badge que é atualizado pelo HTMX -->
+                    <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light" style="display: none;"></span>
                     
-                    <!-- Dropdown Placeholder (Fase 4 - Pode popular via HTMX depois) -->
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" style="width: 300px;">
-                        <li><h6 class="dropdown-header">Notificações</h6></li>
-                        <li><p class="text-center text-muted small py-3">Nenhuma notificação nova.</p></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item small text-center" href="#">Ver todas</a></li>
-                        <li><button class="dropdown-item text-success" hx-post="{% url 'notifications_read' %}" hx-swap="none">Marcar todas como lida</button></li>
+                    <!-- Dropdown com Botão que FUNCIONA -->
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                        <li><h6 class="dropdown-header px-3 py-2">Notificações</h6></li>
+                        
+                        <!-- Botão que MARCA COMO LIDO -->
+                        <li>
+                            <button class="dropdown-item px-3 py-2 text-success fw-bold small"
+                                    hx-post="{% url 'notifications_read' %}"
+                                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                    hx-target="#notification-badge"
+                                    hx-swap="outerHTML"
+                                    hx-on::after-request="this.closest('.dropdown-menu').remove()">
+                                <i data-lucide="check-circle" size="14" class="me-2"></i>
+                                Marcar todas como lida
+                            </button>
+                        </li>
+                        
+                        <li><hr class="dropdown-divider mx-3"></li>
+                        <li><p class="px-3 small text-muted text-center">Nenhuma notificação nova.</p></li>
                     </ul>
                 </div>
                 <!-- ============================ -->

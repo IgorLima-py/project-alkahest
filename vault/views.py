@@ -592,10 +592,12 @@ def notifications_check_view(request):
         """
         return HttpResponse(html)
 
+
 @login_required
+@require_POST
 def notifications_mark_read_view(request):
     """Marca tudo como lido ao abrir o dropdown"""
-    if request.method == "POST":
-        Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
-        return HttpResponse("OK")
-    return HttpResponse(status=405)
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    
+    # Para o HTMX saber que deu certo
+    return HttpResponse("OK")
