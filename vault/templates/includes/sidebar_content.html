@@ -72,6 +72,36 @@
     </a>
 </div>
 
+<div class="d-flex justify-content-center gap-3 mb-3 pt-3">
+    <form action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+        <input name="language" type="hidden" value="pt-br">
+        <button type="submit" class="btn btn-link p-0 text-decoration-none grayscale-hover {% if LANGUAGE_CODE == 'pt-br' %}opacity-100{% else %}opacity-25{% endif %}" title="Português">
+            <span style="font-size: 1.2rem;">🇧🇷</span>
+        </button>
+    </form>
+
+    <form action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+        <input name="language" type="hidden" value="en">
+        <button type="submit" class="btn btn-link p-0 text-decoration-none grayscale-hover {% if LANGUAGE_CODE == 'en' %}opacity-100{% else %}opacity-25{% endif %}" title="English">
+            <span style="font-size: 1.2rem;">🇺🇸</span>
+        </button>
+    </form>
+    
+    <form action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+        <input name="language" type="hidden" value="es">
+        <button type="submit" class="btn btn-link p-0 text-decoration-none grayscale-hover {% if LANGUAGE_CODE == 'es' %}opacity-100{% else %}opacity-25{% endif %}" title="Español">
+            <span style="font-size: 1.2rem;">🇪🇸</span>
+        </button>
+    </form>
+</div>
+
+
 <div class="mt-auto pt-3 border-top border-subtle">
     <form action="{% url 'logout' %}" method="post" class="d-inline">
         {% csrf_token %}
