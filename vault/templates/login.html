@@ -1,32 +1,64 @@
 {% extends 'base.html' %}
+{% load socialaccount %}
+{% load static %}
+
+{# Remove Sidebar e Header para focar no Login #}
+{% block sidebar %}{% endblock %}
+{% block mobile_sidebar %}{% endblock %}
+{% block header %}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card bg-dark border-secondary p-4 shadow-lg">
-            <h3 class="text-center mb-4 text-warning fw-bold">Login no Alkahest</h3>
+<div class="d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="col-12 col-md-6 col-lg-5 col-xl-4">
+        
+        <!-- Brand -->
+        <div class="text-center mb-5">
+            <h1 class="font-heading fw-bold text-white mb-2" style="font-size: 2.5rem;">ALKA.GG</h1>
+            <p style="color: var(--text-muted);">Sua biblioteca, suas regras.</p>
+        </div>
+
+        <div class="p-4 p-md-5" style="background-color: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
             
-            <form method="post">
+            <!-- STEAM LOGIN -->
+            <div class="d-grid mb-4">
+                <a href="{% provider_login_url 'steam' %}" class="btn text-white d-flex align-items-center justify-content-center gap-3 py-3 position-relative overflow-hidden" 
+                   style="background: #171a21; border: 1px solid #2a475e; transition: all 0.2s;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11.979 0C5.666 0 .548 4.909.022 11.12l4.417 6.458 1.955-1.955a3.738 3.738 0 0 1-.362-1.637C6.032 11.912 7.7 10.25 9.775 10.25c2.071 0 3.75 1.668 3.75 3.725 0 1.25-.625 2.362-1.579 3.06l1.967 1.968A11.93 11.93 0 0 0 23.979 12c0-6.627-5.373-12-12-12z"/></svg>
+                    <span class="fw-bold font-heading" style="letter-spacing: 0.05em;">LOGIN COM STEAM</span>
+                </a>
+            </div>
+
+            <div class="d-flex align-items-center mb-4">
+                <hr class="flex-grow-1" style="border-color: var(--border-subtle);">
+                <span class="px-3 small text-uppercase fw-bold" style="color: var(--text-muted); font-size: 0.7rem;">Ou continue com e-mail</span>
+                <hr class="flex-grow-1" style="border-color: var(--border-subtle);">
+            </div>
+
+            <!-- MANUAL FORM -->
+            <form method="post" class="d-flex flex-column gap-3">
                 {% csrf_token %}
                 
-                <div class="mb-3">
-                    <label class="form-label text-muted">Usuário</label>
-                    <input type="text" name="username" class="form-control bg-secondary text-light border-0" required autofocus>
+                {% if form.errors %}
+                <div class="alert alert-danger bg-danger bg-opacity-10 border border-danger text-danger py-2 small rounded-3">
+                    Credenciais inválidas. Tente novamente.
+                </div>
+                {% endif %}
+
+                <div>
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Usuário</label>
+                    <input type="text" name="username" class="form-control bg-body text-white border-0 py-2" style="background-color: var(--bg-body) !important;" required>
                 </div>
                 
-                <div class="mb-4">
-                    <label class="form-label text-muted">Senha</label>
-                    <input type="password" name="password" class="form-control bg-secondary text-light border-0" required>
+                <div>
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Senha</label>
+                    <input type="password" name="password" class="form-control bg-body text-white border-0 py-2" style="background-color: var(--bg-body) !important;" required>
                 </div>
 
-                {% if form.errors %}
-                    <div class="alert alert-danger py-2 small">
-                        Usuário ou senha incorretos.
-                    </div>
-                {% endif %}
-                
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-warning fw-bold text-dark">ENTRAR</button>
+                <div class="d-grid mt-2">
+                    <button type="submit" class="btn text-white fw-bold py-2" 
+                            style="background: var(--accent-primary); box-shadow: 0 0 20px var(--accent-glow);">
+                        ENTRAR
+                    </button>
                 </div>
             </form>
         </div>

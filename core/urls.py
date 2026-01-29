@@ -12,7 +12,7 @@ urlpatterns = [
 
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-
+    
     # Core
     path('', views.dashboard_view, name='dashboard'), 
     path('library/', views.library_view, name='library'),
@@ -20,6 +20,9 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('add/', views.add_game_view, name='add_game'),
     path('export/', views.export_data_view, name='export_data'),
+    
+    # API / ACTIONS
+    path('api/sync/steam/', views.trigger_steam_sync_view, name='trigger_steam_sync'),
     
     # Discovery (Fase 2)
     path('discovery/', views.discovery_view, name='discovery'),
@@ -41,4 +44,6 @@ urlpatterns = [
     path('lists/create/', views.create_list_view, name='create_list'),
     path('lists/<uuid:list_id>/', views.list_detail_view, name='list_detail'),
     path('lists/add/<uuid:game_id>/', views.add_to_list_view, name='add_to_list'),
+
+    
 ]

@@ -48,9 +48,24 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-secondary text-white hover-white"><i data-lucide="settings" size="16"></i> Config</button>
-                <button class="btn btn-sm btn-primary fw-bold shadow-lg bg-gradient-to-r from-accent-primary to-purple-600 border-0">Edit Profile</button>
+            <div class="d-flex gap-2 align-items-center">
+                <!-- BOTÃO SYNC (Novo) -->
+                <!-- hx-post: Chama a URL sem recarregar a tela -->
+                <!-- hx-swap="outerHTML": Substitui o botão pelo HTML que o servidor devolver (spinner) -->
+                <button class="btn btn-sm btn-outline-warning text-warning d-flex align-items-center gap-2"
+                        hx-post="{% url 'trigger_steam_sync' %}" 
+                        hx-swap="outerHTML">
+                    <i data-lucide="refresh-cw" size="16"></i> 
+                    <span>Sync</span>
+                </button>
+
+                <button class="btn btn-sm btn-outline-secondary text-white hover-white d-flex align-items-center gap-2">
+                    <i data-lucide="settings" size="16"></i> Config
+                </button>
+                
+                <button class="btn btn-sm btn-primary fw-bold shadow-lg bg-gradient-to-r from-accent-primary to-purple-600 border-0">
+                    Edit Profile
+                </button>
             </div>
         </div>
     </div>

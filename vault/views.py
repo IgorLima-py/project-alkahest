@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.http import HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
+from django.views.decorators.http import require_POST
 from itertools import chain
 import json
 import uuid
@@ -17,8 +18,10 @@ from .forms import ReviewForm, UserLibraryEntryForm, GameTipForm
 from .models import (
     UserLibraryEntry, UserAchievement, Review, GameTip, TipVote, 
     GameList, GameListItem, MasterGame, Platform, PlatformGame,
-    UserProfile, UserFollow, User
+    UserProfile, UserFollow, User, 
 )
+
+from .tasks import sync_steam_library_task
 
 # Services (A Nova Camada Inteligente)
 from .services import fetch_and_update_game
@@ -428,6 +431,22 @@ def rivals_view(request):
     leaderboard_data.sort(key=lambda x: x['xp'], reverse=True)
     return render(request, 'social/rivals.html', {'leaderboard': leaderboard_data})
 
+
+# BLOCO 10: ASYNC TASKS & API TRIGGERS
+@login_required
+@require_POST
+def trigger_steam_sync_view(request):
+    """Dispara a task de sync via AJAX/HTMX"""
+    user_id = request.user.id
     
-    leaderboard_data.sort(key=lambda x: x['xp'], reverse=True)
-    return render(request, 'social/rivals.html', {'leaderboard': leaderboard_data})
+    # Chama a task (O Rate Limit do Celery/Redis vai proteger isso aqui)
+    task = sync_steam_library_task.delay(user_id)
+    
+    # Retorna feedback visual para o botão (HTMX swap)
+    return HttpResponse(f"""
+        <button class="btn btn-outline-secondary btn-sm" disabled>
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Sincronizando...
+        </button>
+    """)
+    
