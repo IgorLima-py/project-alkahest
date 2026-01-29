@@ -1,5 +1,6 @@
 from celery import shared_task
 from django.contrib.auth.models import User
+from allauth.socialaccount.models import SocialAccount
 from decouple import config
 import requests
 import time
@@ -393,24 +394,58 @@ def export_user_data_task(user_id):
 
 @shared_task
 def delete_user_account_task(user_id):
-    """Soft Delete para manter integridade social"""
-    user = User.objects.get(id=user_id)
-    username_bkp = user.username
-    
-    # 1. Limpa dados sensíveis
-    UserLibraryEntry.objects.filter(user=user).delete() # Histórico de compras/preços
-    
-    # 2. Anonimiza conta (Soft Delete)
-    user.username = f"deleted_{uuid.uuid4().hex[:8]}"
-    user.email = ""
-    user.is_active = False
-    user.set_unusable_password()
-    user.save()
-    
-    # 3. Limpa perfil
-    if hasattr(user, 'profile'):
-        user.profile.bio = ""
-        user.profile.avatar_url = None
-        user.profile.save()
+    print(f"💀 [DELETE] Iniciando exclusão do User ID {user_id}")
+    try:
+        user = User.objects.get(id=user_id)
+        
+        SocialAccount.objects.filter(user=user).delete()
+        
+        # 1. Limpeza da Biblioteca (Mantendo Reviews)
+        for entry in UserLibraryEntry.objects.filter(user=user):
+            if entry.reviews.exists():
+                entry.playtime_minutes = 0
+                entry.last_played = None
+                entry.status = 'dropped'
+                entry.rating = None
+                entry.is_favorite = False
+                entry.save()
+            else:
+                entry.delete()
+        
+        # 2. Anonimização do Usuário (CRÍTICO)
+        # Usamos hex randomico para garantir que não bata com nenhum email existente
+        anon_token = uuid.uuid4().hex[:12]
+        
+        old_username = user.username
+        user.username = f"deleted_{anon_token}"
+        
+        # Truque: Usar um email inválido/dummy que com certeza é único
+        user.email = f"{anon_token}@deleted.local" 
+        
+        user.first_name = ""
+        user.last_name = ""
+        user.is_active = False
+        user.set_unusable_password()
+        
+        # Removemos relações sociais se existirem
+        user.groups.clear()
+        user.user_permissions.clear()
+        
+        # 3. Salva a alteração
+        user.save()
+        print(f"✅ [DELETE] Usuário {old_username} renomeado para {user.username}")
+
+        # 4. Limpeza do Perfil (Se existir)
+        if hasattr(user, 'profile'):
+            user.profile.bio = "Deleted User"
+            user.profile.avatar_url = None
+            user.profile.save()
+            
+        return f"Sucesso: {old_username} virou {user.username}"
+
+    except Exception as e:
+        # Se der erro, printa para descobrirmos
+        print(f"❌ [DELETE ERROR] Falha ao deletar: {str(e)}")
+        return f"Erro: {str(e)}"
         
     return f"Conta de {username_bkp} encerrada."
