@@ -27,7 +27,7 @@ from .models import (
     UserProfile, UserFollow, User, 
 )
 
-from .tasks import sync_steam_library_task
+from .tasks import sync_steam_library_task, delete_user_account_task, export_user_data_task
 
 # Services (A Nova Camada Inteligente)
 from .services import fetch_and_update_game
