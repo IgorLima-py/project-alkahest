@@ -64,7 +64,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Adapter customizado que vamos criar
-ACCOUNT_ADAPTER = 'vault.adapters.AlkahestSocialAdapter'
+SOCIALACCOUNT_ADAPTER = 'vault.adapters.AlkahestSocialAdapter'
 
 # Configuração Steam (Sem e-mail verification forçado pois Steam não retorna e-mail confiavelmente as vezes)
 ACCOUNT_EMAIL_VERIFICATION = "none" 

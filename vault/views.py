@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
 from django.views.decorators.http import require_POST
 from itertools import chain
+from core.celery import app
 import json
 import uuid
 
@@ -432,21 +433,19 @@ def rivals_view(request):
     return render(request, 'social/rivals.html', {'leaderboard': leaderboard_data})
 
 
-# BLOCO 10: ASYNC TASKS & API TRIGGERS
+
 @login_required
 @require_POST
 def trigger_steam_sync_view(request):
-    """Dispara a task de sync via AJAX/HTMX"""
     user_id = request.user.id
     
-    # Chama a task (O Rate Limit do Celery/Redis vai proteger isso aqui)
-    task = sync_steam_library_task.delay(user_id)
+    # Manda o Celery buscar a task pelo nome (string)
+    # Isso evita o erro de "function object"
+    app.send_task('vault.tasks.sync_steam_library_task', args=[user_id])
     
-    # Retorna feedback visual para o botão (HTMX swap)
     return HttpResponse(f"""
-        <button class="btn btn-outline-secondary btn-sm" disabled>
-            <span class="spinner-border spinner-border-sm me-2"></span>
-            Sincronizando...
+        <button class="btn btn-sm btn-outline-warning text-warning d-flex align-items-center gap-2 opacity-75" disabled>
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <span>Sincronizando...</span>
         </button>
     """)
-    

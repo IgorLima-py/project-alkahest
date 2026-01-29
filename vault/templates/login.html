@@ -8,59 +8,66 @@
 {% block header %}{% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-center" style="min-height: 80vh;">
-    <div class="col-12 col-md-6 col-lg-5 col-xl-4">
-        
-        <!-- Brand -->
-        <div class="text-center mb-5">
-            <h1 class="font-heading fw-bold text-white mb-2" style="font-size: 2.5rem;">ALKA.GG</h1>
-            <p style="color: var(--text-muted);">Sua biblioteca, suas regras.</p>
-        </div>
-
-        <div class="p-4 p-md-5" style="background-color: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+<!-- CONTAINER FULL SCREEN CENTRALIZADO -->
+<div class="container-fluid d-flex align-items-center justify-content-center" style="min-height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; background-color: var(--bg-body); z-index: 2000;">
+    
+    <div class="row justify-content-center w-100">
+        <div class="col-12 col-md-6 col-lg-4 col-xl-3">
             
-            <!-- STEAM LOGIN -->
-            <div class="d-grid mb-4">
-                <a href="{% provider_login_url 'steam' %}" class="btn text-white d-flex align-items-center justify-content-center gap-3 py-3 position-relative overflow-hidden" 
-                   style="background: #171a21; border: 1px solid #2a475e; transition: all 0.2s;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11.979 0C5.666 0 .548 4.909.022 11.12l4.417 6.458 1.955-1.955a3.738 3.738 0 0 1-.362-1.637C6.032 11.912 7.7 10.25 9.775 10.25c2.071 0 3.75 1.668 3.75 3.725 0 1.25-.625 2.362-1.579 3.06l1.967 1.968A11.93 11.93 0 0 0 23.979 12c0-6.627-5.373-12-12-12z"/></svg>
-                    <span class="fw-bold font-heading" style="letter-spacing: 0.05em;">LOGIN COM STEAM</span>
-                </a>
+            <!-- Brand -->
+            <div class="text-center mb-5">
+                <h1 class="font-heading fw-bold text-white mb-2" style="font-size: 3rem;">ALKA.GG</h1>
+                <p style="color: var(--text-muted);">Sua biblioteca, suas regras.</p>
             </div>
 
-            <div class="d-flex align-items-center mb-4">
-                <hr class="flex-grow-1" style="border-color: var(--border-subtle);">
-                <span class="px-3 small text-uppercase fw-bold" style="color: var(--text-muted); font-size: 0.7rem;">Ou continue com e-mail</span>
-                <hr class="flex-grow-1" style="border-color: var(--border-subtle);">
+            <div class="p-4 p-md-5 bg-black border border-secondary rounded-4 shadow-lg position-relative overflow-hidden">
+                
+                <!-- STEAM LOGIN -->
+                <div class="d-grid mb-4">
+                    <a href="{% provider_login_url 'steam' %}" class="btn btn-lg text-white d-flex align-items-center justify-content-center gap-3 py-3 w-100" 
+                    style="background: #171a21; border: 1px solid #2a475e; transition: all 0.2s;">
+                        <!-- SVG Limpo e Padronizado -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-steam" viewBox="0 0 16 16">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+                        </svg>
+                        <span class="fw-bold small">LOGIN COM STEAM</span>
+                    </a>
+                </div>
+
+                <div class="d-flex align-items-center mb-4">
+                    <hr class="flex-grow-1 border-secondary">
+                    <span class="px-3 small text-muted fw-bold">OU EMAIL</span>
+                    <hr class="flex-grow-1 border-secondary">
+                </div>
+
+                <!-- FORM -->
+                <form method="post" class="d-flex flex-column gap-3">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label class="form-label small fw-bold text-muted ms-1">USUÁRIO</label>
+                        <input type="text" name="username" class="form-control bg-dark text-white border-secondary py-2 rounded-3" required>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label small fw-bold text-muted ms-1">SENHA</label>
+                        <input type="password" name="password" class="form-control bg-dark text-white border-secondary py-2 rounded-3" required>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary fw-bold py-2 rounded-3" 
+                                style="background: var(--accent-primary); border: none;">
+                            ENTRAR NA CONTA
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="#" class="text-muted text-decoration-none small hover-white">Criar nova conta</a>
             </div>
 
-            <!-- MANUAL FORM -->
-            <form method="post" class="d-flex flex-column gap-3">
-                {% csrf_token %}
-                
-                {% if form.errors %}
-                <div class="alert alert-danger bg-danger bg-opacity-10 border border-danger text-danger py-2 small rounded-3">
-                    Credenciais inválidas. Tente novamente.
-                </div>
-                {% endif %}
-
-                <div>
-                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Usuário</label>
-                    <input type="text" name="username" class="form-control bg-body text-white border-0 py-2" style="background-color: var(--bg-body) !important;" required>
-                </div>
-                
-                <div>
-                    <label class="form-label small fw-bold text-muted text-uppercase mb-1">Senha</label>
-                    <input type="password" name="password" class="form-control bg-body text-white border-0 py-2" style="background-color: var(--bg-body) !important;" required>
-                </div>
-
-                <div class="d-grid mt-2">
-                    <button type="submit" class="btn text-white fw-bold py-2" 
-                            style="background: var(--accent-primary); box-shadow: 0 0 20px var(--accent-glow);">
-                        ENTRAR
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 </div>

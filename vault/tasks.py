@@ -41,7 +41,7 @@ def get_ra_progress_json(url):
 # ==========================================
 # STEAM TASKS
 # ==========================================
-shared_task(bind=True)
+@shared_task(bind=True, name='vault.tasks.sync_steam_library_task') # <--- FORCE O NOME AQUI
 def sync_steam_library_task(self, user_id):
     print(f"🏁 [START] Iniciando Sync Steam para User ID {user_id}")
     
