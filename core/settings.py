@@ -42,8 +42,43 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
-    'vault',
+    'django.contrib.sites',  # <-- Vírgula aqui
+
+    # Third-party
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.steam',  # <--- AQUI ESTAVA O ERRO (Faltava essa vírgula)
+
+    'vault',  # App do projeto
 ]
+
+SITE_ID = 1 # Necessário para allauth
+
+# Configuração Allauth
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Adapter customizado que vamos criar
+ACCOUNT_ADAPTER = 'vault.adapters.AlkahestSocialAdapter'
+
+# Configuração Steam (Sem e-mail verification forçado pois Steam não retorna e-mail confiavelmente as vezes)
+ACCOUNT_EMAIL_VERIFICATION = "none" 
+ACCOUNT_UNIQUE_EMAIL = True
+LOGIN_REDIRECT_URL = 'dashboard'
+
+# Provider Configuration
+SOCIALACCOUNT_PROVIDERS = {
+    'steam': {
+        'APP': {
+            'client_id': '12345', # Não usado pela Steam, mas requerido pelo formato
+            'secret': 'SUA_API_KEY_AQUI', # Coloque sua API Key no .env e puxe com config()
+            'key': ''
+        }
+    }
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

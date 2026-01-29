@@ -5,6 +5,7 @@ import requests
 import time
 from datetime import datetime
 from django.utils.timezone import make_aware
+from django.core.cache import cache  # <--- IMPORTANTE: Importar o cache
 from .models import Platform, PlatformGame, MasterGame, UserLibraryEntry, Achievement, UserAchievement
 
 # Importa nosso decorator de cache (O "Segredo" da performance)
@@ -40,15 +41,34 @@ def get_ra_progress_json(url):
 # ==========================================
 # STEAM TASKS
 # ==========================================
-@shared_task
-def sync_steam_library_task(user_id):
+shared_task(bind=True)
+def sync_steam_library_task(self, user_id):
     print(f"🏁 [START] Iniciando Sync Steam para User ID {user_id}")
+    
+    # -----------------------------------------------------------
+    # CAMADA DE SEGURANÇA: REDIS RATE LIMIT (10 min por User)
+    # -----------------------------------------------------------
+    lock_key = f"steam_sync_lock_user_{user_id}"
+    
+    # Se a chave existir, o usuário rodou isso há menos de 10 min
+    if cache.get(lock_key):
+        msg = f"🚫 [SKIP] User {user_id} tentou sync muito rápido. Ignorando para proteger API."
+        print(msg)
+        return msg 
+
+    # -----------------------------------------------------------
+    # LÓGICA DE NEGÓCIO
+    # -----------------------------------------------------------
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         return "Usuário não encontrado"
 
     KEY = config('STEAM_API_KEY', default='')
+    
+    # TODO CRÍTICO (Fase 5+): Para login social real, pegar o ID assim:
+    # social_account = user.socialaccount_set.filter(provider='steam').first()
+    # STEAM_ID = social_account.uid if social_account else config('STEAM_ID')
     STEAM_ID = config('STEAM_ID', default='')
     
     if not KEY or not STEAM_ID:
@@ -56,13 +76,15 @@ def sync_steam_library_task(user_id):
 
     url = f"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={KEY}&steamid={STEAM_ID}&include_appinfo=1&format=json"
     
-    # Usa nossa função cacheada!
+    # Usa nossa função helper cacheada
     try:
+        # Assumindo que get_steam_library_json está definida acima no arquivo
         data = get_steam_library_json(url)
         games = data.get('response', {}).get('games', [])
     except Exception as e:
         print(f"❌ [ERROR] Falha na Steam API: {e}")
-        return
+        # Se falhar a API, NÃO setamos o lock, para o usuário poder tentar de novo
+        return f"Erro na API: {e}"
 
     steam_plat, _ = Platform.objects.get_or_create(slug='steam', defaults={'name': 'Steam'})
     
@@ -74,7 +96,7 @@ def sync_steam_library_task(user_id):
         title = g.get('name')
         playtime = g.get('playtime_forever', 0)
 
-        # ID Provisório (> 1bi)
+        # ID Provisório (> 1bi) para evitar colisão com IDs reais do IGDB
         master, _ = MasterGame.objects.get_or_create(
             title=title,
             defaults={'igdb_id': int(app_id) + 1000000000} 
@@ -93,10 +115,19 @@ def sync_steam_library_task(user_id):
             }
         )
         
+        # Dispara task de conquistas se jogou algo
         if playtime > 0:
             sync_steam_achievements_task.delay(user.id, str(entry.id))
         
         count += 1
+
+    # -----------------------------------------------------------
+    # FINALIZAÇÃO: ATIVAR LOCK E ENRICHMENT
+    # -----------------------------------------------------------
+    
+    # Sucesso! Agora bloqueamos esse usuário por 600 segundos (10 min)
+    # para ele não floodar o botão de sync
+    cache.set(lock_key, True, timeout=600)
 
     print("🚀 [TRIGGER] Disparando Enrich Task...")
     enrich_library_task.delay()
