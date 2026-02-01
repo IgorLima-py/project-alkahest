@@ -409,3 +409,33 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.recipient.username} - {self.get_notification_type_display()}"
+
+
+class ImportJobStatus(models.TextChoices):
+    PENDING = 'pending', _('Na Fila')
+    PROCESSING = 'processing', _('Processando')
+    COMPLETED = 'completed', _('Concluído')
+    FAILED = 'failed', _('Falha')
+
+class ProfileImportJob(models.Model):
+    """
+    Controla o estado de importações longas para UX assíncrona.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='import_jobs')
+    source = models.CharField(max_length=50, default='backloggd')
+    target_username = models.CharField(max_length=100)
+    
+    status = models.CharField(max_length=20, choices=ImportJobStatus.choices, default=ImportJobStatus.PENDING)
+    progress_current = models.IntegerField(default=0)
+    progress_total = models.IntegerField(default=0)
+    
+    log_message = models.TextField(blank=True) # Para erros ou resumos
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.source} import for {self.target_username} ({self.status})"

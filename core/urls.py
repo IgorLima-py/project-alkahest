@@ -91,6 +91,16 @@ urlpatterns = [
     path('api/sync/steam/', views.trigger_steam_sync_view, name='trigger_steam_sync'),
 
 
-    # Teste nota
+    # ==========================================
+    # Teste Nota
+    # ==========================================
     path('design/lab/', views.design_lab_view, name='design_lab'),
+
+
+    # ==========================================
+    # Backloggd Import
+    # ==========================================
+    path('settings/import/backloggd/', views.start_backloggd_import, name='start_backloggd_import'),
+    path('settings/import/status/<uuid:job_id>/', views.check_import_status, name='check_import_status'),
+
 ]

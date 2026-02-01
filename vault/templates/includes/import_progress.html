@@ -1,0 +1,29 @@
+<div class="card bg-dark border-secondary mb-3" id="import-job-{{ job.id }}"
+     hx-get="{% url 'check_import_status' job.id %}"
+     hx-trigger="every 2s"
+     hx-swap="outerHTML">
+    
+    <div class="card-body">
+        <h6 class="card-title text-light">
+            Importando de {{ job.target_username }}
+            <span class="badge bg-{% if job.status == 'failed' %}danger{% else %}info{% endif %} float-end">
+                {{ job.get_status_display }}
+            </span>
+        </h6>
+        
+        {% if job.status == 'failed' %}
+            <div class="alert alert-danger mt-2">{{ job.log_message|linebreaksbr }}</div>
+        {% else %}
+            <div class="progress mt-2" style="height: 20px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                     role="progressbar" 
+                     style="width: {% if job.progress_total > 0 %}{% widthratio job.progress_current job.progress_total 100 %}{% else %}0{% endif %}%;">
+                    {{ job.progress_current }} / {{ job.progress_total }}
+                </div>
+            </div>
+            <small class="text-muted mt-1 d-block font-monospace" style="font-size: 0.7em;">
+                {{ job.log_message.splitlines|last }}
+            </small>
+        {% endif %}
+    </div>
+</div>

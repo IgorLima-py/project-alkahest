@@ -20,6 +20,10 @@ from core.celery import app
 import json
 import uuid
 
+from .tasks import run_backloggd_import_task
+from .models import ProfileImportJob
+
+
 # Forms
 from .forms import ReviewForm, UserLibraryEntryForm, GameTipForm
 
@@ -655,3 +659,36 @@ def design_lab_view(request):
         },
     ]
     return render(request, 'design_lab.html', {'samples': samples})
+
+
+@login_required
+@require_POST
+def start_backloggd_import(request):
+    username = request.POST.get('backloggd_username')
+    if not username:
+        return HttpResponse("Username required", status=400)
+    
+    # Cria Job
+    job = ProfileImportJob.objects.create(
+        user=request.user,
+        target_username=username,
+        status='pending'
+    )
+    
+    # Dispara Async
+    run_backloggd_import_task.delay(job.id)
+    
+    # Retorna HTML inicial do progresso (HTMX swap)
+    return render(request, 'includes/import_progress.html', {'job': job})
+
+@login_required
+def check_import_status(request, job_id):
+    job = get_object_or_404(ProfileImportJob, id=job_id, user=request.user)
+    
+    if job.status == 'completed':
+        # Retorna mensagem de sucesso e trigger para refresh da página
+        response = HttpResponse('<div class="alert alert-success">Importação concluída! Recarregando...</div>')
+        response['HX-Trigger'] = 'libraryChanged' # Evento para frontend recarregar
+        return response
+        
+    return render(request, 'includes/import_progress.html', {'job': job})

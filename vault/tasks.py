@@ -11,6 +11,8 @@ from datetime import datetime
 from django.utils.timezone import make_aware
 from django.core.cache import cache  # <--- IMPORTANTE: Importar o cache
 from .models import Platform, PlatformGame, MasterGame, UserLibraryEntry, Achievement, UserAchievement
+from .models import ProfileImportJob
+from .services import BackloggdScraperService
 
 # Importa nosso decorator de cache (O "Segredo" da performance)
 from core.cache_utils import cache_external_api
@@ -452,3 +454,19 @@ def delete_user_account_task(user_id):
         return f"Erro: {str(e)}"
         
     return f"Conta de {username_bkp} encerrada."
+
+@shared_task(bind=True)
+def run_backloggd_import_task(self, job_id):
+    """
+    Task Celery que roda o scraper.
+    """
+    job = ProfileImportJob.objects.get(id=job_id)
+    service = BackloggdScraperService(job_id)
+    
+    try:
+        service.run()
+    except Exception as e:
+        # Garantir que o job marque falha mesmo se o service explodir
+        job.status = 'failed'
+        job.save()
+        raise e

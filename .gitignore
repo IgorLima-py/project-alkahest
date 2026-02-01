@@ -1,7 +1,33 @@
+# --- Ambiente Virtual e Variáveis ---
 venv/
+.env
+
+# --- Python & Django ---
 *.pyc
 __pycache__/
-.env
 db.sqlite3
+*.log
+
+# --- Celery (Importante já que você usa) ---
+celerybeat-schedule
+celerybeat.pid
+
+# --- VS Code & IDEs ---
+.vscode/
+.idea/
+
+# --- Arquivos de Sistema ---
 .DS_Store
+Thumbs.db
+
+# --- Arquivos Gerados pelo seu Script de Contexto ---
+00file_tree.txt
+file_tree.txt
+contexto.py
+
+# --- Mídia (Uploads de usuários não devem ir pro Git) ---
+media/
+
+# --- Static (Apenas se você rodar collectstatic em dev) ---
+staticfiles/
 .docs/
