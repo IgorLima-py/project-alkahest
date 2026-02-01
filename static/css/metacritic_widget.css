@@ -1,0 +1,63 @@
+/* vault/static/css/metacritic_widget.css */
+.metacritic-rating-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-family: sans-serif;
+    max-width: 300px;
+    margin: 0 auto; /* Centraliza */
+}
+
+.rating-display-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px; /* Quadrado arredondado */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: black;
+    transition: background-color 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.rating-display-circle.text-white { color: white !important; }
+
+/* Cores de Fundo */
+.bg-secondary { background-color: #e0e0e0; color: #777; }
+.bg-danger-custom { background-color: #ff1744; color: white !important; }
+.bg-warning-custom { background-color: #ffd600; color: black !important; }
+.bg-success-custom { background-color: #00e676; color: black !important; }
+.bg-purple-custom { background-color: #940ef9; color: white !important; }
+
+.rating-bars-wrapper { width: 100%; }
+.bars-container {
+    display: flex;
+    gap: 4px; /* Espaço entre barras */
+    height: 30px;
+    cursor: pointer;
+}
+
+.rating-bar {
+    flex: 1;
+    background-color: #ddd;
+    border-radius: 4px;
+    transition: background-color 0.1s, transform 0.1s;
+}
+
+.rating-bar:hover { transform: scaleY(1.2); }
+
+/* Cores das barras quando ativas */
+.rating-bar.active[data-range="red"] { background-color: #ff1744; opacity: 0.6; }
+.rating-bar.active[data-range="red"]:hover, .rating-bar.selected[data-range="red"] { background-color: #ff1744; opacity: 1; }
+
+.rating-bar.active[data-range="yellow"] { background-color: #ffd600; opacity: 0.6; }
+.rating-bar.active[data-range="yellow"]:hover, .rating-bar.selected[data-range="yellow"] { background-color: #ffd600; opacity: 1; }
+
+.rating-bar.active[data-range="green"] { background-color: #00e676; opacity: 0.6; }
+.rating-bar.active[data-range="green"]:hover, .rating-bar.selected[data-range="green"] { background-color: #00e676; opacity: 1; }
+
+.rating-bar.active[data-range="purple"] { background-color: #940ef9; opacity: 0.6; }
+.rating-bar.active[data-range="purple"]:hover, .rating-bar.selected[data-range="purple"] { background-color: #940ef9; opacity: 1; }

@@ -4,6 +4,9 @@
 
 {% block content %}
 
+<!-- Carrega CSS/JS do Widget APENAS nesta página para performance e funcionalidade do modal -->
+{{ review_form.media }}
+
 <!-- =========================================================
      HERO BANNER & HEADER VISUAL
      ========================================================= -->
@@ -124,10 +127,21 @@
                 </ul>
             </div>
             
-            <label class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Your Rating</label>
-            <div class="d-flex align-items-center gap-1 text-warning fs-5">
-                {{ entry.rating|render_stars }}
-                {% if not entry.rating %}<span class="text-muted small ms-1 opacity-50">No rating</span>{% endif %}
+            <!-- NOVA EXIBIÇÃO DE NOTA (QUADRADO COLORIDO) -->
+            <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Your Rating</label>
+            <div class="d-flex align-items-center gap-3">
+                {% with rating_val=entry.rating %}
+                <div class="d-flex align-items-center justify-content-center fw-bold rounded shadow-sm"
+                     style="width: 45px; height: 45px; font-size: 1.2rem;
+                            background-color: {% get_rating_color rating_val %};
+                            color: {% if rating_val|is_dark_bg %}white{% else %}black{% endif %};">
+                    {{ rating_val|to_display_rating }}
+                </div>
+                {% endwith %}
+                
+                {% if not entry.rating %}
+                <span class="text-muted small fst-italic">No rating yet</span>
+                {% endif %}
             </div>
         </div>
 
@@ -311,18 +325,26 @@
             {% for review in user_reviews %}
             <div class="b-card p-4 mb-3 bg-dark border border-subtle rounded-3 hover-lift transition-all">
                 <div class="d-flex justify-content-between mb-2">
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-3">
+                        
+                        <!-- NOTA VISUAL ATUALIZADA (MINI) -->
                         {% if review.rating %}
-                        <div class="d-flex text-warning small">
-                            {% for i in "12345" %}
-                                <i data-lucide="star" size="12" fill="{% if forloop.counter <= review.rating %}currentColor{% else %}none{% endif %}"></i>
-                            {% endfor %}
+                        {% with rating_val=review.rating %}
+                        <div class="d-flex align-items-center justify-content-center fw-bold rounded shadow-sm flex-shrink-0"
+                             style="width: 32px; height: 32px; font-size: 0.9rem;
+                                    background-color: {% get_rating_color rating_val %};
+                                    color: {% if rating_val|is_dark_bg %}white{% else %}black{% endif %};">
+                            {{ rating_val|to_display_rating }}
                         </div>
+                        {% endwith %}
                         {% endif %}
-                        <span class="text-muted small" style="font-size: 0.7rem;">{{ review.created_at|date:"M d, Y" }}</span>
-                        {% if review.is_replay %}
-                        <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-25 small">Replay</span>
-                        {% endif %}
+                        
+                        <div class="d-flex flex-column">
+                            <span class="text-muted small" style="font-size: 0.7rem;">{{ review.created_at|date:"M d, Y" }}</span>
+                            {% if review.is_replay %}
+                            <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-25 small" style="width: fit-content;">Replay</span>
+                            {% endif %}
+                        </div>
                     </div>
                     
                     <div class="dropdown">
@@ -352,9 +374,7 @@
             {% endfor %}
         </div>
 
-        <!-- =========================================================
-             NOVA SEÇÃO: COMMUNITY REVIEWS
-             ========================================================= -->
+        <!-- COMMUNITY REVIEWS -->
         <div class="mb-5">
             <h5 class="fw-bold font-heading mb-3 text-white border-top border-secondary border-opacity-25 pt-4 d-flex justify-content-between align-items-center">
                 <span>Community Reviews</span>
@@ -383,27 +403,31 @@
                                         <span class="fst-italic text-muted">Deleted User</span>
                                     {% endif %}
                                 </h6>
-                                <div class="d-flex align-items-center gap-2">
+                                <div class="d-flex align-items-center gap-2 mt-1">
+                                    <!-- NOTA MINI COMUNIDADE -->
                                     {% if review.rating %}
-                                    <div class="d-flex text-warning" style="font-size: 0.65rem;">
-                                        {% for i in "12345" %}
-                                            <i data-lucide="star" size="10" fill="{% if forloop.counter <= review.rating %}currentColor{% else %}none{% endif %}"></i>
-                                        {% endfor %}
+                                    {% with rating_val=review.rating %}
+                                    <div class="d-flex align-items-center justify-content-center fw-bold rounded shadow-sm"
+                                         style="width: 24px; height: 24px; font-size: 0.75rem;
+                                                background-color: {% get_rating_color rating_val %};
+                                                color: {% if rating_val|is_dark_bg %}white{% else %}black{% endif %};">
+                                        {{ rating_val|to_display_rating }}
                                     </div>
+                                    {% endwith %}
                                     {% endif %}
                                     <span class="text-muted" style="font-size: 0.65rem;">{{ review.created_at|date:"M d, Y" }}</span>
                                 </div>
                             </div>
                             
-                            <!-- Likes (Placeholder Visual) -->
+                            <!-- Likes -->
                             <div class="d-flex align-items-center gap-1 text-muted small">
                                 <i data-lucide="heart" size="12"></i>
                                 <span style="font-size: 0.7rem;">{{ review.likes_count }}</span>
                             </div>
                         </div>
 
-                        <!-- Review Text (Spoiler Protected) -->
-                        <div class="text-light opacity-90 small lh-sm">
+                        <!-- Review Text -->
+                        <div class="text-light opacity-90 small lh-sm mt-2">
                             {% if review.contains_spoilers %}
                                 <div class="p-2 bg-black rounded border border-danger border-opacity-25 text-danger small fst-italic">
                                     <i data-lucide="eye-off" size="12" class="me-1"></i> Spoiler hidden. 
@@ -484,7 +508,7 @@
      MODALS (Review & Add List)
      ========================================================= -->
 
-<!-- REVIEW MODAL -->
+<!-- REVIEW MODAL CORRIGIDO COM WIDGET NOVO -->
 <div class="modal fade" id="reviewModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content bg-card border border-subtle shadow-lg">
@@ -497,9 +521,9 @@
                 <input type="hidden" name="create_review" value="true">
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small text-muted text-uppercase fw-bold">Rating</label>
-                            <input type="number" name="rating" class="form-control bg-dark text-white border-secondary" step="0.1" min="0" max="5" value="{{ entry.rating|default:'' }}">
+                        <div class="col-md-6 d-flex justify-content-center align-items-start pt-3">
+                            <!-- WIDGET DE NOTA METACRITIC -->
+                            {{ review_form.rating }}
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small text-muted text-uppercase fw-bold">Status</label>
@@ -509,26 +533,28 @@
                                 <option value="dropped" {% if entry.status == 'dropped' %}selected{% endif %}>Dropped</option>
                                 <option value="backlog" {% if entry.status == 'backlog' %}selected{% endif %}>Backlog</option>
                             </select>
+                            
+                            <div class="mt-4">
+                                <label class="form-label small text-muted text-uppercase fw-bold mb-2">Options</label>
+                                <div class="d-flex gap-3 flex-wrap">
+                                    <div class="form-check form-switch">
+                                        {{ review_form.contains_spoilers }}
+                                        <label class="form-check-label text-white small ms-2">Spoilers</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        {{ review_form.is_recommended }}
+                                        <label class="form-check-label text-white small ms-2">Recommended</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        {{ review_form.is_replay }}
+                                        <label class="form-check-label text-white small ms-2">Replay</label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-12">
                             <label class="form-label small text-muted text-uppercase fw-bold">Review</label>
-                            <textarea name="text" class="form-control bg-dark text-white border-secondary" rows="5" placeholder="Write your thoughts... Markdown supported.">{{ review.text|default:'' }}</textarea>
-                        </div>
-                        <div class="col-12">
-                            <div class="d-flex gap-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="contains_spoilers" id="spoilers">
-                                    <label class="form-check-label text-white small" for="spoilers">Spoilers</label>
-                                </div>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="is_recommended" id="rec" checked>
-                                    <label class="form-check-label text-white small" for="rec">Recommended</label>
-                                </div>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="is_replay" id="replay">
-                                    <label class="form-check-label text-white small" for="replay">Replay</label>
-                                </div>
-                            </div>
+                            {{ review_form.text }}
                         </div>
                     </div>
                 </div>
@@ -541,7 +567,7 @@
     </div>
 </div>
 
-<!-- ADD LIST MODAL -->
+<!-- ADD LIST MODAL (Mantido) -->
 <div class="modal fade" id="addListModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-card border border-subtle">

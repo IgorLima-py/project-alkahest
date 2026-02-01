@@ -152,7 +152,7 @@ class UserLibraryEntry(models.Model):
     playtime_minutes = models.IntegerField(default=0)
     last_played = models.DateTimeField(blank=True, null=True, db_index=True)
     last_synced = models.DateTimeField(auto_now=True)
-    rating = models.FloatField(null=True, blank=True, db_index=True) 
+    rating = models.IntegerField(null=True, blank=True, db_index=True, help_text="Armazenado como 0-100")
     
     is_favorite = models.BooleanField(default=False)
     is_recommended = models.BooleanField(null=True, blank=True)
@@ -204,7 +204,7 @@ class Review(models.Model):
     text = models.TextField(help_text="Escreva usando Markdown")
     text_html = models.TextField(editable=False, blank=True)
     
-    rating = models.FloatField(null=True, blank=True)
+    rating = models.IntegerField(null=True, blank=True, help_text="Armazenado como 0-100")
     is_recommended = models.BooleanField(null=True, blank=True)
     
     playtime_at_review = models.IntegerField(null=True)
@@ -230,6 +230,14 @@ class Review(models.Model):
         allowed_attrs = {'a': {'href', 'title'}, 'img': {'src', 'alt'}}
         self.text_html = nh3.clean(html, tags=allowed_tags, attributes=allowed_attrs)
         super().save(*args, **kwargs)
+        
+        # Sincronia Automática: Atualiza a Library Entry
+        if self.library_entry:
+            self.library_entry.rating = self.rating
+            # Lógica opcional: Se der nota, remove do backlog?
+            # if self.rating is not None and self.library_entry.status == 'backlog':
+            #     self.library_entry.status = 'playing' 
+            self.library_entry.save(update_fields=['rating'])
 
     def __str__(self):
         return f"Review de {self.user} - {self.library_entry.platform_game.master_game.title}"

@@ -4,20 +4,95 @@
 
 {% block extra_css %}
 <style>
-    /* Platinum Glow Effect */
-    .platinum-container { position: relative; z-index: 1; }
+    /* Platinum Border */
     .platinum-border {
-        position: absolute; inset: -3px; border-radius: 10px;
-        background: linear-gradient(45deg, #e2e8f0, #94a3b8, #f1f5f9, #475569);
-        background-size: 300% 300%;
-        z-index: -1;
-        animation: shine 4s infinite linear;
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        position: absolute; inset: 0; 
+        border-radius: 4px;
+        box-shadow: 0 0 0 2px #e2e8f0, 0 0 10px rgba(226, 232, 240, 0.5);
+        z-index: 10;
+        pointer-events: none;
     }
-    @keyframes shine { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
+
+    /* Imagem Container */
+    .poster-container {
+        position: relative;
+        aspect-ratio: 2/3;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #1a1a1a;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .poster-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 20px rgba(0,0,0,0.6);
+        z-index: 10;
+    }
+
+    .game-poster {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Overlay */
+    .poster-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        opacity: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 10px;
+        transition: opacity 0.2s;
+        z-index: 20;
+    }
+    .poster-container:hover .poster-overlay { opacity: 1; }
+
+    /* Quadrado da Nota (AUMENTADO 1.3x) */
+    .rating-square {
+        width: 32px;  /* Aumentado de 24px */
+        height: 32px; /* Aumentado de 24px */
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 0.95rem; /* Fonte maior também */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        flex-shrink: 0;
+    }
+
+    /* Meta Row (Barra de Status) */
+    .meta-row {
+        margin-top: 10px; /* Espaço ideal */
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 32px; /* Altura alinhada com o quadrado maior */
+    }
+
+    /* Ícones Sutis (Letterboxd Style) */
+    .icon-subtle {
+        color: #6c757d;
+        opacity: 0.6; /* Bem sutil */
+        transition: all 0.2s;
+    }
+    .icon-subtle:hover { opacity: 1; color: white; }
     
-    /* Backdrop Blur for Overlay Text */
-    .backdrop-blur { backdrop-filter: blur(4px); }
+    .icon-active { color: #ff1744; opacity: 1; } 
+    
+    /* Ícone Review específico: Pequeno e discreto */
+    .review-icon {
+        width: 14px;
+        height: 14px;
+        color: #adb5bd;
+        opacity: 0.5;
+    }
+
 </style>
 {% endblock %}
 
@@ -25,134 +100,122 @@
 <div class="d-flex flex-column gap-4">
 
     <!-- Header & Filters -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 pb-3 border-bottom border-secondary border-opacity-10">
         <div>
-            <h2 class="h3 fw-bold mb-0 font-heading">My Collection</h2>
-            <p class="text-muted small mb-0">{{ total_games }} titles tracked</p>
+            <h2 class="h4 fw-bold text-white mb-0">My Collection</h2>
+            <p class="text-muted small mb-0">{{ total_games }} titles</p>
         </div>
 
-        <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
-            <!-- Search hidden input to keep search active while filtering -->
+        <form method="GET" class="d-flex flex-wrap gap-2">
             {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
-
-            <!-- Platform Filter -->
-            <select name="platform" class="form-select form-select-sm bg-dark text-white border-subtle" style="width: auto;" onchange="this.form.submit()">
+            <select name="platform" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;" onchange="this.form.submit()">
                 <option value="">All Platforms</option>
                 {% for p in platforms %}
                 <option value="{{ p.slug }}" {% if current_platform == p.slug %}selected{% endif %}>{{ p.name }}</option>
                 {% endfor %}
             </select>
-
-            <!-- Status Filter -->
-            <select name="status" class="form-select form-select-sm bg-dark text-white border-subtle" style="width: auto;" onchange="this.form.submit()">
+            <select name="status" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;" onchange="this.form.submit()">
                 <option value="">All Status</option>
                 <option value="playing" {% if current_status == 'playing' %}selected{% endif %}>Playing</option>
-                <option value="backlog" {% if current_status == 'backlog' %}selected{% endif %}>Backlog</option>
                 <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="backlog" {% if current_status == 'backlog' %}selected{% endif %}>Backlog</option>
                 <option value="dropped" {% if current_status == 'dropped' %}selected{% endif %}>Dropped</option>
             </select>
-
-            <!-- Sort -->
-            <select name="sort" class="form-select form-select-sm bg-dark text-white border-subtle" style="width: auto;" onchange="this.form.submit()">
+            <select name="sort" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;" onchange="this.form.submit()">
                 <option value="recent" {% if current_sort == 'recent' %}selected{% endif %}>Recently Played</option>
                 <option value="rating_desc" {% if current_sort == 'rating_desc' %}selected{% endif %}>Highest Rated</option>
                 <option value="playtime_desc" {% if current_sort == 'playtime_desc' %}selected{% endif %}>Most Played</option>
-                <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
             </select>
         </form>
     </div>
 
-    <!-- LIBRARY GRID -->
-    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-3">
+    <!-- GRID -->
+    <!-- Espaçamento Vertical Aumentado: g-y-5 + mb-4 nos itens -->
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-x-3 g-y-5">
         {% for entry in page_obj %}
-        <div class="col">
-            <a href="{% url 'game_detail' entry.id %}" class="text-decoration-none game-poster d-block h-100">
-                <!-- Poster Container -->
-                <div class="position-relative mb-2 {% if entry.status == 'completed' and entry.achievement_percentage >= 100 %}platinum-container{% endif %}">
-                    
-                    <!-- Platinum Glow (Only if 100%) -->
+        <div class="col mb-4"> <!-- Margem extra garantida -->
+            
+            <!-- 1. PÔSTER -->
+            <a href="{% url 'game_detail' entry.id %}" class="d-block text-decoration-none">
+                <div class="poster-container">
                     {% if entry.status == 'completed' and entry.achievement_percentage >= 100 %}
                         <div class="platinum-border"></div>
-                        <div class="position-absolute top-0 start-50 translate-middle-x mt-n2 badge bg-info text-dark border border-white shadow-lg fw-bold rounded-pill px-2" style="font-size: 0.55rem; z-index: 5; letter-spacing: 1px;">
-                            PLATINUM
-                        </div>
                     {% endif %}
 
-                    <!-- Cover Image -->
-                    <img src="{{ entry.platform_game.master_game.cover_url|default:'https://placehold.co/300x450/1a1a1a/FFF' }}" 
-                         class="poster-img w-100 shadow-sm" 
-                         loading="lazy"
-                         style="aspect-ratio: 2/3; object-fit: cover; border-radius: 8px;">
+                    <img src="{{ entry.platform_game.master_game.cover_url|default:'https://placehold.co/300x450/1a1a1a/FFF' }}" class="game-poster" loading="lazy">
                     
-                    <!-- Top Right Badges (Status, Heart, Review) -->
-                    <div class="position-absolute top-0 end-0 p-1 d-flex flex-column gap-1 align-items-end">
-                        {% if entry.status == 'playing' %}
-                            <span class="badge bg-warning text-dark border border-warning shadow-sm fw-bold" style="font-size: 0.6rem;">PLAYING</span>
-                        {% endif %}
-                        
-                        {% if entry.is_favorite %}
-                            <span class="badge bg-danger text-white shadow-sm border border-danger p-1"><i data-lucide="heart" size="10" fill="currentColor"></i></span>
-                        {% endif %}
-                        
-                        {% if entry.rating %}
-                             <span class="badge bg-dark text-warning border border-subtle shadow-sm p-1" title="Reviewed: {{ entry.rating }}"><i data-lucide="pen-tool" size="10"></i></span>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Platform Tag (Bottom Left) -->
-                    <span class="position-absolute bottom-0 start-0 m-1 badge bg-dark bg-opacity-75 backdrop-blur border border-subtle text-uppercase" style="font-size: 0.6rem;">
-                        {{ entry.platform_game.platform.slug }}
-                    </span>
-                </div>
-
-                <!-- Info Block -->
-                <div>
-                    <div class="fw-bold text-white small text-truncate" title="{{ entry.platform_game.master_game.title }}">
-                        {{ entry.platform_game.master_game.title }}
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mt-1">
-                        {% if entry.rating %}
-                            <div class="d-flex align-items-center gap-1 text-warning small">
-                                <i data-lucide="star" size="10" fill="currentColor"></i> <span>{{ entry.rating }}</span>
-                            </div>
-                        {% else %}
-                            <span class="text-muted small opacity-50" style="font-size: 0.7rem;">--</span>
-                        {% endif %}
-                        
-                        {% if entry.playtime_minutes > 0 %}
-                            <span class="small text-muted" style="font-size: 0.75rem;">{{ entry.playtime_hours }}h</span>
-                        {% endif %}
+                    <div class="poster-overlay">
+                        <span class="text-white fw-bold small text-shadow mb-1">{{ entry.platform_game.master_game.title }}</span>
+                        <span class="text-white text-opacity-50" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;">
+                            {{ entry.platform_game.platform.name }}
+                        </span>
                     </div>
                 </div>
             </a>
+
+            <!-- 2. BARRA DE STATUS -->
+            <div class="meta-row">
+                
+                <!-- ESQUERDA: Nota (Grande) + Review (Pequeno) + Heart -->
+                <div class="d-flex align-items-center gap-2">
+                    
+                    <!-- Quadrado da Nota (32px) -->
+                    {% if entry.rating %}
+                        {% with rating_val=entry.rating %}
+                        <div class="rating-square" 
+                             style="background-color: {% get_rating_color rating_val %}; 
+                                    color: {% if rating_val|is_dark_bg %}white{% else %}black{% endif %};">
+                            {{ rating_val|to_display_rating }}
+                        </div>
+                        {% endwith %}
+                    {% else %}
+                        <div class="rating-square bg-dark border border-secondary border-opacity-25 text-muted">-</div>
+                    {% endif %}
+
+                    <!-- Ícones -->
+                    <div class="d-flex align-items-center gap-2 ms-1">
+                        <!-- Review (3 Linhas Sutil) -->
+                        {% if entry.review_text or entry.rating %}
+                            <i data-lucide="align-justify" class="review-icon"></i>
+                        {% endif %}
+
+                        <!-- Favorito -->
+                        {% if entry.is_favorite %}
+                            <i data-lucide="heart" size="14" class="icon-active" fill="currentColor"></i>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                <!-- DIREITA: Conquistas -->
+                {% if entry.achievement_percentage > 0 %}
+                <div class="d-flex align-items-center text-warning fw-bold" style="font-size: 0.75rem;">
+                    {{ entry.achievement_percentage|floatformat:0 }}%
+                </div>
+                {% endif %}
+
+            </div>
         </div>
         {% empty %}
-        <div class="col-12 py-5 text-center">
-            <div class="text-muted mb-3">
-                <i data-lucide="ghost" size="48" class="opacity-50"></i>
-            </div>
-            <h4 class="h5 text-white">No games found</h4>
-            <p class="text-muted small">Try adjusting your filters or search query.</p>
-            <a href="{% url 'library' %}" class="btn btn-sm btn-outline-secondary">Clear Filters</a>
-        </div>
+        <div class="col-12 py-5 text-center text-muted">No games found.</div>
         {% endfor %}
     </div>
 
     <!-- Pagination -->
     {% if page_obj.paginator.num_pages > 1 %}
-    <nav class="mt-auto pt-4 d-flex justify-content-center">
+    <nav class="mt-auto pt-5 d-flex justify-content-center">
         <ul class="pagination pagination-sm">
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link bg-dark text-white border-subtle" href="?page={{ page_obj.previous_page_number }}&{{ current_params }}">&laquo;</a>
+                    <a class="page-link bg-dark text-white border-secondary" href="?page={{ page_obj.previous_page_number }}&{{ current_params }}">&laquo;</a>
                 </li>
             {% endif %}
             <li class="page-item disabled">
-                <span class="page-link bg-dark text-muted border-subtle">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                <span class="page-link bg-dark text-muted border-secondary">Page {{ page_obj.number }}</span>
             </li>
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link bg-dark text-white border-subtle" href="?page={{ page_obj.next_page_number }}&{{ current_params }}">&raquo;</a>
+                    <a class="page-link bg-dark text-white border-secondary" href="?page={{ page_obj.next_page_number }}&{{ current_params }}">&raquo;</a>
                 </li>
             {% endif %}
         </ul>

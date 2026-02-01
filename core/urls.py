@@ -89,4 +89,8 @@ urlpatterns = [
     path('api/notifications/check/', views.notifications_check_view, name='notifications_check'),
     path('api/notifications/read/', views.notifications_mark_read_view, name='notifications_read'),
     path('api/sync/steam/', views.trigger_steam_sync_view, name='trigger_steam_sync'),
+
+
+    # Teste nota
+    path('design/lab/', views.design_lab_view, name='design_lab'),
 ]

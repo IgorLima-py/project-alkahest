@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<!-- Fontes -->
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@700;900&family=Chakra+Petch:wght@700&family=Outfit:wght@700;900&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --lab-font: 'Outfit', sans-serif;
+        --lab-glow-size: 15px;
+        --lab-glow-opacity: 0.7;
+        --lab-stroke: 2px;
+        --lab-legendary: #940ef9;
+    }
+
+    /* CARD BASE */
+    .lab-card {
+        width: 100%;
+        max-width: 160px;
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden; /* Corta o que passar */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        background: #222;
+        transition: transform 0.2s;
+        margin: 0 auto;
+    }
+    .lab-card:hover { transform: translateY(-5px); z-index: 10; }
+
+    .poster-ratio {
+        aspect-ratio: 2/3;
+        width: 100%;
+        position: relative;
+    }
+
+    /* NOTA (Posicionada DENTRO, no canto inferior) */
+    .rating-container {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        z-index: 20;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* ESTILO 1: SQUARE */
+    .rating-square {
+        width: 36px;
+        height: 36px;
+        background: #000;
+        color: #fff;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-family: var(--lab-font);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    /* ESTILO 2: PRO SHAPE */
+    .rating-pro {
+        width: 55px;
+        height: 55px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .pro-glow {
+        position: absolute;
+        inset: 10%;
+        background: currentColor;
+        filter: blur(var(--lab-glow-size));
+        opacity: var(--lab-glow-opacity);
+        border-radius: 50%;
+        z-index: 1;
+    }
+
+    .pro-svg {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.8));
+    }
+    .pro-svg svg {
+        width: 100%;
+        height: 100%;
+        fill: currentColor;
+        stroke: white;
+        stroke-width: var(--lab-stroke);
+        stroke-linejoin: round;
+    }
+
+    .pro-text {
+        position: relative;
+        z-index: 3;
+        color: white;
+        font-weight: 900;
+        font-family: var(--lab-font);
+        font-size: 1.1rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,1);
+    }
+
+    /* CORES */
+    .c-common { color: #ff1744; background-color: #ff1744; }
+    .c-uncommon { color: #ffd600; background-color: #ffd600; }
+    .c-rare { color: #00e676; background-color: #00e676; }
+    .c-legendary { color: var(--lab-legendary); background-color: var(--lab-legendary); }
+    
+    /* Texto nos quadrados precisa ser legível */
+    .bg-c-common { background-color: #ff1744; color: white; }
+    .bg-c-uncommon { background-color: #ffd600; color: black; }
+    .bg-c-rare { background-color: #00e676; color: black; }
+    .bg-c-legendary { background-color: var(--lab-legendary); color: white; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 bg-black min-vh-100">
+    <div class="row g-4">
+        
+        <!-- CONTROLES -->
+        <div class="col-lg-3">
+            <div class="bg-dark p-4 rounded border border-secondary sticky-top" style="top: 20px;">
+                <h5 class="text-white mb-4">🎛️ Configuração</h5>
+                
+                <label class="text-muted small fw-bold">FORMATO</label>
+                <div class="btn-group w-100 mb-4">
+                    <button class="btn btn-outline-light btn-sm" onclick="setShape('hex')">Hex</button>
+                    <button class="btn btn-outline-light btn-sm" onclick="setShape('star')">Star</button>
+                    <button class="btn btn-outline-light btn-sm" onclick="setShape('circle')">Circle</button>
+                </div>
+
+                <label class="text-muted small fw-bold">FONTE</label>
+                <select class="form-select bg-black text-white mb-4" onchange="setVar('--lab-font', this.value)">
+                    <option value="'Outfit', sans-serif">Outfit</option>
+                    <option value="'Barlow', sans-serif">Barlow</option>
+                    <option value="'Chakra Petch', sans-serif">Chakra Petch</option>
+                </select>
+
+                <label class="text-info small fw-bold">NEON GLOW</label>
+                <input type="range" class="form-range" min="0" max="30" value="15" oninput="setVar('--lab-glow-size', this.value + 'px')">
+                
+                <label class="text-warning small fw-bold mt-3">COR LEGENDARY</label>
+                <input type="color" class="form-control form-control-color w-100" value="#940ef9" oninput="setVar('--lab-legendary', this.value)">
+            </div>
+        </div>
+
+        <!-- PREVIEW -->
+        <div class="col-lg-9">
+            
+            <!-- LINHA 1: SQUARE -->
+            <h6 class="text-white border-start border-4 border-danger ps-2 mb-3">Opção 1: Square (Simples)</h6>
+            <div class="row row-cols-4 g-4 mb-5">
+                {% for game in samples %}
+                <div class="col">
+                    <div class="lab-card">
+                        <div class="poster-ratio">
+                            <img src="{{ game.cover }}" class="w-100 h-100 object-fit-cover">
+                            <!-- Nota Dentro -->
+                            <div class="rating-container">
+                                <div class="rating-square bg-c-{{ game.tier }}">
+                                    {{ game.rating|stringformat:"d"|slice:":1" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- LINHA 2: PRO SHAPE -->
+            <h6 class="text-white border-start border-4 border-warning ps-2 mb-3">Opção 2: Neon Pro (Seu preferido)</h6>
+            <div class="row row-cols-4 g-4">
+                {% for game in samples %}
+                <div class="col">
+                    <div class="lab-card">
+                        <div class="poster-ratio">
+                            <img src="{{ game.cover }}" class="w-100 h-100 object-fit-cover">
+                            <!-- Nota Dentro -->
+                            <div class="rating-container">
+                                <div class="rating-pro c-{{ game.tier }}">
+                                    <div class="pro-glow"></div>
+                                    <div class="pro-svg svg-target"></div> <!-- SVG vai aqui -->
+                                    <div class="pro-text">{{ game.rating|stringformat:"d"|slice:":1" }}.{{ game.rating|stringformat:"d"|slice:"1:2" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function setVar(name, val) { document.documentElement.style.setProperty(name, val); }
+
+    const shapes = {
+        'hex': '<polygon points="50,5 91.5,27.5 91.5,72.5 50,95 8.5,72.5 8.5,27.5"/>',
+        'star': '<polygon points="50,5 61,38 95,38 68,58 78,92 50,72 22,92 32,58 5,38 39,38"/>',
+        'circle': '<circle cx="50" cy="50" r="45"/>'
+    };
+
+    function setShape(key) {
+        const html = `<svg viewBox="0 0 100 100">${shapes[key]}</svg>`;
+        document.querySelectorAll('.svg-target').forEach(el => el.innerHTML = html);
+    }
+
+    // Roda ao carregar
+    window.onload = function() { setShape('hex'); };
+</script>
+{% endblock %}

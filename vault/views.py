@@ -123,10 +123,17 @@ def library_view(request):
     if platform_filter: entries = entries.filter(platform_game__platform__slug=platform_filter)
 
     sort_by = request.GET.get('sort', 'recent')
-    if sort_by == 'name_asc': order = 'platform_game__master_game__title'
-    elif sort_by == 'playtime_desc': order = '-playtime_minutes'
-    elif sort_by == 'rating_desc': order = F('rating').desc(nulls_last=True)
-    else: order = F('last_played').desc(nulls_last=True)
+    
+    if sort_by == 'name_asc': 
+        order = 'platform_game__master_game__title'
+    elif sort_by == 'playtime_desc': 
+        order = '-playtime_minutes'
+    elif sort_by == 'rating_desc': 
+        # Força ordenação decrescente de inteiro, jogando nulos pro final
+        order = F('rating').desc(nulls_last=True)
+    else: 
+        # recent
+        order = F('last_played').desc(nulls_last=True)
     
     entries = entries.order_by(order)
     paginator = Paginator(entries, items_per_page)
@@ -158,37 +165,25 @@ def game_detail_view(request, game_id):
             return redirect('game_detail', game_id=game_id)
 
         if 'create_review' in request.POST:
-            # Instancia o form com os dados do POST
             form = ReviewForm(request.POST)
             
             if form.is_valid():
-                review = form.save(commit=False)
+                review = form.save(commit=False) # O form já tratou o rating 0-100
                 review.user = request.user
                 review.library_entry = entry
                 
-                # Snapshot do tempo de jogo no momento da review
+                # Snapshot do tempo
                 review.playtime_at_review = entry.playtime_minutes
                 
-                review.save() # Salva a Review
+                review.save() # AQUI o model.save() vai atualizar o entry.rating automaticamente!
                 
-                # Atualiza a nota e o status na Library Entry também
-                entry.rating = review.rating
-                
-                # Se o usuário mudou o status no modal, atualiza aqui
-                new_status = form.cleaned_data.get('status') # Atenção: 'status' não é campo do Review, precisamos tratar separado se ele vier no POST mas não no Form
-                # CORREÇÃO: O campo 'status' está no HTML mas não no ReviewForm (ele é do UserLibraryEntry).
-                # Pegamos 'status' direto do request.POST
+                # Atualiza APENAS status se veio no POST (pois status não tá no form de review)
                 status_val = request.POST.get('status')
-                if status_val:
+                if status_val and status_val != entry.status:
                     entry.status = status_val
+                    entry.save(update_fields=['status']) # Não precisa salvar rating de novo
                 
-                entry.save()
-                
-                print("✅ Review Salva com Sucesso!")
                 return redirect('game_detail', game_id=game_id)
-            else:
-                # DEBUG: Isso vai mostrar no terminal porque não salvou
-                print("❌ Erro no Form:", form.errors)
 
         if 'create_tip' in request.POST:
             GameTip.objects.create(user=request.user, master_game=master, text=request.POST.get('tip_text'))
@@ -206,12 +201,28 @@ def game_detail_view(request, game_id):
     tips = sorted(list(GameTip.objects.filter(master_game=master)), key=lambda t: t.score(), reverse=True)
     user_lists = GameList.objects.filter(user=request.user).order_by('-updated_at')
 
+    existing_review = Review.objects.filter(user=request.user, library_entry=entry).first()
+    
+    if existing_review:
+        review_form = ReviewForm(instance=existing_review)
+    else:
+        # Se não tem review, mas tem rating na library, preenche o rating
+        initial_data = {'rating': entry.rating} if entry.rating is not None else {}
+        review_form = ReviewForm(initial=initial_data)
+
     context = {
-        'entry': entry, 'master': master, 'platform': entry.platform_game.platform,
+        'entry': entry, 
+        'master': master, 
+        'platform': entry.platform_game.platform,
         'community_reviews': community_reviews,
-        'total_achievements': total_ach, 'unlocked_achievements': len(unlocked_ids),
-        'percentage': pct, 'unlocked_ids': set(unlocked_ids),
-        'user_reviews': user_reviews, 'tips': tips, 'user_lists': user_lists
+        'total_achievements': total_ach, 
+        'unlocked_achievements': len(unlocked_ids),
+        'percentage': pct, 
+        'unlocked_ids': set(unlocked_ids),
+        'user_reviews': user_reviews, 
+        'tips': tips, 
+        'user_lists': user_lists,
+        'review_form': review_form, # <--- ADICIONE ESTA LINHA
     }
     return render(request, 'game_detail.html', context)
 
@@ -390,10 +401,11 @@ def delete_review_view(request, review_id):
 @login_required
 def edit_library_entry_view(request, entry_id):
     entry = get_object_or_404(UserLibraryEntry, id=entry_id, user=request.user)
+    
     if request.method == 'POST':
         form = UserLibraryEntryForm(request.POST, instance=entry)
         if form.is_valid():
-            # Lógica de troca de plataforma mantida
+            # 1. Lógica de Troca de Plataforma (Mantida intacta)
             new_platform = form.cleaned_data['platform']
             if new_platform != entry.platform_game.platform:
                 master = entry.platform_game.master_game
@@ -403,12 +415,13 @@ def edit_library_entry_view(request, entry_id):
                 )
                 entry.platform_game = pg
             
-            entry.status = form.cleaned_data['status']
-            entry.rating = form.cleaned_data['rating']
-            entry.is_favorite = form.cleaned_data['is_favorite']
-            entry.save()
+            # 2. Salva campos padrão (Status, Favorito) E o Rating (via lógica interna do Form)
+            entry = form.save() 
+            
             return redirect('game_detail', game_id=entry.id)
-    else: form = UserLibraryEntryForm(instance=entry)
+    else:
+        form = UserLibraryEntryForm(instance=entry)
+    
     return render(request, 'library/edit_entry.html', {'form': form, 'entry': entry})
 
 @login_required
@@ -601,3 +614,44 @@ def notifications_mark_read_view(request):
     
     # Para o HTMX saber que deu certo
     return HttpResponse("OK")
+
+
+
+@login_required
+def design_lab_view(request):
+    # Mock Data simulando jogos reais da sua library
+    samples = [
+        {
+            'id': 1,
+            'title': 'Bad Rats', # Exemplo Common
+            'rating': 25, # 2.5
+            'tier': 'common',
+            'color': '#ff1744',
+            'cover': 'https://placehold.co/300x450/333/FFF?text=Bad+Rats'
+        },
+        {
+            'id': 2,
+            'title': 'Cyber Glitch', # Exemplo Uncommon
+            'rating': 55, # 5.5
+            'tier': 'uncommon',
+            'color': '#ffd600',
+            'cover': 'https://placehold.co/300x450/444/FFF?text=Cyber'
+        },
+        {
+            'id': 3,
+            'title': 'Eco Warrior', # Exemplo Rare
+            'rating': 78, # 7.8
+            'tier': 'rare',
+            'color': '#00e676',
+            'cover': 'https://placehold.co/300x450/555/FFF?text=Eco'
+        },
+        {
+            'id': 4,
+            'title': 'Starfield 2', # Exemplo Legendary
+            'rating': 99, # 9.9
+            'tier': 'legendary',
+            'color': '#940ef9', # Roxo padrão, mas será customizável no front
+            'cover': 'https://placehold.co/300x450/666/FFF?text=Starfield'
+        },
+    ]
+    return render(request, 'design_lab.html', {'samples': samples})

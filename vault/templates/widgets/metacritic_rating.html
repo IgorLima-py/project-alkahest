@@ -1,0 +1,25 @@
+<div class="metacritic-widget-wrapper">
+    <!-- Input escondido que o Django lê -->
+    <input type="hidden" name="{{ widget.name }}" value="{{ widget.value|default:0 }}">
+
+    <div class="rating-display-circle bg-secondary">
+        <span>-</span>
+    </div>
+    
+    <div class="rating-bars-wrapper mt-2">
+        <p class="text-muted small mb-1 text-center" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">My Score</p>
+        <div class="bars-container">
+            <!-- 10 Barras geradas manualmente para controle total -->
+            <div class="rating-bar" data-value="10" data-range="red" title="1"></div>
+            <div class="rating-bar" data-value="20" data-range="red" title="2"></div>
+            <div class="rating-bar" data-value="30" data-range="red" title="3"></div>
+            <div class="rating-bar" data-value="40" data-range="yellow" title="4"></div>
+            <div class="rating-bar" data-value="50" data-range="yellow" title="5"></div>
+            <div class="rating-bar" data-value="60" data-range="yellow" title="6"></div>
+            <div class="rating-bar" data-value="70" data-range="green" title="7"></div>
+            <div class="rating-bar" data-value="80" data-range="green" title="8"></div>
+            <div class="rating-bar" data-value="90" data-range="purple" title="9"></div>
+            <div class="rating-bar" data-value="100" data-range="purple" title="10"></div>
+        </div>
+    </div>
+</div>
