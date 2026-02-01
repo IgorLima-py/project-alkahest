@@ -6,6 +6,9 @@ from django_ratelimit.decorators import ratelimit
 from vault import views
 from vault.views import set_language_view
 
+from django.contrib.auth.views import LogoutView
+
+
 urlpatterns = [
     # ==========================================
     # ADMIN & CONFIG
