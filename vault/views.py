@@ -31,7 +31,7 @@ from .forms import ReviewForm, UserLibraryEntryForm, GameTipForm
 from .models import (
     UserLibraryEntry, UserAchievement, Review, GameTip, TipVote, 
     GameList, GameListItem, MasterGame, Platform, PlatformGame,
-    UserProfile, UserFollow, User, Notification
+    UserProfile, UserFollow, User, Notification, ProfileImportJob, UserLibraryEntry
 )
 
 from .tasks import sync_steam_library_task, delete_user_account_task, export_user_data_task
@@ -694,11 +694,39 @@ def check_import_status(request, job_id):
     return render(request, 'includes/import_progress.html', {'job': job})
 
 
+
 @login_required
 def import_hub_view(request):
-    active_jobs = ProfileImportJob.objects.filter(
-        user=request.user
-    ).order_by('-created_at')[:5]
+    # Pega apenas o último job do usuário para focar na ação atual
+    active_job = ProfileImportJob.objects.filter(user=request.user).order_by('-created_at').first()
     
-    # CAMINHO ATUALIZADO
-    return render(request, 'settings/import_hub.html', {'active_jobs': active_jobs})
+    # Se o job for muito antigo (> 1 hora) ou já finalizado, não mostra como ativo no load inicial
+    if active_job and (active_job.status in ['completed', 'failed']):
+        # Opcional: Mostra resumo do último job, mas permite novo
+        pass
+        
+    return render(request, 'settings/import_hub.html', {'active_job': active_job})
+
+@login_required
+def import_live_feed(request, job_id):
+    """
+    Retorna as últimas N entradas criadas/modificadas RECENTEMENTE.
+    """
+    job = get_object_or_404(ProfileImportJob, id=job_id, user=request.user)
+    
+    # PEGA TUDO O QUE MUDOU NOS ÚLTIMOS 10 MINUTOS
+    # Isso é mais garantido do que filtrar pelo job.created_at exato
+    time_threshold = timezone.now() - timedelta(minutes=10)
+    
+    latest_entries = UserLibraryEntry.objects.filter(
+        user=request.user,
+        last_synced__gte=time_threshold
+    ).select_related('platform_game__master_game').order_by('-last_synced')[:10]
+    
+    # DEBUG: Printar no console do servidor pra ver se tá achando
+    print(f"DEBUG FEED: Encontradas {latest_entries.count()} entradas recentes para user {request.user}")
+    
+    return render(request, 'includes/import_live_rows.html', {
+        'entries': latest_entries,
+        'job': job
+    })

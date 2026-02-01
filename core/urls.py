@@ -105,5 +105,6 @@ urlpatterns = [
     path('settings/import/', views.import_hub_view, name='import_hub'),
     path('settings/import/start/', views.start_backloggd_import, name='start_backloggd_import'),
     path('settings/import/status/<uuid:job_id>/', views.check_import_status, name='check_import_status'),
+    path('settings/import/feed/<uuid:job_id>/', views.import_live_feed, name='import_live_feed'),
 
 ]
