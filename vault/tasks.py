@@ -1,80 +1,77 @@
+# vault/tasks.py
 from celery import shared_task
 import csv
 import uuid
 import io
+import time
+import requests
+from datetime import datetime
+from decouple import config
+
 from django.contrib.auth.models import User
 from allauth.socialaccount.models import SocialAccount
-from decouple import config
-import requests
-import time
-from datetime import datetime
 from django.utils.timezone import make_aware
-from django.core.cache import cache  # <--- IMPORTANTE: Importar o cache
-from .models import Platform, PlatformGame, MasterGame, UserLibraryEntry, Achievement, UserAchievement
-from .models import ProfileImportJob
+from django.core.cache import cache
+from django.db.models import Q
+from django.db import transaction
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+
+from .models import (
+    Platform, PlatformGame, MasterGame, 
+    UserLibraryEntry, Achievement, UserAchievement, 
+    Review, ProfileImportJob
+)
+
+# Importa Services
 from .services import BackloggdScraperService
-
-# Importa nosso decorator de cache (O "Segredo" da performance)
-from core.cache_utils import cache_external_api
-
-# Tenta importar o service de enriquecimento
 try:
     from .services import fetch_and_update_game
 except ImportError:
     fetch_and_update_game = None
 
+# Importa Cache Utils
+from core.cache_utils import cache_external_api
+
+
 # ==========================================
-# HELPERS COM CACHE (O "Fino do Fino")
+# HELPERS COM CACHE
 # ==========================================
 
-@cache_external_api(timeout=60*60, prefix="steam_user_lib") # 1 Hora de Cache
+@cache_external_api(timeout=60*60, prefix="steam_user_lib") 
 def get_steam_library_json(url):
-    """Busca JSON da biblioteca Steam com cache de 1h"""
-    print(f"📡 [NETWORK] Baixando biblioteca Steam...") # Log visual
+    print(f"📡 [NETWORK] Baixando biblioteca Steam...")
     return requests.get(url).json()
 
-@cache_external_api(timeout=60*60*24, prefix="steam_schema") # 24 Horas de Cache
+@cache_external_api(timeout=60*60*24, prefix="steam_schema")
 def get_steam_game_schema(url):
-    """Busca dados de conquistas do jogo (Metadados mudam pouco)"""
     return requests.get(url).json()
 
-@cache_external_api(timeout=60*60, prefix="ra_user_progress") # 1 Hora de Cache
+@cache_external_api(timeout=60*60, prefix="ra_user_progress")
 def get_ra_progress_json(url):
-    """Busca progresso do RetroAchievements"""
     print(f"📡 [NETWORK] Baixando dados do RA...")
     return requests.get(url).json()
+
 
 # ==========================================
 # STEAM TASKS
 # ==========================================
-@shared_task(bind=True, name='vault.tasks.sync_steam_library_task') # <--- FORCE O NOME AQUI
+@shared_task(bind=True, name='vault.tasks.sync_steam_library_task')
 def sync_steam_library_task(self, user_id):
     print(f"🏁 [START] Iniciando Sync Steam para User ID {user_id}")
-    
-    # -----------------------------------------------------------
-    # CAMADA DE SEGURANÇA: REDIS RATE LIMIT (10 min por User)
-    # -----------------------------------------------------------
     lock_key = f"steam_sync_lock_user_{user_id}"
     
-    # Se a chave existir, o usuário rodou isso há menos de 10 min
     if cache.get(lock_key):
-        msg = f"🚫 [SKIP] User {user_id} tentou sync muito rápido. Ignorando para proteger API."
+        msg = f"🚫 [SKIP] User {user_id} tentou sync muito rápido."
         print(msg)
         return msg 
 
-    # -----------------------------------------------------------
-    # LÓGICA DE NEGÓCIO
-    # -----------------------------------------------------------
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         return "Usuário não encontrado"
 
     KEY = config('STEAM_API_KEY', default='')
-    
-    # TODO CRÍTICO (Fase 5+): Para login social real, pegar o ID assim:
-    # social_account = user.socialaccount_set.filter(provider='steam').first()
-    # STEAM_ID = social_account.uid if social_account else config('STEAM_ID')
     STEAM_ID = config('STEAM_ID', default='')
     
     if not KEY or not STEAM_ID:
@@ -82,22 +79,19 @@ def sync_steam_library_task(self, user_id):
 
     url = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
     params = {
-        'key': config('STEAM_API_KEY'),
-        'steamid': config('STEAM_ID'), # Idealmente pegar do user.socialaccount
+        'key': KEY,
+        'steamid': STEAM_ID,
         'include_appinfo': 1,
         'format': 'json'
     }
     
-    # Usa nossa função helper cacheada
     try:
-        # Requests trata o encoding seguro da query string
         data = requests.get(url, params=params).json()
         games = data.get('response', {}).get('games', [])
     except Exception as e:
         return f"Erro API: {e}"
 
     steam_plat, _ = Platform.objects.get_or_create(slug='steam', defaults={'name': 'Steam'})
-    
     count = 0
     print(f"🎮 [PROCESS] Processando {len(games)} jogos...")
     
@@ -106,7 +100,6 @@ def sync_steam_library_task(self, user_id):
         title = g.get('name')
         playtime = g.get('playtime_forever', 0)
 
-        # ID Provisório (> 1bi) para evitar colisão com IDs reais do IGDB
         master, _ = MasterGame.objects.get_or_create(
             title=title,
             defaults={'igdb_id': int(app_id) + 1000000000} 
@@ -125,23 +118,13 @@ def sync_steam_library_task(self, user_id):
             }
         )
         
-        # Dispara task de conquistas se jogou algo
         if playtime > 0:
             sync_steam_achievements_task.delay(user.id, str(entry.id))
         
         count += 1
 
-    # -----------------------------------------------------------
-    # FINALIZAÇÃO: ATIVAR LOCK E ENRICHMENT
-    # -----------------------------------------------------------
-    
-    # Sucesso! Agora bloqueamos esse usuário por 600 segundos (10 min)
-    # para ele não floodar o botão de sync
     cache.set(lock_key, True, timeout=600)
-
-    print("🚀 [TRIGGER] Disparando Enrich Task...")
     enrich_library_task.delay()
-    
     return f"✅ Steam Finalizado: {count} jogos."
 
 
@@ -158,10 +141,8 @@ def sync_steam_achievements_task(user_id, entry_id):
 
     try:
         schema_url = f"http://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key={KEY}&appid={app_id}"
-        # Stats do usuário mudam sempre, então NÃO cacheamos ou usamos TTL curto (5min)
         user_url = f"http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid={app_id}&key={KEY}&steamid={STEAM_ID}"
         
-        # Schema usa cache de 24h
         schema_res = get_steam_game_schema(schema_url)
         user_res = requests.get(user_url).json() 
     except: return
@@ -202,7 +183,7 @@ def sync_steam_achievements_task(user_id, entry_id):
         if entry.status != 'completed':
             entry.status = 'completed'
             entry.save()
-            print(f"🏆 [PLATINA] {entry.platform_game.external_title}")
+
 
 # ==========================================
 # RETROACHIEVEMENTS TASKS
@@ -221,7 +202,6 @@ def sync_ra_library_task(user_id):
 
     url = f"https://retroachievements.org/API/API_GetUserCompletedGames.php?z={RA_USER}&y={RA_KEY}&u={RA_USER}"
     try:
-        # Usa Cache
         data = get_ra_progress_json(url)
         games = data if isinstance(data, list) else []
     except: return "Erro RA API"
@@ -251,96 +231,96 @@ def sync_ra_library_task(user_id):
 
     return f"✅ RA: {len(games)} jogos."
 
+
 @shared_task
 def sync_ra_achievements_task(user_id, entry_id):
-    # Lógica mantida, omitida aqui por brevidade, mas pode manter a do passo anterior
     pass
 
+
 # ==========================================
-# ENRICHMENT (IGDB) TASKS - COM LOGS!
+# ENRICHMENT (IGDB) TASKS
 # ==========================================
 @shared_task
 def enrich_library_task():
     """
-    Roda o enriquecimento em 'batches' com proteção contra loop infinito.
+    Pega jogos importados (IDs negativos) ou Provisórios (IDs > 900mi)
+    e busca os dados oficiais no IGDB.
     """
-    BATCH_SIZE = 20 
+    BATCH_SIZE = 10 
     
-    if not fetch_and_update_game: 
-        return "Service error"
+    if not fetch_and_update_game: return "Service error"
 
-    # Query apenas para IDs positivos altos (Provisórios não verificados)
-    pending_query = MasterGame.objects.filter(igdb_id__gt=900000000)
-    total_pending = pending_query.count()
+    # IDs negativos são do Importador Backloggd
+    # IDs > 900mi são do Steam/RA importer
+    targets = MasterGame.objects.filter(
+        Q(igdb_id__gt=900000000) | Q(igdb_id__lt=0)
+    )[:BATCH_SIZE]
 
-    if total_pending == 0:
-        print("✅ [ENRICH] Zero jogos pendentes. Trabalho concluído!")
-        return "Concluído"
+    if not targets:
+        return "Nenhum jogo pendente de enriquecimento."
 
-    print(f"🔄 [ENRICH] Iniciando lote. Faltam {total_pending} jogos na fila...")
-
-    # Pega o lote
-    targets = list(pending_query[:BATCH_SIZE])
-    
+    print(f"🔄 [ENRICH] Processando lote de {len(targets)} jogos...")
     updated_count = 0
-    processed_in_batch = 0 # Contador local para UI
 
     for master in targets:
-        processed_in_batch += 1
-        # Mostra: [1/20] Jogo X...
-        print(f"   -> [{processed_in_batch}/{BATCH_SIZE}] Analisando: {master.title}")
-        
-        steam_pg = master.platforms.filter(platform__slug='steam').first()
-        steam_id = steam_pg.external_id if steam_pg else None
+        original_title = master.title
+        print(f" 🔎 Buscando dados oficiais para: {original_title}")
         
         try:
-            new_master = fetch_and_update_game(search_name=master.title, steam_id=steam_id)
+            # Busca no IGDB pelo nome
+            new_master = fetch_and_update_game(search_name=original_title)
             
-            if new_master:
-                if new_master.id != master.id:
-                    # SUCESSO: Mescla e atualiza
+            if new_master and new_master.id != master.id:
+                # SUCESSO: O jogo existe no IGDB!
+                print(f"    ✅ Encontrado! Mesclando {master.id} -> {new_master.id}")
+                
+                with transaction.atomic():
+                    # Move PlatformGames para o novo MasterGame
                     for pg in master.platforms.all():
-                        pg.master_game = new_master
-                        pg.save()
-                    for entry in UserLibraryEntry.objects.filter(platform_game__master_game=master):
-                        entry.save() 
+                        if not PlatformGame.objects.filter(master_game=new_master, platform=pg.platform).exists():
+                            pg.master_game = new_master
+                            pg.save()
                     
-                    master.delete()
-                    updated_count += 1
-                    print(f"      ✅ MATCH! Atualizado para ID {new_master.igdb_id}")
+                    # Atualiza entries da library (não precisa fazer nada se movemos o PG)
+                    
+                master.delete()
+                updated_count += 1
             else:
-                # FALHA: Jogo não existe no IGDB ou API falhou.
-                # AÇÃO: Marcar como "Verificado" para não pegar no próximo loop.
-                # Truque: Inverter o sinal do ID temporário.
-                print(f"      ⚠️ Sem dados no IGDB. Marcando para ignorar futuramente.")
-                master.igdb_id = -master.igdb_id 
-                master.save()
-
+                print(f"    ⚠️ Não encontrado no IGDB. Mantendo Stub.")
+                
         except Exception as e:
-            print(f"      ❌ Erro Crítico em {master.title}: {e}")
-            # Em caso de erro de código, também ignoramos para não travar a fila
-            master.igdb_id = -master.igdb_id
-            master.save()
+            print(f"    ❌ Erro ao enriquecer {original_title}: {e}")
 
-    # Recursão: Verifica se sobrou alguém (os negativos agora são ignorados)
-    remaining = MasterGame.objects.filter(igdb_id__gt=900000000).count()
-    
-    if remaining > 0:
-        print(f"🔁 [ENRICH] Lote finalizado. Agendando próximo lote (Restam {remaining})...")
-        enrich_library_task.apply_async(countdown=2)
-    else:
-        print("✨ [ENRICH] Fim da linha! Todos os jogos foram processados ou ignorados.")
+    # Re-agenda se tiver mais
+    if MasterGame.objects.filter(Q(igdb_id__gt=900000000) | Q(igdb_id__lt=0)).exists():
+        enrich_library_task.apply_async(countdown=5)
 
     return f"Lote finalizado. Atualizados: {updated_count}"
 
-# === NOVAS TASKS LGPD ===
+
+# ==========================================
+# IMPORTADOR BACKLOGGD (CELERY TASK)
+# ==========================================
+@shared_task(bind=True)
+def run_backloggd_import_task(self, job_id):
+    """Task Celery que roda o scraper."""
+    job = ProfileImportJob.objects.get(id=job_id)
+    service = BackloggdScraperService(job_id)
+    
+    try:
+        service.run()
+    except Exception as e:
+        job.status = 'failed'
+        job.save()
+        raise e
+
+
+# ==========================================
+# EXPORT & DELETE TASKS (LGPD)
+# ==========================================
 
 @shared_task
 def export_user_data_task(user_id):
-    """
-    Gera um arquivo ZIP contendo CSVs da Biblioteca e Reviews.
-    Formato amigável para Excel/Google Sheets.
-    """
     try:
         user = User.objects.get(id=user_id)
         
@@ -349,9 +329,7 @@ def export_user_data_task(user_id):
         writer_lib = csv.writer(lib_buffer)
         writer_lib.writerow(['Title', 'Platform', 'Status', 'Rating', 'Playtime (Minutes)', 'Last Played', 'Date Added'])
         
-        # Otimização: select_related para evitar N+1
         library = UserLibraryEntry.objects.filter(user=user).select_related('platform_game__master_game', 'platform_game__platform')
-        
         for entry in library:
             writer_lib.writerow([
                 entry.platform_game.master_game.title,
@@ -359,7 +337,7 @@ def export_user_data_task(user_id):
                 entry.status,
                 entry.rating or '',
                 entry.playtime_minutes,
-                entry.last_played.strftime('%Y-%m-%d') if entry.last_played else '',
+                (entry.last_played.strftime('%Y-%m-%d') if entry.last_played else ''),
                 entry.last_synced.strftime('%Y-%m-%d')
             ])
             
@@ -369,31 +347,27 @@ def export_user_data_task(user_id):
         writer_rev.writerow(['Game', 'Date', 'Rating', 'Review Text', 'Recommended', 'Spoilers'])
         
         reviews = Review.objects.filter(user=user).select_related('library_entry__platform_game__master_game')
-        
         for rev in reviews:
             writer_rev.writerow([
                 rev.library_entry.platform_game.master_game.title,
                 rev.created_at.strftime('%Y-%m-%d'),
                 rev.rating or '',
-                rev.text, # Texto original em Markdown
+                rev.text,
                 'Yes' if rev.is_recommended else 'No',
                 'Yes' if rev.contains_spoilers else 'No'
             ])
 
-        # 3. Criar o ZIP em memória
+        # 3. Criar ZIP
+        import zipfile
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             zip_file.writestr(f'alkahest_library_{user.username}.csv', lib_buffer.getvalue())
             zip_file.writestr(f'alkahest_reviews_{user.username}.csv', rev_buffer.getvalue())
         
-        # 4. Salvar no Storage
         filename = f"exports/{user.username}_export_{int(time.time())}.zip"
         path = default_storage.save(filename, ContentFile(zip_buffer.getvalue()))
-        
         return f"Export CSV/ZIP salvo em: {path}"
 
-    except User.DoesNotExist:
-        return "User not found"
     except Exception as e:
         return f"Erro no export: {str(e)}"
 
@@ -402,10 +376,11 @@ def delete_user_account_task(user_id):
     print(f"💀 [DELETE] Iniciando exclusão do User ID {user_id}")
     try:
         user = User.objects.get(id=user_id)
-
+        old_username = user.username
+        
         SocialAccount.objects.filter(user=user).delete()
         
-        # 1. Limpeza da Biblioteca (Mantendo Reviews)
+        # Limpeza da Biblioteca
         for entry in UserLibraryEntry.objects.filter(user=user):
             if entry.reviews.exists():
                 entry.playtime_minutes = 0
@@ -417,30 +392,19 @@ def delete_user_account_task(user_id):
             else:
                 entry.delete()
         
-        # 2. Anonimização do Usuário (CRÍTICO)
-        # Usamos hex randomico para garantir que não bata com nenhum email existente
+        # Anonimização
         anon_token = uuid.uuid4().hex[:12]
-        
-        old_username = user.username
         user.username = f"deleted_{anon_token}"
-        
-        # Truque: Usar um email inválido/dummy que com certeza é único
         user.email = f"{anon_token}@deleted.local" 
-        
         user.first_name = ""
         user.last_name = ""
         user.is_active = False
         user.set_unusable_password()
         
-        # Removemos relações sociais se existirem
         user.groups.clear()
         user.user_permissions.clear()
-        
-        # 3. Salva a alteração
         user.save()
-        print(f"✅ [DELETE] Usuário {old_username} renomeado para {user.username}")
-
-        # 4. Limpeza do Perfil (Se existir)
+        
         if hasattr(user, 'profile'):
             user.profile.bio = "Deleted User"
             user.profile.avatar_url = None
@@ -449,24 +413,4 @@ def delete_user_account_task(user_id):
         return f"Sucesso: {old_username} virou {user.username}"
 
     except Exception as e:
-        # Se der erro, printa para descobrirmos
-        print(f"❌ [DELETE ERROR] Falha ao deletar: {str(e)}")
         return f"Erro: {str(e)}"
-        
-    return f"Conta de {username_bkp} encerrada."
-
-@shared_task(bind=True)
-def run_backloggd_import_task(self, job_id):
-    """
-    Task Celery que roda o scraper.
-    """
-    job = ProfileImportJob.objects.get(id=job_id)
-    service = BackloggdScraperService(job_id)
-    
-    try:
-        service.run()
-    except Exception as e:
-        # Garantir que o job marque falha mesmo se o service explodir
-        job.status = 'failed'
-        job.save()
-        raise e

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark text-white border-secondary">
+                <div class="card-header border-secondary">
+                    <h3><i class="fas fa-file-import me-2"></i>Importador Backloggd</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Digite o nome de usuário público do Backloggd. O processo roda em background.
+                        <br>
+                        <small class="text-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Atenção: Isso pode demorar. Não feche a aba se quiser ver o log em tempo real.
+                        </small>
+                    </p>
+
+                    <!-- Formulário HTMX -->
+                    <form hx-post="{% url 'start_backloggd_import' %}" 
+                          hx-target="#import-results" 
+                          hx-swap="prepend">
+                        {% csrf_token %}
+                        <div class="input-group mb-3">
+                            <span class="input-group-text bg-secondary border-secondary text-white">@</span>
+                            <input type="text" name="backloggd_username" class="form-control bg-dark text-white border-secondary" placeholder="Username (ex: GmanLives)" required>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-cloud-download-alt"></i> Iniciar Importação
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="border-secondary">
+
+                    <!-- Área onde as Barras de Progresso vão aparecer -->
+                    <div id="import-results">
+                        <!-- Jobs anteriores pendentes ou rodando aparecem aqui -->
+                        {% for job in active_jobs %}
+                            {% include 'includes/import_progress.html' with job=job %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

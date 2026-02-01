@@ -1,21 +1,29 @@
+# vault/services.py
 import re
-import nh3
-import requests
-import random
 import time
+import random
+import requests
+import nh3
+import cloudscraper  # <--- CRÍTICO: Instale com 'pip install cloudscraper'
+from bs4 import BeautifulSoup
 from datetime import datetime
+
 from django.utils.text import slugify
 from django.utils.dateparse import parse_date
+from django.db import transaction
 from decouple import config
-from .models import MasterGame
-from bs4 import BeautifulSoup
-from .utils_igdb import igdb_api_request # Importa a nova função robusta
+
+from .models import MasterGame, Platform, PlatformGame, UserLibraryEntry, Review
+from .utils_igdb import igdb_api_request 
+
+# ==============================================================================
+# BLOCO 1: LÓGICA IGDB (FETCH & UPDATE)
+# ==============================================================================
 
 def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
     """
-    Busca Jogo no IGDB (Cascata de Tentativas) usando o novo wrapper robusto.
+    Busca Jogo no IGDB (Cascata de Tentativas) usando o wrapper robusto.
     """
-    
     # Query de campos completa
     fields = (
         "name, slug, status, category, parent_game, "
@@ -27,7 +35,7 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
         "collection.name, franchises.name, similar_games, dlcs, "
         "language_supports.language.name, language_supports.language_support_type.name, "
         "websites.url, websites.category, "
-        "external_games.category, external_games.uid" # Importante para linkar lojas
+        "external_games.category, external_games.uid" 
     )
 
     data = []
@@ -72,199 +80,8 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
     master, created = _process_and_save_game(data)
     return master
 
-class BackloggdScraperService:
-    """
-    Scraper especializado em Backloggd.
-    Estratégia:
-    1. Acessa /u/{username}/games para pegar ID, Título, Poster.
-    2. Acessa /u/{username}/reviews para pegar textos ricos e spoilers.
-    """
-    BASE_URL = "https://www.backloggd.com"
-    
-    def __init__(self, job_id):
-        from .models import ProfileImportJob # Import local para evitar ciclo
-        self.job = ProfileImportJob.objects.get(id=job_id)
-        self.user = self.job.user
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Referer': 'https://www.backloggd.com/',
-        })
+# --- Funções Auxiliares IGDB ---
 
-    def run(self):
-        try:
-            self.job.status = 'processing'
-            self.job.save()
-            
-            # Passo 1: Descobrir total de páginas (meta-dado aproximado)
-            self._log("Iniciando varredura de Reviews...")
-            self._scrape_reviews()
-            
-            # Passo 2: Varredura de Library (Jogados mas sem review escrita)
-            # self._scrape_library() # (Opcional: implemente se quiser apenas status sem texto)
-            
-            self.job.status = 'completed'
-            self.job.progress_current = self.job.progress_total
-            self.job.log_message += "\nImportação finalizada com sucesso."
-            self.job.save()
-            
-        except Exception as e:
-            self.job.status = 'failed'
-            self.job.log_message = str(e)
-            self.job.save()
-            raise e
-
-    def _scrape_reviews(self):
-        page = 1
-        has_next = True
-        
-        while has_next:
-            url = f"{self.BASE_URL}/u/{self.job.target_username}/reviews/page/{page}"
-            self._log(f"Lendo página {page}...")
-            
-            response = self._make_request(url)
-            if not response: 
-                break
-                
-            soup = BeautifulSoup(response.text, 'html.parser')
-            review_cards = soup.select('div.review-card')
-            
-            if not review_cards:
-                has_next = False
-                break
-                
-            self.job.progress_total += len(review_cards)
-            self.job.save()
-
-            for card in review_cards:
-                self._process_review_card(card)
-                self.job.progress_current += 1
-                self.job.save()
-
-            # Paginação check
-            next_btn = soup.select_one('nav.pagination a[rel="next"]')
-            if not next_btn:
-                has_next = False
-            
-            page += 1
-            time.sleep(random.uniform(2.0, 4.0)) # Delay anti-ban
-
-    def _process_review_card(self, card):
-        from .models import MasterGame, Platform, PlatformGame, UserLibraryEntry, Review
-        
-        # 1. Extração de Dados do HTML
-        # O Backloggd geralmente esconde o IGDB ID no link da imagem ou atributos data
-        # Fallback: Pegar do link do poster
-        game_link = card.select_one('.review-card-top a')
-        if not game_link: return
-
-        # Tentar extrair IGDB ID do atributo game_id na div.poster (se disponível no card de review)
-        # Nota: No card de review as vezes não tem o game_id explícito, mas no link da imagem sim.
-        slug = game_link['href'].split('/games/')[1].split('/')[0]
-        
-        # Título
-        # O título as vezes não está texto puro no card de review mobile, mas no alt da imagem
-        img_tag = card.select_one('.card-img-top')
-        title = img_tag['alt'] if img_tag else slug.replace('-', ' ').title()
-        
-        # Rating (Width: 80%)
-        rating = None
-        stars = card.select_one('.stars-top')
-        if stars and 'style' in stars.attrs:
-            width_match = re.search(r'width:(\d+)%', stars['style'])
-            if width_match:
-                rating = int(width_match.group(1))
-
-        # Texto e Spoiler
-        review_body = card.select_one('.review-body .card-text')
-        is_spoiler = bool(card.select('.review-spoiler'))
-        
-        # Se for spoiler, o texto pode estar escondido ou precisar de clique. 
-        # O Backloggd renderiza o texto no HTML mesmo se for spoiler.
-        raw_text = review_body.get_text('\n', strip=True) if review_body else ""
-        
-        # Data
-        date_elem = card.select_one('.review-date')
-        review_date = None
-        if date_elem:
-            clean_date = date_elem.get_text(strip=True).replace('Reviewed on ', '')
-            try:
-                review_date = datetime.strptime(clean_date, '%d %b %Y').date()
-            except: pass
-
-        # 2. Resolução do Master Game (CRÍTICO)
-        # Tenta achar por slug ou criar Stub
-        master_game = MasterGame.objects.filter(slug=slug).first()
-        
-        if not master_game:
-            # Criação de Stub Inteligente
-            # Usamos um ID negativo temporário baseado no hash do slug para consistência
-            temp_id = -(abs(hash(slug)) % 100000000)
-            master_game = MasterGame.objects.create(
-                slug=slug,
-                title=title,
-                igdb_id=temp_id,
-                cover_url=img_tag['src'] if img_tag else None
-            )
-            # Agenda enriquecimento real via IGDB
-            # (Pode-se chamar fetch_and_update_game aqui se não for travar muito)
-
-        # 3. Plataforma (Default PC se não soubermos)
-        plat_pc, _ = Platform.objects.get_or_create(slug='pc', defaults={'name': 'PC'})
-        p_game, _ = PlatformGame.objects.get_or_create(
-            master_game=master_game,
-            platform=plat_pc, # Backloggd reviews genéricas não mostram plataforma fácil
-            defaults={'external_id': f"bl_import_{slug}", 'external_title': title}
-        )
-
-        # 4. Persistência (Atomic)
-        with transaction.atomic():
-            # Library Entry
-            entry, created = UserLibraryEntry.objects.get_or_create(
-                user=self.user,
-                platform_game=p_game
-            )
-            
-            # Atualiza dados se for novo ou se a importação for autoritativa
-            entry.status = 'completed' # Se tem review, completou
-            if rating:
-                entry.rating = rating
-            if review_date:
-                entry.last_played = review_date # Melhor estimativa
-            entry.save()
-
-            # Review
-            if raw_text:
-                Review.objects.update_or_create(
-                    user=self.user,
-                    library_entry=entry,
-                    defaults={
-                        'text': nh3.clean(raw_text), # Sanitização NH3 OBRIGATÓRIA
-                        'rating': rating,
-                        'contains_spoilers': is_spoiler,
-                        'created_at': review_date or datetime.now()
-                    }
-                )
-
-    def _make_request(self, url):
-        try:
-            resp = self.session.get(url, timeout=10)
-            if resp.status_code == 429:
-                self._log("Rate Limit (429). Dormindo 60s...")
-                time.sleep(60)
-                return self._make_request(url) # Retry
-            return resp
-        except Exception as e:
-            self._log(f"Erro de request: {e}")
-            return None
-
-    def _log(self, msg):
-        # Atualiza log no banco para o usuário ver se travou
-        self.job.log_message = (self.job.log_message + f"\n[{datetime.now().strftime('%H:%M:%S')}] {msg}")[-2000:]
-        self.job.save(update_fields=['log_message'])
-
-
-# Funções auxiliares de limpeza (mantidas iguais)
 def _sanitize_light(name):
     name = re.sub(r'[®™©]', '', name)
     useless_suffixes = [
@@ -285,16 +102,12 @@ def _sanitize_heavy(name):
         name = re.sub(suffix, '', name, flags=re.IGNORECASE)
     return name.strip()
 
-# Função de Processamento (Mantida igual mas sem a request dentro)
 def _process_and_save_game(data):
-    # --- CORREÇÃO OBRIGATÓRIA AQUI ---
     # Se data for uma lista (ex: [{...}]), pegamos o primeiro item.
     if isinstance(data, list):
-        if not data: return None, False # Lista vazia, sai fora
-        data = data[0] # Transforma lista em dicionário
-    # ---------------------------------
+        if not data: return None, False 
+        data = data[0]
 
-    # Agora data é um dicionário {}, então .get() vai funcionar!
     cover_url = 'https:' + data['cover']['url'].replace('t_thumb', 't_cover_big') if 'cover' in data else None
     
     artworks = ['https:' + img['url'].replace('t_thumb', 't_1080p') for img in data.get('artworks', [])]
@@ -369,3 +182,237 @@ def _process_and_save_game(data):
         }
     )
     return master_game, created
+
+
+# ==============================================================================
+# BLOCO 2: BACKLOGGD SCRAPER SERVICE (CLOUD SCRAPER EDITION)
+# ==============================================================================
+
+class BackloggdScraperService:
+    """
+    Scraper robusto para Backloggd usando CloudScraper para bypass de Cloudflare.
+    Estratégia:
+    - Simula um browser real (Chrome/Windows).
+    - Link-First Strategy: Busca links de jogos e sobe a hierarquia DOM para achar dados.
+    """
+    BASE_URL = "https://www.backloggd.com"
+    
+    def __init__(self, job_id):
+        from .models import ProfileImportJob
+        self.job = ProfileImportJob.objects.get(id=job_id)
+        self.user = self.job.user
+        
+        # Inicializa o CloudScraper em vez de Requests simples
+        # Isso resolve os erros de 403/429 e CAPTCHA oculto
+        self.scraper = cloudscraper.create_scraper(
+            browser={
+                'browser': 'chrome',
+                'platform': 'windows',
+                'desktop': True
+            }
+        )
+
+    def run(self):
+        try:
+            self.job.status = 'processing'
+            self.job.save()
+            
+            self._log(f"Iniciando importação para: {self.job.target_username}")
+            
+            # Scrape de Reviews (Conteúdo mais rico)
+            total_reviews = self._scrape_reviews()
+            
+            # Scrape de Jogados (Opcional - Fase futura)
+            # self._scrape_games_list() 
+            
+            if total_reviews == 0:
+                self.job.status = 'failed'
+                self.job.log_message += "\n❌ Nenhum item encontrado. Perfil privado ou bloqueio severo."
+            else:
+                self.job.status = 'completed'
+                self.job.log_message += f"\n✅ Sucesso! {total_reviews} reviews importadas."
+            
+            self.job.progress_current = self.job.progress_total
+            self.job.save()
+            
+        except Exception as e:
+            self.job.status = 'failed'
+            self.job.log_message = f"❌ Erro Fatal: {str(e)}"
+            self.job.save()
+            # Não damos raise para não crashar o Celery, apenas marcamos o job como falha
+            print(f"Erro no Scraper: {e}")
+
+    def _scrape_reviews(self):
+        page = 1
+        total_extracted = 0
+        
+        while True:
+            url = f"{self.BASE_URL}/u/{self.job.target_username}/reviews/page/{page}/"
+            self._log(f"📖 Lendo página {page}...")
+            
+            response = self._make_request(url)
+            if not response or response.status_code == 404:
+                break
+                
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # ESTRATÉGIA LINK-FIRST
+            # Encontra todos os links de jogos e deduz o card pai
+            links = soup.select('a[href*="/games/"]')
+            
+            unique_items = []
+            seen_slugs = set()
+            
+            for link in links:
+                # Sobe para achar o container (card ou coluna)
+                card = link.find_parent('div', class_='card') or link.find_parent('div', class_='col-12')
+                
+                if card:
+                    href = link['href']
+                    # Extrai slug da URL: /games/elden-ring/ -> elden-ring
+                    try:
+                        parts = [p for p in href.split('/') if p]
+                        if 'games' in parts:
+                            slug_idx = parts.index('games') + 1
+                            if slug_idx < len(parts):
+                                slug = parts[slug_idx]
+                                
+                                if slug not in seen_slugs:
+                                    seen_slugs.add(slug)
+                                    unique_items.append((card, slug, link))
+                    except: continue
+
+            self._log(f"   Encontrados {len(unique_items)} itens.")
+            
+            if not unique_items:
+                break # Página vazia ou fim da lista
+                
+            self.job.progress_total += len(unique_items)
+            self.job.save()
+
+            for item in unique_items:
+                try:
+                    self._process_item(item)
+                    self.job.progress_current += 1
+                    total_extracted += 1
+                    self.job.save()
+                except Exception as e:
+                    print(f"Erro processando item: {e}")
+
+            # Paginação: Verifica se existe botão Next
+            next_btn = soup.find('a', attrs={'rel': 'next'})
+            if not next_btn:
+                break
+                
+            page += 1
+            time.sleep(random.uniform(2, 5)) # Delay humano
+            
+        return total_extracted
+
+    def _process_item(self, item):
+        card, slug, link_elem = item
+        
+        # 1. TÍTULO & CAPA
+        img = card.find('img')
+        title = img.get('alt') if img else link_elem.get_text(strip=True)
+        cover_url = img.get('src') if img else None
+        
+        if not title: title = slug.replace('-', ' ').title()
+        
+        # 2. RATING (Procura style="width:XX%")
+        rating = None
+        style_elem = card.find(style=re.compile(r'width:\s*\d+%'))
+        if style_elem:
+            match = re.search(r'width:\s*(\d+)%', style_elem['style'])
+            if match:
+                rating = int(match.group(1))
+                
+        # 3. TEXTO & SPOILER
+        review_text = ""
+        is_spoiler = bool(card.find(class_='spoiler') or card.find(class_='review-spoiler'))
+        
+        # Heurística: Review é o texto mais longo do card
+        candidates = card.find_all(['p', 'span', 'div'])
+        valid_texts = []
+        for c in candidates:
+            # Ignora classes irrelevantes
+            if 'stars' in c.get('class', []) or 'date' in c.get('class', []): continue
+            
+            text = c.get_text('\n', strip=True)
+            if len(text) > 15: # Ignora textos curtos (datas, labels)
+                valid_texts.append(text)
+        
+        if valid_texts:
+            review_text = max(valid_texts, key=len)
+
+        # 4. SALVAR
+        self._save_to_db(slug, title, cover_url, rating, review_text, is_spoiler)
+
+    def _save_to_db(self, slug, title, cover_url, rating, text, is_spoiler):
+        # Master Game Stub (ID Negativo Temporário)
+        # Usamos hash do slug para gerar um ID consistente (idempotência)
+        temp_id = -(abs(hash(slug)) % 9999999)
+        
+        master, _ = MasterGame.objects.get_or_create(
+            slug=slug,
+            defaults={
+                'title': title,
+                'igdb_id': temp_id,
+                'cover_url': cover_url,
+                'status': 0 # Released
+            }
+        )
+        
+        # Platform (PC Default)
+        pc, _ = Platform.objects.get_or_create(slug='pc', defaults={'name': 'PC'})
+        
+        # Platform Game Link
+        pg, _ = PlatformGame.objects.get_or_create(
+            master_game=master, platform=pc,
+            defaults={'external_id': f"bl_{slug}", 'external_title': title}
+        )
+        
+        with transaction.atomic():
+            # Library Entry
+            entry, _ = UserLibraryEntry.objects.get_or_create(
+                user=self.user, platform_game=pg,
+                defaults={'status': 'completed'}
+            )
+            
+            if rating:
+                entry.rating = rating
+                entry.save()
+            
+            # Review
+            if text:
+                Review.objects.update_or_create(
+                    user=self.user, library_entry=entry,
+                    defaults={
+                        'text': nh3.clean(text), # Sanitização NH3
+                        'rating': rating,
+                        'contains_spoilers': is_spoiler,
+                        'title': f"Review de {title}"
+                    }
+                )
+
+    def _make_request(self, url):
+        try:
+            # Usa o scraper.get em vez de requests.get
+            resp = self.scraper.get(url, timeout=20)
+            
+            if resp.status_code == 429:
+                self._log("⏳ Rate Limit (429). Aguardando 60s...")
+                time.sleep(60)
+                return self._make_request(url)
+                
+            return resp
+        except Exception as e:
+            self._log(f"Erro de conexão: {e}")
+            return None
+
+    def _log(self, msg):
+        print(f"[Import] {msg}") # Output no terminal
+        # Atualiza log no banco
+        ts = datetime.now().strftime("%H:%M:%S")
+        self.job.log_message = f"{self.job.log_message}\n[{ts}] {msg}"[-2000:]
+        self.job.save(update_fields=['log_message'])

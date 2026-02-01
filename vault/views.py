@@ -692,3 +692,13 @@ def check_import_status(request, job_id):
         return response
         
     return render(request, 'includes/import_progress.html', {'job': job})
+
+
+@login_required
+def import_hub_view(request):
+    active_jobs = ProfileImportJob.objects.filter(
+        user=request.user
+    ).order_by('-created_at')[:5]
+    
+    # CAMINHO ATUALIZADO
+    return render(request, 'settings/import_hub.html', {'active_jobs': active_jobs})
