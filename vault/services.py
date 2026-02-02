@@ -4,7 +4,7 @@ import time
 import random
 import requests
 import nh3
-import cloudscraper  # <--- CRÍTICO: Instale com 'pip install cloudscraper'
+import cloudscraper  # pip install cloudscraper
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -24,7 +24,6 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
     """
     Busca Jogo no IGDB (Cascata de Tentativas) usando o wrapper robusto.
     """
-    # Query de campos completa
     fields = (
         "name, slug, status, category, parent_game, "
         "summary, storyline, first_release_date, "
@@ -45,9 +44,8 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
         body = f"fields {fields}; where id = {igdb_id};"
         data = igdb_api_request('games', body)
 
-    # 2. TENTATIVA: STEAM ID (Link Oficial)
+    # 2. TENTATIVA: STEAM ID
     if not data and steam_id:
-        # Category 13 = Steam.
         body = f"fields {fields}; where external_games.uid = \"{steam_id}\" & external_games.category = 13; limit 1;"
         data = igdb_api_request('games', body)
 
@@ -58,7 +56,7 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
         body = f"search \"{safe_name_raw}\"; fields {fields}; limit 1;"
         data = igdb_api_request('games', body)
 
-        # 4. TENTATIVA: NOME "LEVE"
+        # 4. TENTATIVA: NOME LEVE
         if not data:
             semi_clean = _sanitize_light(safe_name_raw)
             if semi_clean != safe_name_raw:
@@ -66,7 +64,7 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
                 body = f"search \"{semi_clean}\"; fields {fields}; limit 1;"
                 data = igdb_api_request('games', body)
 
-        # 5. TENTATIVA: NOME "BASE"
+        # 5. TENTATIVA: NOME BASE
         if not data:
             base_clean = _sanitize_heavy(safe_name_raw)
             if base_clean != semi_clean and base_clean != safe_name_raw:
@@ -103,7 +101,6 @@ def _sanitize_heavy(name):
     return name.strip()
 
 def _process_and_save_game(data):
-    # Se data for uma lista (ex: [{...}]), pegamos o primeiro item.
     if isinstance(data, list):
         if not data: return None, False 
         data = data[0]
@@ -183,18 +180,11 @@ def _process_and_save_game(data):
     )
     return master_game, created
 
-
 # ==============================================================================
-# BLOCO 2: BACKLOGGD SCRAPER SERVICE (CLOUD SCRAPER EDITION)
+# BLOCO 2: BACKLOGGD SCRAPER SERVICE (LOG EDITION)
 # ==============================================================================
 
 class BackloggdScraperService:
-    """
-    Scraper robusto para Backloggd usando CloudScraper para bypass de Cloudflare.
-    Estratégia:
-    - Simula um browser real (Chrome/Windows).
-    - Link-First Strategy: Busca links de jogos e sobe a hierarquia DOM para achar dados.
-    """
     BASE_URL = "https://www.backloggd.com"
     
     def __init__(self, job_id):
@@ -202,13 +192,12 @@ class BackloggdScraperService:
         self.job = ProfileImportJob.objects.get(id=job_id)
         self.user = self.job.user
         
-        # Inicializa o CloudScraper em vez de Requests simples
-        # Isso resolve os erros de 403/429 e CAPTCHA oculto
+        # Simula Android para evitar bloqueio
         self.scraper = cloudscraper.create_scraper(
             browser={
                 'browser': 'chrome',
-                'platform': 'windows',
-                'desktop': True
+                'platform': 'android', 
+                'mobile': True
             }
         )
 
@@ -216,141 +205,127 @@ class BackloggdScraperService:
         try:
             self.job.status = 'processing'
             self.job.save()
-            
             self._log(f"Iniciando importação para: {self.job.target_username}")
             
-            # Scrape de Reviews (Conteúdo mais rico)
-            total_reviews = self._scrape_reviews()
+            # 1. Tenta buscar do Diário (Mais rico: Datas, Texto, Notas)
+            count_log = self._scrape_log()
             
-            # Scrape de Jogados (Opcional - Fase futura)
-            # self._scrape_games_list() 
+            # 2. Se achar pouco, poderíamos tentar buscar da lista geral (Games)
+            # Mas vamos manter simples por enquanto para evitar bloqueio.
             
-            if total_reviews == 0:
+            if count_log == 0:
                 self.job.status = 'failed'
-                self.job.log_message += "\n❌ Nenhum item encontrado. Perfil privado ou bloqueio severo."
+                self.job.log_message += "\n❌ Nenhum log encontrado. Perfil privado ou sem diário."
             else:
                 self.job.status = 'completed'
-                self.job.log_message += f"\n✅ Sucesso! {total_reviews} reviews importadas."
+                self.job.log_message += f"\n✅ Sucesso! {count_log} logs processados."
             
             self.job.progress_current = self.job.progress_total
             self.job.save()
+            return count_log
             
         except Exception as e:
             self.job.status = 'failed'
             self.job.log_message = f"❌ Erro Fatal: {str(e)}"
             self.job.save()
-            # Não damos raise para não crashar o Celery, apenas marcamos o job como falha
             print(f"Erro no Scraper: {e}")
+            return 0
 
-    def _scrape_reviews(self):
+    def _scrape_log(self):
         page = 1
         total_extracted = 0
         
         while True:
-            url = f"{self.BASE_URL}/u/{self.job.target_username}/reviews/page/{page}/"
-            self._log(f"📖 Lendo página {page}...")
+            # Rota /log/ é a melhor fonte de dados detalhados
+            url = f"{self.BASE_URL}/u/{self.job.target_username}/log/page/{page}/"
+            self._log(f"📖 Lendo Diário (Log) pg {page}...")
             
             response = self._make_request(url)
-            if not response or response.status_code == 404:
-                break
-                
+            if not response or response.status_code == 404: break
+            
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # ESTRATÉGIA LINK-FIRST
-            # Encontra todos os links de jogos e deduz o card pai
-            links = soup.select('a[href*="/games/"]')
+            # Seletores para entradas de log
+            log_entries = soup.select('div.log-entry, div.journal-entry, div.card-log')
             
-            unique_items = []
-            seen_slugs = set()
+            if not log_entries:
+                # Fallback genérico
+                log_entries = soup.select('div[data-rating]')
             
-            for link in links:
-                # Sobe para achar o container (card ou coluna)
-                card = link.find_parent('div', class_='card') or link.find_parent('div', class_='col-12')
-                
-                if card:
-                    href = link['href']
-                    # Extrai slug da URL: /games/elden-ring/ -> elden-ring
-                    try:
-                        parts = [p for p in href.split('/') if p]
-                        if 'games' in parts:
-                            slug_idx = parts.index('games') + 1
-                            if slug_idx < len(parts):
-                                slug = parts[slug_idx]
-                                
-                                if slug not in seen_slugs:
-                                    seen_slugs.add(slug)
-                                    unique_items.append((card, slug, link))
-                    except: continue
+            self._log(f"   Encontrados {len(log_entries)} logs.")
+            
+            if not log_entries: break
 
-            self._log(f"   Encontrados {len(unique_items)} itens.")
-            
-            if not unique_items:
-                break # Página vazia ou fim da lista
-                
-            self.job.progress_total += len(unique_items)
+            self.job.progress_total += len(log_entries)
             self.job.save()
 
-            for item in unique_items:
+            for entry in log_entries:
                 try:
-                    self._process_item(item)
+                    self._process_log_entry(entry)
                     self.job.progress_current += 1
                     total_extracted += 1
                     self.job.save()
                 except Exception as e:
-                    print(f"Erro processando item: {e}")
+                    print(f"Skip: {e}")
 
-            # Paginação: Verifica se existe botão Next
-            next_btn = soup.find('a', attrs={'rel': 'next'})
-            if not next_btn:
-                break
-                
+            if not soup.find('a', attrs={'rel': 'next'}): break
             page += 1
             time.sleep(random.uniform(2, 5)) # Delay humano
             
         return total_extracted
 
-    def _process_item(self, item):
-        card, slug, link_elem = item
+    def _process_log_entry(self, card):
+        # 1. TÍTULO E SLUG
+        link = card.select_one('a[href*="/games/"]')
+        if not link: return
         
-        # 1. TÍTULO & CAPA
+        href = link['href']
+        # /games/slug/ -> slug
+        try:
+            slug = href.split('/games/')[1].split('/')[0]
+        except: return
+        
         img = card.find('img')
-        title = img.get('alt') if img else link_elem.get_text(strip=True)
+        title = img.get('alt') if img else link.get_text(strip=True)
         cover_url = img.get('src') if img else None
-        
         if not title: title = slug.replace('-', ' ').title()
-        
-        # 2. RATING (Procura style="width:XX%")
+
+        # 2. RATING (Prioridade: data-rating)
         rating = None
-        style_elem = card.find(style=re.compile(r'width:\s*\d+%'))
-        if style_elem:
-            match = re.search(r'width:\s*(\d+)%', style_elem['style'])
-            if match:
-                rating = int(match.group(1))
-                
-        # 3. TEXTO & SPOILER
+        data_rating = card.get('data-rating')
+        if data_rating:
+            rating = int(data_rating) * 10 
+        else:
+            stars = card.select_one('.stars-top')
+            if stars:
+                width = re.search(r'width:\s*(\d+)%', stars.get('style', ''))
+                if width: rating = int(width.group(1))
+
+        # 3. TEXTO (Review)
         review_text = ""
-        is_spoiler = bool(card.find(class_='spoiler') or card.find(class_='review-spoiler'))
+        # Tenta achar o container de texto do journal
+        review_div = card.select_one('.journal-review, .log-review, .review-text, .card-text')
         
-        # Heurística: Review é o texto mais longo do card
-        candidates = card.find_all(['p', 'span', 'div'])
-        valid_texts = []
-        for c in candidates:
-            # Ignora classes irrelevantes
-            if 'stars' in c.get('class', []) or 'date' in c.get('class', []): continue
-            
-            text = c.get_text('\n', strip=True)
-            if len(text) > 15: # Ignora textos curtos (datas, labels)
-                valid_texts.append(text)
+        if review_div:
+            review_text = review_div.get_text('\n', strip=True)
+        else:
+            # Busca heurística por parágrafos longos
+            ps = card.select('p')
+            for p in ps:
+                txt = p.get_text(strip=True)
+                # Filtra textos que são metadados comuns do site
+                if len(txt) > 20 and "Played on" not in txt and "Review by" not in txt:
+                    review_text = txt
+                    break
         
-        if valid_texts:
-            review_text = max(valid_texts, key=len)
+        if len(review_text) < 10: review_text = ""
+
+        is_spoiler = bool(card.select_one('.spoiler'))
 
         # 4. SALVAR
         self._save_to_db(slug, title, cover_url, rating, review_text, is_spoiler)
 
     def _save_to_db(self, slug, title, cover_url, rating, text, is_spoiler):
-        # Master Game Stub (ID Negativo Temporário)
-        # Usamos hash do slug para gerar um ID consistente (idempotência)
         temp_id = -(abs(hash(slug)) % 9999999)
         
         master, _ = MasterGame.objects.get_or_create(
@@ -359,21 +334,18 @@ class BackloggdScraperService:
                 'title': title,
                 'igdb_id': temp_id,
                 'cover_url': cover_url,
-                'status': 0 # Released
+                'status': 0
             }
         )
         
-        # Platform (PC Default)
         pc, _ = Platform.objects.get_or_create(slug='pc', defaults={'name': 'PC'})
         
-        # Platform Game Link
         pg, _ = PlatformGame.objects.get_or_create(
             master_game=master, platform=pc,
             defaults={'external_id': f"bl_{slug}", 'external_title': title}
         )
         
         with transaction.atomic():
-            # Library Entry
             entry, _ = UserLibraryEntry.objects.get_or_create(
                 user=self.user, platform_game=pg,
                 defaults={'status': 'completed'}
@@ -383,12 +355,11 @@ class BackloggdScraperService:
                 entry.rating = rating
                 entry.save()
             
-            # Review
             if text:
                 Review.objects.update_or_create(
                     user=self.user, library_entry=entry,
                     defaults={
-                        'text': nh3.clean(text), # Sanitização NH3
+                        'text': nh3.clean(text),
                         'rating': rating,
                         'contains_spoilers': is_spoiler,
                         'title': f"Review de {title}"
@@ -397,22 +368,18 @@ class BackloggdScraperService:
 
     def _make_request(self, url):
         try:
-            # Usa o scraper.get em vez de requests.get
             resp = self.scraper.get(url, timeout=20)
-            
             if resp.status_code == 429:
                 self._log("⏳ Rate Limit (429). Aguardando 60s...")
                 time.sleep(60)
                 return self._make_request(url)
-                
             return resp
         except Exception as e:
             self._log(f"Erro de conexão: {e}")
             return None
 
     def _log(self, msg):
-        print(f"[Import] {msg}") # Output no terminal
-        # Atualiza log no banco
+        print(f"[Import] {msg}")
         ts = datetime.now().strftime("%H:%M:%S")
         self.job.log_message = f"{self.job.log_message}\n[{ts}] {msg}"[-2000:]
         self.job.save(update_fields=['log_message'])

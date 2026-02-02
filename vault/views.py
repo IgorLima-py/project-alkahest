@@ -2,6 +2,8 @@
 import io
 import csv
 import zipfile
+from datetime import timedelta # <--- Adicione isso
+from django.utils import timezone
 import time
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
@@ -709,23 +711,19 @@ def import_hub_view(request):
 
 @login_required
 def import_live_feed(request, job_id):
-    """
-    Retorna as últimas N entradas criadas/modificadas RECENTEMENTE.
-    """
     job = get_object_or_404(ProfileImportJob, id=job_id, user=request.user)
     
-    # PEGA TUDO O QUE MUDOU NOS ÚLTIMOS 10 MINUTOS
-    # Isso é mais garantido do que filtrar pelo job.created_at exato
-    time_threshold = timezone.now() - timedelta(minutes=10)
-    
+    # SEM FILTRO DE TEMPO. Pega as últimas 10 que o usuário tem, ponto.
+    # Se o scraper estiver funcionando, essas 10 vão mudar na sua frente.
     latest_entries = UserLibraryEntry.objects.filter(
-        user=request.user,
-        last_synced__gte=time_threshold
+        user=request.user
     ).select_related('platform_game__master_game').order_by('-last_synced')[:10]
     
-    # DEBUG: Printar no console do servidor pra ver se tá achando
-    print(f"DEBUG FEED: Encontradas {latest_entries.count()} entradas recentes para user {request.user}")
-    
+    # Debug no terminal pra vc ver o que ele achou
+    print(f"DEBUG FEED: Mostrando {latest_entries.count()} jogos (os mais recentes do banco)")
+    for e in latest_entries:
+        print(f"   -> {e.platform_game.master_game.title} ({e.last_synced})")
+
     return render(request, 'includes/import_live_rows.html', {
         'entries': latest_entries,
         'job': job
