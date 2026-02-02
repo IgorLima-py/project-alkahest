@@ -31,3 +31,8 @@ media/
 # --- Static (Apenas se você rodar collectstatic em dev) ---
 staticfiles/
 .docs/
+
+# ------ Testes de Scrapping e etc ------
+.lab/
+*.ipynb_checkpoints
+*.json
