@@ -380,8 +380,21 @@ def delete_user_account_task(user_id):
         
         SocialAccount.objects.filter(user=user).delete()
         
-        # Limpeza da Biblioteca
+        # 1. Anonimizar Reviews (LGPD - Direito ao Esquecimento)
+        # Em vez de apenas limpar a library, anonimizamos o conteúdo público
+        user_reviews = Review.objects.filter(user=user)
+        user_reviews.update(
+            title="[Conta Excluída]",
+            text="[O conteúdo desta análise foi removido a pedido do usuário]",
+            text_html="<p><em>[O conteúdo desta análise foi removido a pedido do usuário]</em></p>",
+            rating=None,
+            is_recommended=None,
+            likes_count=0
+        )
+
+        # 2. Limpeza da Biblioteca
         for entry in UserLibraryEntry.objects.filter(user=user):
+            # Se tem review (agora anonimizado), mantemos o registro mas limpamos dados pessoais
             if entry.reviews.exists():
                 entry.playtime_minutes = 0
                 entry.last_played = None
@@ -390,6 +403,7 @@ def delete_user_account_task(user_id):
                 entry.is_favorite = False
                 entry.save()
             else:
+                # Se não tem review, pode deletar tudo
                 entry.delete()
         
         # Anonimização

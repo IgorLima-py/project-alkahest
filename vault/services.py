@@ -366,13 +366,20 @@ class BackloggdScraperService:
                     }
                 )
 
-    def _make_request(self, url):
+    def _make_request(self, url, retries=3): # Adicionamos limite de tentativas
         try:
+            if retries <= 0:
+                self._log("❌ Limite de tentativas excedido.")
+                return None
+
             resp = self.scraper.get(url, timeout=20)
+            
             if resp.status_code == 429:
-                self._log("⏳ Rate Limit (429). Aguardando 60s...")
+                self._log(f"⏳ Rate Limit (429). Tentativas restantes: {retries}")
                 time.sleep(60)
-                return self._make_request(url)
+                # Tenta de novo, mas diminui o contador de retries
+                return self._make_request(url, retries=retries - 1)
+            
             return resp
         except Exception as e:
             self._log(f"Erro de conexão: {e}")
