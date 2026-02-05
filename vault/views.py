@@ -355,7 +355,7 @@ def add_to_list_view(request, game_id):
         list_id = request.POST.get('list_id')
         comment = request.POST.get('comment', '')
         target_list = get_object_or_404(GameList, pk=list_id, user=request.user)
-        entry = get_object_or_404(UserLibraryEntry, pk=game_id)
+        entry = get_object_or_404(UserLibraryEntry, pk=game_id, user=request.user)
         master = entry.platform_game.master_game
         last_order = target_list.items.count() + 1
         GameListItem.objects.create(game_list=target_list, master_game=master, order=last_order, comment=comment)
@@ -490,6 +490,7 @@ def rivals_view(request):
 
 @login_required
 @require_POST
+@ratelimit(key='user', rate='5/h', block=True)
 def trigger_steam_sync_view(request):
     user_id = request.user.id
     

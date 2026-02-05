@@ -1,0 +1,119 @@
+import pytest
+from django.urls import reverse
+from vault.models import UserLibraryEntry, GameList, Review, PlatformGame, MasterGame, Platform
+from django.contrib.messages import get_messages
+
+# Mocks para não chamar Celery/Steam de verdade
+from unittest.mock import patch
+
+@pytest.mark.django_db
+class TestBrokenAccessControl:
+    """
+    OWASP A01: Broken Access Control (IDOR & Privilege Escalation)
+    """
+
+    def test_idor_add_others_entry_to_my_list(self, client, user_a, user_b, master_game, platform):
+        """
+        EXPLOIT: User A tenta adicionar um UserLibraryEntry privado do User B 
+        dentro de sua própria lista (User A).
+        """
+        # Setup: User B tem um jogo (entry_b)
+        pg = PlatformGame.objects.create(master_game=master_game, platform=platform, external_id='123')
+        entry_b = UserLibraryEntry.objects.create(user=user_b, platform_game=pg, status='playing')
+        
+        # Setup: User A tem uma lista
+        list_a = GameList.objects.create(user=user_a, title="My Backlog")
+        
+        # Login como User A (Atacante)
+        client.force_login(user_a)
+        
+        # Ação: Tentar adicionar o game_id (UUID) do User B na lista do User A
+        url = reverse('add_to_list', kwargs={'game_id': entry_b.id})
+        data = {'list_id': list_a.id}
+        
+        response = client.post(url, data)
+        
+        # EXPECTATIVA DE SEGURANÇA: 
+        # O sistema deveria bloquear (404 ou 403) porque entry_b não é do User A.
+        # SE RETORNAR 302 (Redirect), O TESTE FALHA -> VOCÊ TEM UM IDOR.
+        if response.status_code == 302:
+            pytest.fail("🚨 IDOR DETECTADO: User A conseguiu adicionar um Entry do User B na lista!")
+        
+        assert response.status_code in [404, 403]
+
+    def test_delete_review_idor(self, client, user_a, user_b, master_game, platform):
+        """
+        EXPLOIT: User A tenta deletar review do User B.
+        """
+        pg = PlatformGame.objects.create(master_game=master_game, platform=platform, external_id='999')
+        entry_b = UserLibraryEntry.objects.create(user=user_b, platform_game=pg)
+        review_b = Review.objects.create(user=user_b, library_entry=entry_b, text="Hate it", rating=10)
+        
+        client.force_login(user_a)
+        url = reverse('delete_review', kwargs={'review_id': review_b.id})
+        
+        response = client.post(url)
+        
+        # O get_object_or_404(user=request.user) deve proteger isso
+        assert response.status_code == 404, "Falha: User A conseguiu deletar (ou ver) review do User B"
+        assert Review.objects.filter(id=review_b.id).exists(), "O review foi deletado do banco!"
+
+@pytest.mark.django_db
+class TestInjectionAndSanitization:
+    """
+    OWASP A03: Injection (XSS)
+    """
+
+    def test_stored_xss_in_review(self, client, user_a, entry_user_a):
+        """
+        EXPLOIT: Injetar Payload XSS no corpo do Review.
+        """
+        client.force_login(user_a)
+        url = reverse('game_detail', kwargs={'game_id': entry_user_a.id})
+        
+        xss_payload = "Nice game <img src=x onerror=alert('HACKED')>"
+        
+        data = {
+            'create_review': '1',
+            'text': xss_payload,
+            'rating': 100,
+            'is_recommended': True
+        }
+        
+        response = client.post(url, data, follow=True)
+        assert response.status_code == 200
+        
+        # Verifica no Banco de Dados
+        review = Review.objects.get(library_entry=entry_user_a)
+        
+        # O nh3 deve remover o onerror ou escapar a tag
+        assert "onerror" not in review.text_html, "FALHA: Event handler JS persistiu no HTML sanitizado!"
+        assert "<script>" not in review.text_html
+        
+        # Verifica se o texto raw (para edição) mantém o original (opcional, mas comum)
+        # O importante é o text_html estar limpo
+        
+@pytest.mark.django_db
+class TestDenialOfService:
+    """
+    OWASP A04: Insecure Design (Lack of Rate Limiting)
+    """
+
+    def test_celery_bomb_sync_steam(self, client, user_a):
+        """
+        EXPLOIT: Disparar trigger de sync repetidamente para exaurir workers.
+        """
+        client.force_login(user_a)
+        url = reverse('trigger_steam_sync')
+        
+        # Dispara 10 requisições seguidas
+        # Se não houver rate limit, todas retornam 200
+        responses = [client.post(url) for _ in range(10)]
+        
+        # Se você configurou rate limit (ex: 5/h), algumas devem ser 429
+        # Como o código atual NÃO TEM, isso aqui vai confirmar a vulnerabilidade
+        status_codes = [r.status_code for r in responses]
+        
+        if all(code == 200 for code in status_codes):
+            pytest.fail("🚨 DOS RISK: Endpoint de Sync Steam não tem Rate Limit! Um atacante pode derrubar o Celery.")
+
