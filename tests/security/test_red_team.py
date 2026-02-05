@@ -1,8 +1,10 @@
 import pytest
 from django.urls import reverse
+from django.contrib.auth.models import User
 from vault.models import UserLibraryEntry, GameList, Review, PlatformGame, MasterGame, Platform
 from django.contrib.messages import get_messages
-
+from django.test import override_settings
+from django.core.cache import cache
 
 # Mocks para não chamar Celery/Steam de verdade
 from unittest.mock import patch
@@ -90,32 +92,53 @@ class TestInjectionAndSanitization:
         # O nh3 deve remover o onerror ou escapar a tag
         assert "onerror" not in review.text_html, "FALHA: Event handler JS persistiu no HTML sanitizado!"
         assert "<script>" not in review.text_html
-        
-        # Verifica se o texto raw (para edição) mantém o original (opcional, mas comum)
-        # O importante é o text_html estar limpo
-        
+
 @pytest.mark.django_db
 class TestDenialOfService:
     """
     OWASP A04: Insecure Design (Lack of Rate Limiting)
     """
 
+    @override_settings(
+        CACHES={
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                'LOCATION': 'unique-snowflake',
+            }
+        },
+        RATELIMIT_USE_CACHE='default',
+        RATELIMIT_ENABLE=True
+    )
     # O 'patch' finge que o send_task funciona sem chamar o worker real
     @patch('vault.views.app.send_task') 
-    def test_celery_bomb_sync_steam(self, mock_send_task, client, user_a):
+    def test_celery_bomb_sync_steam(self, mock_send_task, client):
         """
         EXPLOIT: Disparar trigger de sync repetidamente.
+        Deve bloquear usuário COMUM.
         """
-        client.force_login(user_a)
+        # Garante cache limpo antes de começar
+        cache.clear()
+
+        # CRIA UM USER COMUM (NÃO-STAFF) PARA O RATE LIMIT PEGAR
+        spammer = User.objects.create_user(
+            username='spammer_bot_v4', 
+            password='123',
+            is_staff=False,
+            is_superuser=False
+        )
+        client.force_login(spammer)
+        
         url = reverse('trigger_steam_sync')
         
-        # Dispara 10 requisições seguidas
-        responses = [client.post(url, secure=True) for _ in range(10)]
+        # Dispara 15 requisições seguidas (limite na view é 10/h)
+        status_codes = []
+        for _ in range(15):
+            resp = client.post(url, secure=True)
+            status_codes.append(resp.status_code)
         
-        # Verifica se pelo menos uma foi bloqueada (429)
-        status_codes = [r.status_code for r in responses]
+        # Debug para você ver o que aconteceu
+        print(f"Status Codes (Spammer): {status_codes}")
         
-        # Se você aplicou o Rate Limit de '5/h', esperamos ver 429s
-        assert 403 in status_codes or 429 in status_codes, \
-        f"FALHA: Nenhuma requisição foi bloqueada! Codes: {status_codes}"
-
+        # Se o Rate Limit estiver funcionando, veremos 429 ou 403
+        assert 429 in status_codes or 403 in status_codes, \
+            f"FALHA: Nenhuma requisição foi bloqueada! O spammer passou livre. Codes: {status_codes}"

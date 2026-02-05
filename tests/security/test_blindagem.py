@@ -26,6 +26,7 @@ class TestSecurityShield:
         user = User.objects.create_user(username='hacker', password='123')
         client.force_login(user)
         
+        # Payload com XSS
         payload = "<img src=x onerror=alert('hack')>"
         url = reverse('create_list')
         
@@ -39,10 +40,26 @@ class TestSecurityShield:
         
         # Verifica banco
         created_list = GameList.objects.first()
+        
+        # O MAIS IMPORTANTE: O ataque sumiu?
         assert "onerror" not in created_list.description
-        assert "img" in created_list.description # img é permitida, mas atributos perigosos saem
-        # Nota: O nh3.clean remove o 'onerror', mas pode manter o 'src' se válido ou remover a tag se inválida.
-        # Ajuste conforme a config do nh3 no utils.
+        assert "alert" not in created_list.description
+
+
+    def test_create_list_valid_html(self, client):
+        """Verifica se HTML válido e seguro é preservado."""
+        user = User.objects.create_user(username='good_user', password='123')
+        client.force_login(user)
+        
+        # Payload VÁLIDO e SEGURO
+        payload = 'Minha lista <b>épica</b>'
+        url = reverse('create_list')
+        
+        client.post(url, {'title': 'Good List', 'description': payload})
+        
+        created_list = GameList.objects.last()
+        assert "<b>épica</b>" in created_list.description or "<strong>épica</strong>" in created_list.description
+
 
     # --- 2. TESTE DE RATE LIMIT (FRIENDLY) ---
     def test_rate_limit_blocks_user_but_allows_staff(self, client, settings):
