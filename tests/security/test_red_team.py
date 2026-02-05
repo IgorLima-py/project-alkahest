@@ -3,6 +3,7 @@ from django.urls import reverse
 from vault.models import UserLibraryEntry, GameList, Review, PlatformGame, MasterGame, Platform
 from django.contrib.messages import get_messages
 
+
 # Mocks para não chamar Celery/Steam de verdade
 from unittest.mock import patch
 
@@ -31,7 +32,7 @@ class TestBrokenAccessControl:
         url = reverse('add_to_list', kwargs={'game_id': entry_b.id})
         data = {'list_id': list_a.id}
         
-        response = client.post(url, data)
+        response = client.post(url, data, secure=True)
         
         # EXPECTATIVA DE SEGURANÇA: 
         # O sistema deveria bloquear (404 ou 403) porque entry_b não é do User A.
@@ -52,7 +53,7 @@ class TestBrokenAccessControl:
         client.force_login(user_a)
         url = reverse('delete_review', kwargs={'review_id': review_b.id})
         
-        response = client.post(url)
+        response = client.post(url, secure=True)
         
         # O get_object_or_404(user=request.user) deve proteger isso
         assert response.status_code == 404, "Falha: User A conseguiu deletar (ou ver) review do User B"
@@ -80,7 +81,7 @@ class TestInjectionAndSanitization:
             'is_recommended': True
         }
         
-        response = client.post(url, data, follow=True)
+        response = client.post(url, data, follow=True, secure=True)
         assert response.status_code == 200
         
         # Verifica no Banco de Dados
@@ -99,21 +100,22 @@ class TestDenialOfService:
     OWASP A04: Insecure Design (Lack of Rate Limiting)
     """
 
-    def test_celery_bomb_sync_steam(self, client, user_a):
+    # O 'patch' finge que o send_task funciona sem chamar o worker real
+    @patch('vault.views.app.send_task') 
+    def test_celery_bomb_sync_steam(self, mock_send_task, client, user_a):
         """
-        EXPLOIT: Disparar trigger de sync repetidamente para exaurir workers.
+        EXPLOIT: Disparar trigger de sync repetidamente.
         """
         client.force_login(user_a)
         url = reverse('trigger_steam_sync')
         
         # Dispara 10 requisições seguidas
-        # Se não houver rate limit, todas retornam 200
-        responses = [client.post(url) for _ in range(10)]
+        responses = [client.post(url, secure=True) for _ in range(10)]
         
-        # Se você configurou rate limit (ex: 5/h), algumas devem ser 429
-        # Como o código atual NÃO TEM, isso aqui vai confirmar a vulnerabilidade
+        # Verifica se pelo menos uma foi bloqueada (429)
         status_codes = [r.status_code for r in responses]
         
-        if all(code == 200 for code in status_codes):
-            pytest.fail("🚨 DOS RISK: Endpoint de Sync Steam não tem Rate Limit! Um atacante pode derrubar o Celery.")
+        # Se você aplicou o Rate Limit de '5/h', esperamos ver 429s
+        assert 403 in status_codes or 429 in status_codes, \
+        f"FALHA: Nenhuma requisição foi bloqueada! Codes: {status_codes}"
 

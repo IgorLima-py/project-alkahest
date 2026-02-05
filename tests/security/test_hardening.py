@@ -44,11 +44,15 @@ class TestSecurityHardening:
         Verifica se o Middleware de segurança está injetando os headers HTTP corretos.
         """
         client = Client()
-        response = client.get('/') # Acessa a home (dashboard ou login)
+        
+        # --- A MUDANÇA É AQUI (secure=True) ---
+        # Simulamos HTTPS para evitar o redirect 301
+        response = client.get('/', secure=True) 
+        # --------------------------------------
         
         # 1. Previne que seu site seja carregado em iframes (Clickjacking)
         assert response.headers.get('X-Frame-Options') == 'DENY', \
-            "Header X-Frame-Options ausente ou incorreto."
+            f"Header X-Frame-Options incorreto. Status: {response.status_code}"
             
         # 2. Previne que o navegador tente 'adivinhar' tipos de arquivo (MIME Sniffing)
         assert response.headers.get('X-Content-Type-Options') == 'nosniff', \
