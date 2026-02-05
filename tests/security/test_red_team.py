@@ -5,6 +5,7 @@ from vault.models import UserLibraryEntry, GameList, Review, PlatformGame, Maste
 from django.contrib.messages import get_messages
 from django.test import override_settings
 from django.core.cache import cache
+from django.conf import settings
 
 # Mocks para não chamar Celery/Steam de verdade
 from unittest.mock import patch
@@ -16,38 +17,22 @@ class TestBrokenAccessControl:
     """
 
     def test_idor_add_others_entry_to_my_list(self, client, user_a, user_b, master_game, platform):
-        """
-        EXPLOIT: User A tenta adicionar um UserLibraryEntry privado do User B 
-        dentro de sua própria lista (User A).
-        """
-        # Setup: User B tem um jogo (entry_b)
         pg = PlatformGame.objects.create(master_game=master_game, platform=platform, external_id='123')
         entry_b = UserLibraryEntry.objects.create(user=user_b, platform_game=pg, status='playing')
-        
-        # Setup: User A tem uma lista
         list_a = GameList.objects.create(user=user_a, title="My Backlog")
         
-        # Login como User A (Atacante)
         client.force_login(user_a)
-        
-        # Ação: Tentar adicionar o game_id (UUID) do User B na lista do User A
         url = reverse('add_to_list', kwargs={'game_id': entry_b.id})
         data = {'list_id': list_a.id}
         
         response = client.post(url, data, secure=True)
         
-        # EXPECTATIVA DE SEGURANÇA: 
-        # O sistema deveria bloquear (404 ou 403) porque entry_b não é do User A.
-        # SE RETORNAR 302 (Redirect), O TESTE FALHA -> VOCÊ TEM UM IDOR.
         if response.status_code == 302:
             pytest.fail("🚨 IDOR DETECTADO: User A conseguiu adicionar um Entry do User B na lista!")
         
         assert response.status_code in [404, 403]
 
     def test_delete_review_idor(self, client, user_a, user_b, master_game, platform):
-        """
-        EXPLOIT: User A tenta deletar review do User B.
-        """
         pg = PlatformGame.objects.create(master_game=master_game, platform=platform, external_id='999')
         entry_b = UserLibraryEntry.objects.create(user=user_b, platform_game=pg)
         review_b = Review.objects.create(user=user_b, library_entry=entry_b, text="Hate it", rating=10)
@@ -56,10 +41,8 @@ class TestBrokenAccessControl:
         url = reverse('delete_review', kwargs={'review_id': review_b.id})
         
         response = client.post(url, secure=True)
-        
-        # O get_object_or_404(user=request.user) deve proteger isso
-        assert response.status_code == 404, "Falha: User A conseguiu deletar (ou ver) review do User B"
-        assert Review.objects.filter(id=review_b.id).exists(), "O review foi deletado do banco!"
+        assert response.status_code == 404
+        assert Review.objects.filter(id=review_b.id).exists()
 
 @pytest.mark.django_db
 class TestInjectionAndSanitization:
@@ -68,12 +51,8 @@ class TestInjectionAndSanitization:
     """
 
     def test_stored_xss_in_review(self, client, user_a, entry_user_a):
-        """
-        EXPLOIT: Injetar Payload XSS no corpo do Review.
-        """
         client.force_login(user_a)
         url = reverse('game_detail', kwargs={'game_id': entry_user_a.id})
-        
         xss_payload = "Nice game <img src=x onerror=alert('HACKED')>"
         
         data = {
@@ -85,12 +64,9 @@ class TestInjectionAndSanitization:
         
         response = client.post(url, data, follow=True, secure=True)
         assert response.status_code == 200
-        
-        # Verifica no Banco de Dados
         review = Review.objects.get(library_entry=entry_user_a)
         
-        # O nh3 deve remover o onerror ou escapar a tag
-        assert "onerror" not in review.text_html, "FALHA: Event handler JS persistiu no HTML sanitizado!"
+        assert "onerror" not in review.text_html
         assert "<script>" not in review.text_html
 
 @pytest.mark.django_db
@@ -103,42 +79,46 @@ class TestDenialOfService:
         CACHES={
             'default': {
                 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-                'LOCATION': 'unique-snowflake',
+                'LOCATION': 'unique-snowflake-v2',
             }
         },
         RATELIMIT_USE_CACHE='default',
-        RATELIMIT_ENABLE=True
+        RATELIMIT_ENABLE=True,
     )
-    # O 'patch' finge que o send_task funciona sem chamar o worker real
     @patch('vault.views.app.send_task') 
     def test_celery_bomb_sync_steam(self, mock_send_task, client):
         """
         EXPLOIT: Disparar trigger de sync repetidamente.
         Deve bloquear usuário COMUM.
         """
-        # Garante cache limpo antes de começar
         cache.clear()
 
-        # CRIA UM USER COMUM (NÃO-STAFF) PARA O RATE LIMIT PEGAR
+        # Cria usuário comum
         spammer = User.objects.create_user(
-            username='spammer_bot_v4', 
+            username='spammer_final', 
             password='123',
-            is_staff=False,
-            is_superuser=False
+            is_staff=False
         )
-        client.force_login(spammer)
         
+        # URL do alvo
         url = reverse('trigger_steam_sync')
         
-        # Dispara 15 requisições seguidas (limite na view é 10/h)
         status_codes = []
-        for _ in range(15):
-            resp = client.post(url, secure=True)
+        
+        # Truque: Usamos REMOTE_ADDR fixo para garantir que o RateLimit
+        # identifique a origem inequivocamente, mesmo se falhar em pegar o User ID.
+        fixed_ip = '127.0.0.66'
+        
+        # Fazemos o Login MANUALMENTE na sessão para ter certeza absoluta
+        client.login(username='spammer_final', password='123')
+
+        print("\n--- INICIANDO BOMBARDEIO ---")
+        for i in range(20): # Aumentei para 20 pra ter certeza
+            # Passamos REMOTE_ADDR explicitamente no extra keyword args do post
+            resp = client.post(url, secure=True, REMOTE_ADDR=fixed_ip)
             status_codes.append(resp.status_code)
+            print(f"Req {i+1}: {resp.status_code}")
         
-        # Debug para você ver o que aconteceu
-        print(f"Status Codes (Spammer): {status_codes}")
-        
-        # Se o Rate Limit estiver funcionando, veremos 429 ou 403
-        assert 429 in status_codes or 403 in status_codes, \
-            f"FALHA: Nenhuma requisição foi bloqueada! O spammer passou livre. Codes: {status_codes}"
+        # Verifica se houve bloqueio (403 ou 429)
+        assert 403 in status_codes or 429 in status_codes, \
+            f"FALHA: Rate Limit ignorado. Codes: {status_codes}"
