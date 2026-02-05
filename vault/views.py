@@ -21,6 +21,7 @@ from itertools import chain
 from core.celery import app
 import json
 import uuid
+import nh3
 
 
 from django.views.decorators.cache import never_cache # <--- NOVO (Mata Zumbi)

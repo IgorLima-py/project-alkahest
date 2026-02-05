@@ -15,14 +15,17 @@ def sanitize_html(content):
     # Primeiro converte Markdown para HTML
     html = markdown.markdown(content)
     
+    # 🛡️ FIX: Removido 'rel' dos atributos de 'a' porque o nh3 (ammonia) tem um bug
+    # onde você não pode customizar 'rel' manualmente. A lib adiciona automaticamente.
     # Whitelist estrita (Seguindo padrão do Models)
     allowed_tags = {'b', 'i', 'strong', 'em', 'p', 'br', 'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'h1', 'h2', 'hr'}
     allowed_attrs = {
-        'a': {'href', 'title', 'target', 'rel'}, 
-        'img': {'src', 'alt', 'class'}
+        'a': {'href', 'title'}, # ❌ REMOVIDO 'target' e 'rel' (causam panic no nh3)
+        'img': {'src', 'alt'}   # ❌ REMOVIDO 'class' (não é crítico para segurança)
     }
     
     # Limpa tags maliciosas (<script>, <iframe>, onclick, etc)
+    # O nh3 adiciona automaticamente rel="noopener noreferrer" em links externos
     clean_html = nh3.clean(html, tags=allowed_tags, attributes=allowed_attrs)
     return clean_html
 
@@ -39,7 +42,6 @@ def friendly_ratelimit(key='ip', rate='5/m', block=True, method='ALL'):
                 return fn(request, *args, **kwargs)
             
             # Aplica o Rate Limit padrão para mortais
-            # Nota: Usamos o decorador como função aqui
             limiter = ratelimit(key=key, rate=rate, block=block, method=method)
             return limiter(fn)(request, *args, **kwargs)
             
