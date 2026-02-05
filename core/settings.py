@@ -21,7 +21,32 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
+if DEBUG:
+    ALLOWED_HOSTS = ['*']
+else:
+    # Em produção, leia a lista separada por vírgula. Ex: "meusite.com,www.meusite.com"
+    ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
+
+if not DEBUG:
+    # Cookies seguros (só trafegam via HTTPS)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Redireciona HTTP -> HTTPS automaticamente
+    SECURE_SSL_REDIRECT = True
+    
+    # HSTS: Força navegadores a usarem HTTPS por 1 ano
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Proteção extra de Proxy (necessário se usar Heroku/Render/AWS Load Balancer)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    # Em desenvolvimento, não exigimos HTTPS
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = False
 
 # Application definition
 INSTALLED_APPS = [
@@ -65,9 +90,7 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_EMAIL_REQUIRED = True
 
-# CORREÇÃO: Adicione o asterisco (*) para indicar obrigatoriedade
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*'] 
 
 LOGIN_REDIRECT_URL = 'dashboard'
