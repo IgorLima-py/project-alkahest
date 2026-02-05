@@ -1,20 +1,36 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.account.utils import user_field
-from django.conf import settings
+from django.contrib import messages
+from django.shortcuts import redirect
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AlkahestSocialAdapter(DefaultSocialAccountAdapter):
+    def authentication_error(self, request, provider_id, error=None, exception=None, extra_context=None):
+        """
+        Captura erros catastróficos durante o OAuth (Ex: Steam fora do ar).
+        Evita a tela amarela de Debug (500).
+        """
+        logger.error(
+            f"Steam OAuth Failure. Provider: {provider_id}. Error: {error}. Exception: {exception}"
+        )
+        
+        msg = "Não foi possível conectar aos servidores da Steam no momento. Tente novamente em alguns minutos ou use o login manual."
+        
+        # Feedback visual para o usuário
+        if request:
+            messages.error(request, msg)
+            
+        # Redireciona para login em vez de explodir erro
+        return redirect('login')
+
     def populate_user(self, request, sociallogin, data):
-        """
-        Garante username válido vindo da Steam.
-        """
         user = super().populate_user(request, sociallogin, data)
         
-        # Tenta pegar username ou name
+        # Lógica de Username Seguro (Mantida do seu original)
         username = data.get('username') or data.get('name') or ''
-        
-        # Se for vazio ou tiver caracteres inválidos, gera um seguro
-        # Steam costuma mandar nomes com espaço ou caracteres especiais que o Django odeia
         if not username or not username.isalnum():
             safe_id = uuid.uuid4().hex[:8]
             user_field(user, 'username', f"steam_{safe_id}")
@@ -24,15 +40,7 @@ class AlkahestSocialAdapter(DefaultSocialAccountAdapter):
         return user
 
     def save_user(self, request, sociallogin, form=None):
-        """
-        Cria UserProfile automaticamente.
-        """
         user = super().save_user(request, sociallogin, form)
-        
         from .models import UserProfile
         UserProfile.objects.get_or_create(user=user)
-        
         return user
-    
-    # REMOVIDO: Métodos de validação de URL que estavam quebrando (is_safe_url)
-    # Deixe o DefaultAdapter lidar com isso.

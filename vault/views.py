@@ -22,6 +22,10 @@ from core.celery import app
 import json
 import uuid
 
+
+from django.views.decorators.cache import never_cache # <--- NOVO (Mata Zumbi)
+from .utils.security import sanitize_html, friendly_ratelimit
+
 from .tasks import run_backloggd_import_task
 from .models import ProfileImportJob
 
@@ -155,7 +159,8 @@ def library_view(request):
 
 # BLOCO 3: DETALHES DO JOGO (Agora com lógica de metadados ricos)
 @login_required
-@ratelimit(key='user', rate='50/d', block=True) # Limite de 10 reviews por dia
+@never_cache # 🛡️ FIX: Impede que o navegador mostre review antiga ao voltar página
+@friendly_ratelimit(key='user', rate='100/d', block=True) # 🛡️ FIX: Admin não trava, rate aumentado
 def game_detail_view(request, game_id):
     entry = get_object_or_404(
         UserLibraryEntry.objects.select_related('platform_game__master_game', 'platform_game__platform'),
@@ -192,7 +197,18 @@ def game_detail_view(request, game_id):
                 return redirect('game_detail', game_id=game_id)
 
         if 'create_tip' in request.POST:
-            GameTip.objects.create(user=request.user, master_game=master, text=request.POST.get('tip_text'))
+            raw_text = request.POST.get('tip_text')
+            # 🛡️ FIX: XSS - Sanitização antes de salvar
+            # Nota: Como Tip é CharField curto, removemos tags HTML e deixamos texto puro se preferir,
+            # mas o sanitize_html garante que nada malicioso passe.
+            # Para Tips (texto curto), talvez nh3.clean(text, tags=set()) seja melhor (strip tags).
+            # Vou assumir que queremos permitir bold/italic básico.
+            clean_text = sanitize_html(raw_text)
+            
+            # Remove tags HTML excessivas para manter limpo no card pequeno, se desejar:
+            # clean_text = nh3.clean(raw_text, tags=set()) 
+            
+            GameTip.objects.create(user=request.user, master_game=master, text=clean_text)
             return redirect('game_detail', game_id=game_id)
 
     # VIEW DATA
@@ -332,11 +348,17 @@ def my_lists_view(request):
 @login_required
 def create_list_view(request):
     if request.method == 'POST':
-        title = request.POST.get('title')
+        title = request.POST.get('title') # Title geralmente escapado pelo Django no template, mas bom cuidar
         desc = request.POST.get('description')
+        
         if title:
-            new_list = GameList.objects.create(user=request.user, title=title, description=desc)
+            # 🛡️ FIX: XSS - Sanitização da descrição (campo rico)
+            clean_desc = sanitize_html(desc)
+            clean_title = nh3.clean(title, tags=set()) # Título sem HTML
+            
+            new_list = GameList.objects.create(user=request.user, title=clean_title, description=clean_desc)
             return redirect('list_detail', list_id=new_list.id)
+            
     return render(request, 'lists/create_list.html')
 
 @login_required
@@ -490,7 +512,7 @@ def rivals_view(request):
 
 @login_required
 @require_POST
-@ratelimit(key='user', rate='5/h', block=True)
+@friendly_ratelimit(key='user', rate='6/h', block=True)
 def trigger_steam_sync_view(request):
     user_id = request.user.id
     
@@ -507,7 +529,7 @@ def trigger_steam_sync_view(request):
 
 
 @login_required
-@ratelimit(key='user', rate='50/h', block=True) # Aumentei para 10/h para você testar sem travar
+@friendly_ratelimit(key='user', rate='6/h', block=True)
 def request_export_view(request):
     user = request.user
     
