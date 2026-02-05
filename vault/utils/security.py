@@ -29,7 +29,7 @@ def sanitize_html(content):
     clean_html = nh3.clean(html, tags=allowed_tags, attributes=allowed_attrs)
     return clean_html
 
-def friendly_ratelimit(key='ip', rate='5/m', block=True, method='ALL'):
+def friendly_ratelimit(key='user', rate='5/m', block=True, method='ALL'):
     """
     Wrapper para o django_ratelimit.
     Regra: Se o usuário for STAFF ou SUPERUSER, ignora o limite.
@@ -37,12 +37,19 @@ def friendly_ratelimit(key='ip', rate='5/m', block=True, method='ALL'):
     def decorator(fn):
         @wraps(fn)
         def _wrapped(request, *args, **kwargs):
-            # 🔓 Pass Livre para Admins e Staff
+            # 1. Debug: Vamos ver quem está batendo
+            # print(f"DEBUG RATELIMIT: User={request.user}, Staff={request.user.is_staff}")
+
+            # 2. Pass Livre para Admins
             if request.user.is_authenticated and request.user.is_staff:
                 return fn(request, *args, **kwargs)
             
-            # Aplica o Rate Limit padrão para mortais
+            # 3. Aplica o Rate Limit padrão
+            # IMPORTANTE: Chamamos ratelimit() como função decoradora AGORA
+            # Isso garante que ele pegue o request atual corretamente.
             limiter = ratelimit(key=key, rate=rate, block=block, method=method)
+            
+            # O django-ratelimit retorna uma view wrappada. Precisamos chamá-la.
             return limiter(fn)(request, *args, **kwargs)
             
         return _wrapped

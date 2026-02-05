@@ -79,11 +79,13 @@ class TestDenialOfService:
         CACHES={
             'default': {
                 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-                'LOCATION': 'unique-snowflake-v2',
+                'LOCATION': 'unique-snowflake-v3',
             }
         },
         RATELIMIT_USE_CACHE='default',
         RATELIMIT_ENABLE=True,
+        # FORÇA A CHAVE DE CACHE A SER COMPATÍVEL
+        RATELIMIT_VIEW_PREFIX='rl:',
     )
     @patch('vault.views.app.send_task') 
     def test_celery_bomb_sync_steam(self, mock_send_task, client):
@@ -116,6 +118,7 @@ class TestDenialOfService:
         for i in range(20): # Aumentei para 20 pra ter certeza
             # Passamos REMOTE_ADDR explicitamente no extra keyword args do post
             resp = client.post(url, secure=True, REMOTE_ADDR=fixed_ip)
+            print(f"Req {i+1}: {resp.status_code} | User Authenticated: {resp.wsgi_request.user.is_authenticated}")
             status_codes.append(resp.status_code)
             print(f"Req {i+1}: {resp.status_code}")
         
