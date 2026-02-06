@@ -20,21 +20,28 @@
 <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-4">
     {% for game in results %}
     <div class="col">
-        <div class="card bg-dark border-secondary h-100">
-            <!-- Cover -->
-            {% if game.cover %}
-                <img src="{{ game.cover.url }}" class="card-img-top" style="aspect-ratio: 3/4; object-fit: cover;">
+        <div class="card bg-dark border-secondary h-100 shadow-sm hover-shadow">
+            <!-- Cover (Agora usando o campo correto do Model) -->
+            {% if game.cover_url %}
+                <img src="{{ game.cover_url }}" class="card-img-top" style="aspect-ratio: 3/4; object-fit: cover;" alt="{{ game.title }}">
             {% else %}
-                <div class="bg-secondary d-flex align-items-center justify-content-center" style="aspect-ratio: 3/4;">{% trans "No Cover" %}</div>
+                <div class="bg-secondary d-flex align-items-center justify-content-center text-white-50" style="aspect-ratio: 3/4;">
+                    <i class="bi bi-image fs-1"></i>
+                </div>
             {% endif %}
             
-            <div class="card-body p-2 d-flex flex-column">
-                <h6 class="card-title text-light text-truncate mb-auto" title="{{ game.name }}">{{ game.name }}</h6>
-                <small class="text-muted d-block mb-2">{{ game.first_release_date|default:_("Unknown Year") }}</small>
+            <div class="card-body p-3 d-flex flex-column">
+                <!-- Title (Agora usando o campo correto do Model) -->
+                <h6 class="card-title text-light text-truncate mb-1" title="{{ game.title }}">
+                    {{ game.title }}
+                </h6>
+                <small class="text-muted d-block mb-3">
+                    {{ game.release_date|date:"Y"|default:_("Unknown Year") }}
+                </small>
                 
                 <!-- Button triggering Add Modal -->
-                <button type="button" class="btn btn-sm btn-outline-success w-100 mt-2" data-bs-toggle="modal" data-bs-target="#addModal{{ game.id }}">
-                    <i class="bi bi-plus-lg"></i> {% trans "Add" %}
+                <button type="button" class="btn btn-sm btn-outline-success w-100 mt-auto" data-bs-toggle="modal" data-bs-target="#addModal{{ game.id }}">
+                    <i class="bi bi-plus-lg"></i> {% trans "Add to Library" %}
                 </button>
             </div>
         </div>
@@ -45,10 +52,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark border-secondary">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title">
-                        {% blocktrans with game_name=game.name %}
-                        Add {{ game_name }}
-                        {% endblocktrans %}
+                    <h5 class="modal-title text-white">
+                        {% blocktrans with game_title=game.title %}Add {{ game_title }}{% endblocktrans %}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -56,23 +61,20 @@
                     <form method="POST">
                         {% csrf_token %}
                         <!-- Hidden Data sent to Backend -->
-                        <input type="hidden" name="add_game_id" value="{{ game.id }}">
-                        <input type="hidden" name="game_title" value="{{ game.name }}">
-                        <input type="hidden" name="cover_url" value="{{ game.cover.url }}">
+                        <input type="hidden" name="add_master_id" value="{{ game.id }}">
                         
                         <div class="mb-3">
-                            <label class="form-label">{% trans "On which platform?" %}</label>
-                            <select name="platform_slug" class="form-select bg-secondary text-light border-0">
+                            <label class="form-label text-secondary">{% trans "On which platform?" %}</label>
+                            <select name="platform_slug" class="form-select bg-black text-light border-secondary">
                                 {% for plat in platforms %}
-                                    <!-- Selects PS5 by default if desired, or the first one -->
                                     <option value="{{ plat.slug }}">{{ plat.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">{% trans "Initial Status" %}</label>
-                            <select name="status" class="form-select bg-secondary text-light border-0">
+                        <div class="mb-4">
+                            <label class="form-label text-secondary">{% trans "Initial Status" %}</label>
+                            <select name="status" class="form-select bg-black text-light border-secondary">
                                 <option value="backlog">{% trans "Backlog (Want to Play)" %}</option>
                                 <option value="playing">{% trans "Playing" %}</option>
                                 <option value="completed">{% trans "Completed / Platinum" %}</option>
@@ -80,7 +82,9 @@
                             </select>
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100 fw-bold">{% trans "Save to Library" %}</button>
+                        <button type="submit" class="btn btn-success w-100 fw-bold">
+                            {% trans "Save to Library" %}
+                        </button>
                     </form>
                 </div>
             </div>
@@ -89,6 +93,10 @@
     {% endfor %}
 </div>
 {% elif search_query %}
-    <div class="text-center text-muted mt-5">{% trans "No games found on IGDB. Try another name." %}</div>
+    <div class="text-center text-muted mt-5 py-5 border border-secondary rounded border-dashed">
+        <i class="bi bi-controller fs-1 mb-3 d-block"></i>
+        <h5>{% trans "No games found on IGDB." %}</h5>
+        <p>{% trans "Try searching for the exact English title." %}</p>
+    </div>
 {% endif %}
 {% endblock %}

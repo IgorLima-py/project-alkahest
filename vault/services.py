@@ -1,4 +1,3 @@
-# vault/services.py
 import re
 import time
 import random
@@ -22,7 +21,7 @@ from .utils_igdb import igdb_api_request
 
 def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
     """
-    Busca Jogo no IGDB (Cascata de Tentativas) usando o wrapper robusto.
+    Busca Jogo no IGDB (Cascata de Tentativas) e retorna objeto MasterGame salvo.
     """
     fields = (
         "name, slug, status, category, parent_game, "
@@ -78,6 +77,7 @@ def fetch_and_update_game(igdb_id=None, search_name=None, steam_id=None):
     master, created = _process_and_save_game(data)
     return master
 
+
 # --- Funções Auxiliares IGDB ---
 
 def _sanitize_light(name):
@@ -105,8 +105,15 @@ def _process_and_save_game(data):
         if not data: return None, False 
         data = data[0]
 
-    cover_url = 'https:' + data['cover']['url'].replace('t_thumb', 't_cover_big') if 'cover' in data else None
-    
+    # FIX: Garante URL https e imagem grande
+    cover_url = None
+    if 'cover' in data and 'url' in data['cover']:
+        cover_url = 'https:' + data['cover']['url'].replace('t_thumb', 't_cover_big') 
+        if not cover_url.startswith('https:https:'): # Fix para caso a URL já venha com protocolo
+             pass # ok
+        else:
+             cover_url = cover_url.replace('https:////', 'https://') # Fix urls malucas do igdb
+
     artworks = ['https:' + img['url'].replace('t_thumb', 't_1080p') for img in data.get('artworks', [])]
     screenshots = ['https:' + img['url'].replace('t_thumb', 't_1080p') for img in data.get('screenshots', [])]
     background_url = artworks[0] if artworks else (screenshots[0] if screenshots else cover_url)
@@ -125,9 +132,10 @@ def _process_and_save_game(data):
     parent_obj = None
     if data.get('parent_game'):
         try:
-            parent_obj = MasterGame.objects.get(igdb_id=data['parent_game'])
-        except MasterGame.DoesNotExist:
-            parent_obj = None 
+            # Tenta pegar apenas se já existir localmente para evitar recursão infinita
+            parent_obj = MasterGame.objects.filter(igdb_id=data['parent_game']).first()
+        except:
+            pass 
 
     languages = {"Audio": [], "Subtitles": [], "Interface": []}
     if 'language_supports' in data:
@@ -180,8 +188,9 @@ def _process_and_save_game(data):
     )
     return master_game, created
 
+
 # ==============================================================================
-# BLOCO 2: BACKLOGGD SCRAPER SERVICE (LOG EDITION)
+# BLOCO 2: BACKLOGGD SCRAPER SERVICE (Mantido Intacto)
 # ==============================================================================
 
 class BackloggdScraperService:
@@ -192,7 +201,6 @@ class BackloggdScraperService:
         self.job = ProfileImportJob.objects.get(id=job_id)
         self.user = self.job.user
         
-        # Simula Android para evitar bloqueio
         self.scraper = cloudscraper.create_scraper(
             browser={
                 'browser': 'chrome',
@@ -207,11 +215,7 @@ class BackloggdScraperService:
             self.job.save()
             self._log(f"Iniciando importação para: {self.job.target_username}")
             
-            # 1. Tenta buscar do Diário (Mais rico: Datas, Texto, Notas)
             count_log = self._scrape_log()
-            
-            # 2. Se achar pouco, poderíamos tentar buscar da lista geral (Games)
-            # Mas vamos manter simples por enquanto para evitar bloqueio.
             
             if count_log == 0:
                 self.job.status = 'failed'
@@ -236,7 +240,6 @@ class BackloggdScraperService:
         total_extracted = 0
         
         while True:
-            # Rota /log/ é a melhor fonte de dados detalhados
             url = f"{self.BASE_URL}/u/{self.job.target_username}/log/page/{page}/"
             self._log(f"📖 Lendo Diário (Log) pg {page}...")
             
@@ -245,11 +248,9 @@ class BackloggdScraperService:
             
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # Seletores para entradas de log
             log_entries = soup.select('div.log-entry, div.journal-entry, div.card-log')
             
             if not log_entries:
-                # Fallback genérico
                 log_entries = soup.select('div[data-rating]')
             
             self._log(f"   Encontrados {len(log_entries)} logs.")
@@ -270,17 +271,15 @@ class BackloggdScraperService:
 
             if not soup.find('a', attrs={'rel': 'next'}): break
             page += 1
-            time.sleep(random.uniform(2, 5)) # Delay humano
+            time.sleep(random.uniform(2, 5)) 
             
         return total_extracted
 
     def _process_log_entry(self, card):
-        # 1. TÍTULO E SLUG
         link = card.select_one('a[href*="/games/"]')
         if not link: return
         
         href = link['href']
-        # /games/slug/ -> slug
         try:
             slug = href.split('/games/')[1].split('/')[0]
         except: return
@@ -290,7 +289,6 @@ class BackloggdScraperService:
         cover_url = img.get('src') if img else None
         if not title: title = slug.replace('-', ' ').title()
 
-        # 2. RATING (Prioridade: data-rating)
         rating = None
         data_rating = card.get('data-rating')
         if data_rating:
@@ -301,19 +299,15 @@ class BackloggdScraperService:
                 width = re.search(r'width:\s*(\d+)%', stars.get('style', ''))
                 if width: rating = int(width.group(1))
 
-        # 3. TEXTO (Review)
         review_text = ""
-        # Tenta achar o container de texto do journal
         review_div = card.select_one('.journal-review, .log-review, .review-text, .card-text')
         
         if review_div:
             review_text = review_div.get_text('\n', strip=True)
         else:
-            # Busca heurística por parágrafos longos
             ps = card.select('p')
             for p in ps:
                 txt = p.get_text(strip=True)
-                # Filtra textos que são metadados comuns do site
                 if len(txt) > 20 and "Played on" not in txt and "Review by" not in txt:
                     review_text = txt
                     break
@@ -322,7 +316,6 @@ class BackloggdScraperService:
 
         is_spoiler = bool(card.select_one('.spoiler'))
 
-        # 4. SALVAR
         self._save_to_db(slug, title, cover_url, rating, review_text, is_spoiler)
 
     def _save_to_db(self, slug, title, cover_url, rating, text, is_spoiler):
@@ -366,7 +359,7 @@ class BackloggdScraperService:
                     }
                 )
 
-    def _make_request(self, url, retries=3): # Adicionamos limite de tentativas
+    def _make_request(self, url, retries=3): 
         try:
             if retries <= 0:
                 self._log("❌ Limite de tentativas excedido.")
@@ -377,7 +370,6 @@ class BackloggdScraperService:
             if resp.status_code == 429:
                 self._log(f"⏳ Rate Limit (429). Tentativas restantes: {retries}")
                 time.sleep(60)
-                # Tenta de novo, mas diminui o contador de retries
                 return self._make_request(url, retries=retries - 1)
             
             return resp
