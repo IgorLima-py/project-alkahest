@@ -10,10 +10,21 @@
             {% blocktrans with username=user.username %}Welcome back, {{ username }}.{% endblocktrans %}
         </h1>
         <p class="text-muted lead fs-6 mb-0">
-            {% blocktrans count playing=playing_count backlog=backlog_count %}
-            You have <strong class="text-white">{{ playing }} game</strong> in progress and <strong class="text-white">{{ backlog }} title</strong> in your backlog.
+            {# Bloco 1: Pluraliza os jogos em progresso #}
+            {% blocktrans count playing=playing_count %}
+            You have <strong class="text-white">{{ playing }} game</strong> in progress
             {% plural %}
-            You have <strong class="text-white">{{ playing }} games</strong> in progress and <strong class="text-white">{{ backlog }} titles</strong> in your backlog.
+            You have <strong class="text-white">{{ playing }} games</strong> in progress
+            {% endblocktrans %}
+
+            {# Conector simples #}
+            {% trans "and" %}
+
+            {# Bloco 2: Pluraliza os títulos no backlog #}
+            {% blocktrans count backlog=backlog_count %}
+            <strong class="text-white">{{ backlog }} title</strong> in your backlog.
+            {% plural %}
+            <strong class="text-white">{{ backlog }} titles</strong> in your backlog.
             {% endblocktrans %}
         </p>
     </div>
