@@ -1,7 +1,9 @@
 import nh3
 from django import forms
+from django.core.exceptions import ValidationError
 from .models import Review, UserLibraryEntry, GameTip, Platform, UserProfile
-from .widgets import MetacriticRatingWidget  # Importe o widget que criamos
+from django.utils.translation import gettext_lazy as _
+from .widgets import MetacriticRatingWidget
 
 # --- MIXIN DE SEGURANÇA (NH3) ---
 class Nh3SanitizedMixin:

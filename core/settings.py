@@ -144,6 +144,7 @@ TEMPLATES = [
                 'django.template.context_processors.request', # Requerido pelo allauth
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'vault.context_processors.analytics_settings', 
             ],
         },
     },
@@ -211,3 +212,9 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+
+# --- Analytics & Tracking ---
+ENABLE_ANALYTICS = config('ENABLE_ANALYTICS', default=False, cast=bool)
+POSTHOG_API_KEY = config('POSTHOG_API_KEY', default='')
+POSTHOG_HOST = config('POSTHOG_HOST', default='https://app.posthog.com')

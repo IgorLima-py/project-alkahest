@@ -5,6 +5,7 @@ from allauth.account.views import LoginView as AllauthLoginView # Importação d
 from django_ratelimit.decorators import ratelimit
 from vault import views
 from vault.views import set_language_view
+from vault.views_admin import merge_games_view, god_mode_dashboard
 
 from django.contrib.auth.views import LogoutView
 
@@ -106,5 +107,11 @@ urlpatterns = [
     path('settings/import/start/', views.start_backloggd_import, name='start_backloggd_import'),
     path('settings/import/status/<uuid:job_id>/', views.check_import_status, name='check_import_status'),
     path('settings/import/feed/<uuid:job_id>/', views.import_live_feed, name='import_live_feed'),
+
+    # ==========================================
+    # God Mode
+    # ==========================================
+    path('god/dashboard/', god_mode_dashboard, name='god_mode_dashboard'),
+    path('god/merge/', merge_games_view, name='merge_games_tool'),
 
 ]

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark border-danger mb-4">
+                <div class="card-header bg-danger text-white fw-bold">
+                    <i class="bi bi-exclamation-triangle-fill"></i> GOD MODE: FUSÃO DE JOGOS
+                </div>
+                <div class="card-body">
+                    <p class="text-danger-emphasis">
+                        Esta ferramenta unifica dois jogos em um. Todos os dados (reviews, playtimes, listas) 
+                        do jogo de <strong>ORIGEM</strong> serão movidos para o jogo de <strong>DESTINO</strong>.
+                    </p>
+                    <hr class="border-secondary">
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label text-white">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text text-secondary">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="text-danger small">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Tem certeza absoluta? Esta ação não pode ser desfeita.');">
+                                <i class="bi bi-radioactive"></i> EXECUTAR FUSÃO
+                            </button>
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
