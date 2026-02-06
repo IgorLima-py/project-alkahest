@@ -9,6 +9,7 @@ import dj_database_url
 from decouple import config 
 import os
 from django.utils.translation import gettext_lazy as _
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -60,6 +61,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'django.contrib.sites',
+    'dbbackup',
 
     # Third-party
     'allauth',
@@ -68,9 +70,14 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.openid',
     'allauth.socialaccount.providers.steam',
     'django_ratelimit',
+
+    
 ]
 
 SITE_ID = 1
+
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': BASE_DIR / 'backups'}
 
 # ==========================================
 # AUTHENTICATION & SECURITY
@@ -218,3 +225,14 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 ENABLE_ANALYTICS = config('ENABLE_ANALYTICS', default=False, cast=bool)
 POSTHOG_API_KEY = config('POSTHOG_API_KEY', default='')
 POSTHOG_HOST = config('POSTHOG_HOST', default='https://app.posthog.com')
+
+
+# Se estiver rodando pytest ou manage.py test...
+if 'test' in sys.argv or 'pytest' in sys.argv[0]:
+    # E se o banco configurado NÃO for sqlite (ou seja, é o Neon/Prod)...
+    db_url = DATABASES['default']['NAME']
+    if 'neon.tech' in str(DATABASES['default'].get('HOST', '')):
+         print("🚨 PERIGO: Tentando rodar testes no banco NEON de Produção!")
+         print("O pytest deve criar um banco 'test_' separado automaticamente.")
+         # O Django faz isso por padrão, mas é bom garantir que ninguém 
+         # configurou o nome do banco de teste para ser igual ao de prod.
