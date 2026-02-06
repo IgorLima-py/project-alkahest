@@ -5,7 +5,7 @@ from allauth.account.views import LoginView as AllauthLoginView # Importação d
 from django_ratelimit.decorators import ratelimit
 from vault import views
 from vault.views import set_language_view
-from vault.views_admin import merge_games_view, god_mode_dashboard
+from vault.views_admin import merge_games_tool, god_mode_dashboard
 
 from django.contrib.auth.views import LogoutView
 
@@ -112,6 +112,6 @@ urlpatterns = [
     # God Mode
     # ==========================================
     path('god/dashboard/', god_mode_dashboard, name='god_mode_dashboard'),
-    path('god/merge/', merge_games_view, name='merge_games_tool'),
+    path('god/merge/', merge_games_tool, name='merge_games_tool'),
 
 ]

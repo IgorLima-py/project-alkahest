@@ -1,39 +1,57 @@
 import pytest
-from vault.models import MasterGame, PlatformGame, UserLibraryEntry, Review, GameListItem, GameList
-from vault.forms import GameMergeForm
+from django.contrib.auth.models import User
+from vault.models import MasterGame, PlatformGame, UserLibraryEntry, Review, GameListItem, GameList, Platform
 from django.urls import reverse
 
 @pytest.mark.django_db
-def test_merge_games_logic(user_factory, master_game_factory, platform_factory):
-    # 1. Setup: User, Platform e 2 Jogos (Duplicados)
-    admin_user = user_factory(is_superuser=True)
-    normal_user = user_factory()
-    platform = platform_factory(name="Steam", slug="steam")
+def test_merge_games_logic(client):
+    # --- SETUP (Criação Manual de Objetos) ---
     
-    # Target (O Oficial)
-    target_game = master_game_factory(title="The Witcher 3: Wild Hunt", igdb_id=111)
-    target_pg = PlatformGame.objects.create(master_game=target_game, platform=platform, external_id="111")
+    # 1. Usuários
+    admin_user = User.objects.create_superuser('admin', 'admin@example.com', 'password123')
+    normal_user = User.objects.create_user('user', 'user@example.com', 'password123')
     
-    # Source (O Duplicado a ser deletado)
-    source_game = master_game_factory(title="Witcher 3", igdb_id=222)
-    source_pg = PlatformGame.objects.create(master_game=source_game, platform=platform, external_id="222")
+    # 2. Plataforma
+    platform = Platform.objects.create(name="Steam", slug="steam")
     
-    # O usuário tem o jogo SOURCE na biblioteca (e fez review)
+    # 3. Target (O Jogo Oficial)
+    target_game = MasterGame.objects.create(title="The Witcher 3: Wild Hunt", igdb_id=111)
+    target_pg = PlatformGame.objects.create(
+        master_game=target_game, 
+        platform=platform, 
+        external_id="111", 
+        external_title="Witcher 3 WH"
+    )
+    
+    # 4. Source (O Duplicado a ser deletado)
+    source_game = MasterGame.objects.create(title="Witcher 3 (Dup)", igdb_id=222)
+    source_pg = PlatformGame.objects.create(
+        master_game=source_game, 
+        platform=platform, 
+        external_id="222", 
+        external_title="Witcher 3"
+    )
+    
+    # 5. O Usuário tem o jogo SOURCE na biblioteca (com review)
     entry_source = UserLibraryEntry.objects.create(
         user=normal_user, 
         platform_game=source_pg, 
         status='playing',
         playtime_minutes=100
     )
-    review_source = Review.objects.create(user=normal_user, library_entry=entry_source, text="Top", rating=90)
+    review_source = Review.objects.create(
+        user=normal_user, 
+        library_entry=entry_source, 
+        text="Review do jogo duplicado", 
+        rating=90
+    )
     
-    # O usuário TAMBÉM tem o jogo TARGET na lista (Caso de conflito)
+    # 6. Conflito: O Usuário TAMBÉM tem o jogo TARGET numa lista
     game_list = GameList.objects.create(user=normal_user, title="My Backlog")
-    GameListItem.objects.create(game_list=game_list, master_game=target_game)
-    GameListItem.objects.create(game_list=game_list, master_game=source_game) # Item duplicado na lista
+    GameListItem.objects.create(game_list=game_list, master_game=target_game, order=1)
+    GameListItem.objects.create(game_list=game_list, master_game=source_game, order=2) # Item que deve sumir
 
-    # 2. Executar o Merge (via POST na view)
-    client = pytest.Client()
+    # --- EXECUÇÃO ---
     client.force_login(admin_user)
     
     url = reverse('merge_games_tool')
@@ -44,9 +62,13 @@ def test_merge_games_logic(user_factory, master_game_factory, platform_factory):
     
     response = client.post(url, data, follow=True)
     
-    # 3. Asserts (Verificações)
+    # --- VALIDAÇÃO (ASSERTS) ---
     assert response.status_code == 200
-    assert "Merged" in [m.message for m in response.context['messages']]
+    
+    # Verifica se a mensagem de sucesso apareceu
+    messages = list(response.context['messages'])
+    assert len(messages) > 0
+    assert "SUCESSO" in str(messages[0])
     
     # A) Source foi deletado?
     assert not MasterGame.objects.filter(id=source_game.id).exists()
@@ -55,9 +77,9 @@ def test_merge_games_logic(user_factory, master_game_factory, platform_factory):
     assert MasterGame.objects.filter(id=target_game.id).exists()
     
     # C) Library Entry foi migrada?
-    # O user agora deve ter uma entry apontando para o TARGET PG, mas com os dados preservados
+    # O user agora deve ter uma entry apontando para o TARGET PG
     target_entry = UserLibraryEntry.objects.get(user=normal_user, platform_game=target_pg)
-    assert target_entry.playtime_minutes == 100 # Dado migrado
+    assert target_entry.playtime_minutes == 100 # Dado preservado
     assert target_entry.status == 'playing'
     
     # D) Review foi re-apontada?
@@ -65,18 +87,21 @@ def test_merge_games_logic(user_factory, master_game_factory, platform_factory):
     assert review.library_entry == target_entry # Aponta pro novo entry
     
     # E) Listas limpas?
-    # O usuário tinha os 2 na lista. O merge deve ter removido o source e mantido o target, sem duplicar.
-    assert GameListItem.objects.filter(game_list=game_list, master_game=target_game).count() == 1
+    # O source sumiu da lista, ficou só o target (sem duplicata)
+    assert GameListItem.objects.filter(game_list=game_list).count() == 1
+    assert GameListItem.objects.filter(game_list=game_list, master_game=target_game).exists()
 
 @pytest.mark.django_db
-def test_merge_security_idor(client, user_factory):
+def test_merge_security_idor(client):
     """Garante que usuários normais não podem acessar a ferramenta de merge."""
-    hacker = user_factory(is_superuser=False)
+    hacker = User.objects.create_user('hacker', 'hacker@example.com', 'password123')
     client.force_login(hacker)
+    
     url = reverse('merge_games_tool')
     
-    # Deve redirecionar para login (admin required) ou 403, dependendo do user_passes_test
-    # O user_passes_test redireciona para login url padrão se falhar
+    # Deve redirecionar para login (admin required)
     response = client.get(url)
+    
+    # O decorador @user_passes_test redireciona (302) para o login se falhar
     assert response.status_code == 302 
     assert "/accounts/login/" in response.url
