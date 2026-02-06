@@ -376,11 +376,12 @@ class PriceHistory(models.Model):
 # ==========================================
 
 class NotificationType(models.TextChoices):
-    SYSTEM = 'system', _('Sistema')
-    SOCIAL_FOLLOW = 'follow', _('Novo Seguidor')
-    SOCIAL_LIKE = 'like', _('Curtida')
-    PRICE_ALERT = 'price', _('Alerta de Preço')
-    GAME_RELEASE = 'release', _('Lançamento')
+    SYSTEM = 'system', _('System')
+    SOCIAL_FOLLOW = 'follow', _('New Follower')
+    SOCIAL_LIKE = 'like', _('Like')
+    PRICE_ALERT = 'price', _('Price Alert')
+    GAME_RELEASE = 'release', _('New Release')
+
 
 class Notification(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -412,10 +413,10 @@ class Notification(models.Model):
 
 
 class ImportJobStatus(models.TextChoices):
-    PENDING = 'pending', _('Na Fila')
-    PROCESSING = 'processing', _('Processando')
-    COMPLETED = 'completed', _('Concluído')
-    FAILED = 'failed', _('Falha')
+    PENDING = 'pending', _('Pending')
+    PROCESSING = 'processing', _('Processing')
+    COMPLETED = 'completed', _('Completed')
+    FAILED = 'failed', _('Failed')
 
 class ProfileImportJob(models.Model):
     """

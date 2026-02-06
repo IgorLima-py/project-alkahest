@@ -1,0 +1,1301 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\\n"
+"Report-Msgid-Bugs-To: \\n"
+"POT-Creation-Date: 2026-02-05 21:35-0300\\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n"
+"Language-Team: LANGUAGE <LL@li.org>\\n"
+"Language: \\n"
+"MIME-Version: 1.0\\n"
+"Content-Type: text/plain; charset=UTF-8\\n"
+"Content-Transfer-Encoding: 8bit\\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\\n"
+
+#: .\\core\\settings.py:180
+msgid "Português"
+msgstr "Português"
+
+#: .\\core\\settings.py:181 .\\vault\\templates\\includes\\sidebar_content.html:98
+msgid "English"
+msgstr "Inglês"
+
+#: .\\core\\settings.py:182
+msgid "Español"
+msgstr "Espanhol"
+
+#: .\\vault\\models.py:379
+msgid "System"
+msgstr "Sistema"
+
+#: .\\vault\\models.py:380
+msgid "New Follower"
+msgstr "Novo Seguidor"
+
+#: .\\vault\\models.py:381
+msgid "Like"
+msgstr "Curtida"
+
+#: .\\vault\\models.py:382
+msgid "Price Alert"
+msgstr "Alerta de Preço"
+
+#: .\\vault\\models.py:383
+msgid "New Release"
+msgstr "Lançamento"
+
+#: .\\vault\\models.py:416
+msgid "Pending"
+msgstr "Pendente"
+
+#: .\\vault\\models.py:417
+msgid "Processing"
+msgstr "Processando"
+
+#: .\\vault\\models.py:418 .\\vault\\templates\\dashboard.html:25
+#: .\\vault\\templates\\game_detail.html:117
+#: .\\vault\\templates\\game_detail.html:563 .\\vault\\templates\\library.html:138
+msgid "Completed"
+msgstr "Concluído"
+
+#: .\\vault\\models.py:419
+msgid "Failed"
+msgstr "Falhou"
+
+#: .\\vault\\templates\\account\\login.html:23
+#: .\\vault\\templates\\account\\signup.html:22
+msgid "Your library, your rules."
+msgstr "Sua biblioteca, suas regras."
+
+#: .\\vault\\templates\\account\\login.html:37
+#: .\\vault\\templates\\account\\signup.html:35
+msgid "LOGIN WITH STEAM"
+msgstr "ENTRAR COM STEAM"
+
+#: .\\vault\\templates\\account\\login.html:44
+msgid "OR EMAIL"
+msgstr "OU EMAIL"
+
+#: .\\vault\\templates\\account\\login.html:69
+msgid "USERNAME OR EMAIL"
+msgstr "USUÁRIO OU EMAIL"
+
+#: .\\vault\\templates\\account\\login.html:71
+msgid "Username or Email"
+msgstr "Usuário ou Email"
+
+#: .\\vault\\templates\\account\\login.html:75
+#: .\\vault\\templates\\account\\signup.html:62
+msgid "PASSWORD"
+msgstr "SENHA"
+
+#: .\\vault\\templates\\account\\login.html:83
+msgid "LOG IN"
+msgstr "ENTRAR"
+
+#: .\\vault\\templates\\account\\login.html:92
+msgid "Create new account"
+msgstr "Criar nova conta"
+
+#: .\\vault\\templates\\account\\signup.html:42
+msgid "OR CREATE ACCOUNT"
+msgstr "OU CRIAR CONTA"
+
+#: .\\vault\\templates\\account\\signup.html:52
+msgid "EMAIL"
+msgstr "EMAIL"
+
+#: .\\vault\\templates\\account\\signup.html:57
+msgid "USERNAME"
+msgstr "USUÁRIO"
+
+#: .\\vault\\templates\\account\\signup.html:67
+msgid "CONFIRM PASSWORD"
+msgstr "CONFIRMAR SENHA"
+
+#: .\\vault\\templates\\account\\signup.html:74
+msgid "CREATE ACCOUNT"
+msgstr "CRIAR CONTA"
+
+#: .\\vault\\templates\\account\\signup.html:83
+msgid "Already have an account? Log in"
+msgstr "Já tem uma conta? Entre"
+
+#: .\\vault\\templates\\account\\verification_sent.html:10
+msgid "Verify Your Email"
+msgstr "Verifique Seu Email"
+
+#: .\\vault\\templates\\account\\verification_sent.html:12
+msgid ""
+"We have sent a confirmation link to the registered address. Please check "
+"your inbox (and spam) to activate your account."
+msgstr ""
+"Enviamos um link de confirmação para o endereço registrado. Por favor, "
+"verifique sua caixa de entrada (e spam) para ativar sua conta."
+
+#: .\\vault\\templates\\account\\verification_sent.html:15
+msgid "Back to Login"
+msgstr "Voltar para Login"
+
+#: .\\vault\\templates\\add_game.html:7
+msgid "Manually Add Game"
+msgstr "Adicionar Jogo Manualmente"
+
+#: .\\vault\\templates\\add_game.html:8
+msgid ""
+"Search the global database and add to your collection (PS5, Switch, etc)."
+msgstr ""
+"Pesquise no banco de dados global e adicione à sua coleção (PS5, Switch, "
+"etc)."
+
+#: .\\vault\\templates\\add_game.html:13
+msgid "Enter game name (e.g. God of War)..."
+msgstr "Digite o nome do jogo (ex: God of War)..."
+
+#: .\\vault\\templates\\add_game.html:28
+msgid "No Cover"
+msgstr "Sem Capa"
+
+#: .\\vault\\templates\\add_game.html:33
+msgid "Unknown Year"
+msgstr "Ano Desconhecido"
+
+#: .\\vault\\templates\\add_game.html:37
+msgid "Add"
+msgstr "Adicionar"
+
+#: .\\vault\\templates\\add_game.html:49
+#, python-format
+msgid ""
+"\\n"
+"                        Add %(game_name)s\\n"
+"                        "
+msgstr ""
+"\\n"
+"                        Adicionar %(game_name)s\\n"
+"                        "
+
+#: .\\vault\\templates\\add_game.html:64
+msgid "On which platform?"
+msgstr "Em qual plataforma?"
+
+#: .\\vault\\templates\\add_game.html:74
+msgid "Initial Status"
+msgstr "Status Inicial"
+
+#: .\\vault\\templates\\add_game.html:76
+msgid "Backlog (Want to Play)"
+msgstr "Backlog (Quero Jogar)"
+
+#: .\\vault\\templates\\add_game.html:77 .\\vault\\templates\\game_detail.html:110
+#: .\\vault\\templates\\game_detail.html:562 .\\vault\\templates\\library.html:137
+msgid "Playing"
+msgstr "Jogando"
+
+#: .\\vault\\templates\\add_game.html:78
+msgid "Completed / Platinum"
+msgstr "Concluído / Platinado"
+
+#: .\\vault\\templates\\add_game.html:79 .\\vault\\templates\\game_detail.html:131
+#: .\\vault\\templates\\game_detail.html:564 .\\vault\\templates\\library.html:140
+msgid "Dropped"
+msgstr "Abandonado"
+
+#: .\\vault\\templates\\add_game.html:83
+msgid "Save to Library"
+msgstr "Salvar na Biblioteca"
+
+#: .\\vault\\templates\\add_game.html:92
+msgid "No games found on IGDB. Try another name."
+msgstr "Nenhum jogo encontrado no IGDB. Tente outro nome."
+
+#: .\\vault\\templates\\base.html:8
+msgid "ALKA.GG"
+msgstr "ALKA.GG"
+
+#: .\\vault\\templates\\base.html:173
+msgid "Search games, lists, or users..."
+msgstr "Busque jogos, listas ou usuários..."
+
+#: .\\vault\\templates\\base.html:197
+msgid "Notifications"
+msgstr "Notificações"
+
+#: .\\vault\\templates\\base.html:208
+msgid "Mark all as read"
+msgstr "Marcar todas como lidas"
+
+#: .\\vault\\templates\\base.html:213
+msgid "No new notifications."
+msgstr "Nenhuma nova notificação."
+
+#: .\\vault\\templates\\base.html:224 .\\vault\\templates\\profile.html:23
+msgid "LVL"
+msgstr "NVL"
+
+#: .\\vault\\templates\\base.html:234
+msgid "Login"
+msgstr "Entrar"
+
+#: .\\vault\\templates\\base.html:235
+msgid "Sign Up"
+msgstr "Cadastrar"
+
+#: .\\vault\\templates\\dashboard.html:10
+#, python-format
+msgid "Welcome back, %(username)s."
+msgstr "Bem-vindo de volta, %(username)s."
+
+#: .\\vault\\templates\\dashboard.html:13
+#, python-format
+msgid ""
+"\\n"
+"            You have <strong class=\"text-white\">%(playing)s game</strong> "
+"in progress and <strong class=\"text-white\">%(backlog)s title</strong> in "
+"your backlog.\\n"
+"            "
+msgid_plural ""
+"\\n"
+"            You have <strong class=\"text-white\">%(playing)s games</strong> "
+"in progress and <strong class=\"text-white\">%(backlog)s titles</strong> in "
+"your backlog.\\n"
+"            "
+msgstr[0] ""
+"\\n"
+"            Você tem <strong class=\"text-white\">%(playing)s jogo</strong> "
+"em progresso e <strong class=\"text-white\">%(backlog)s título</strong> no "
+"seu backlog.\\n"
+"            "
+msgstr[1] ""
+"\\n"
+"            Você tem <strong class=\"text-white\">%(playing)s jogos</strong> "
+"em progresso e <strong class=\"text-white\">%(backlog)s títulos</strong> no "
+"seu backlog.\\n"
+"            "
+
+#: .\\vault\\templates\\dashboard.html:30 .\\vault\\templates\\game_detail.html:175
+msgid "Playtime"
+msgstr "Tempo de Jogo"
+
+#: .\\vault\\templates\\dashboard.html:39
+msgid "Jump Back In"
+msgstr "Continuar Jogando"
+
+#: .\\vault\\templates\\dashboard.html:41 .\\vault\\templates\\discovery.html:31
+msgid "View All"
+msgstr "Ver Tudo"
+
+#: .\\vault\\templates\\dashboard.html:59
+msgid "PLAYING"
+msgstr "JOGANDO"
+
+#: .\\vault\\templates\\dashboard.html:78
+msgid "No games currently in progress."
+msgstr "Nenhum jogo em progresso no momento."
+
+#: .\\vault\\templates\\dashboard.html:79
+msgid "Start a Game"
+msgstr "Começar um Jogo"
+
+#: .\\vault\\templates\\dashboard.html:91
+msgid "Friend Activity"
+msgstr "Atividade dos Amigos"
+
+#: .\\vault\\templates\\dashboard.html:111
+msgid "reviewed"
+msgstr "avaliou"
+
+#: .\\vault\\templates\\dashboard.html:113
+msgid "started playing"
+msgstr "começou a jogar"
+
+#: .\\vault\\templates\\dashboard.html:119 .\\vault\\templates\\dashboard.html:121
+#, python-format
+msgid "%(time)s ago"
+msgstr "%(time)s atrás"
+
+#: .\\vault\\templates\\dashboard.html:142
+msgid "NEW JOURNEY"
+msgstr "NOVA JORNADA"
+
+#: .\\vault\\templates\\dashboard.html:148
+msgid "Your friends are quiet. Too quiet."
+msgstr "Seus amigos estão quietos. Quietos até demais."
+
+#: .\\vault\\templates\\dashboard.html:149
+msgid "Find people to follow"
+msgstr "Encontre pessoas para seguir"
+
+#: .\\vault\\templates\\dashboard.html:157 .\\vault\\templates\\discovery.html:30
+msgid "Trending Now"
+msgstr "Em Alta"
+
+#: .\\vault\\templates\\dashboard.html:161
+msgid "Critics' Choice"
+msgstr "Escolha da Crítica"
+
+#: .\\vault\\templates\\dashboard.html:170
+msgid "96 OpenCritic"
+msgstr "96 OpenCritic"
+
+#: .\\vault\\templates\\dashboard.html:174
+msgid "No data yet."
+msgstr "Sem dados ainda."
+
+#: .\\vault\\templates\\dashboard.html:181
+msgid "Community Top"
+msgstr "Top da Comunidade"
+
+#: .\\vault\\templates\\dashboard.html:201
+msgid "GAME PASS"
+msgstr "GAME PASS"
+
+#: .\\vault\\templates\\dashboard.html:202
+msgid "New on Service"
+msgstr "Novidades no Serviço"
+
+#: .\\vault\\templates\\dashboard.html:210 .\\vault\\templates\\discovery.html:102
+msgid "Best Deals"
+msgstr "Melhores Ofertas"
+
+#: .\\vault\\templates\\dashboard.html:222 .\\vault\\templates\\discovery.html:131
+msgid "View All Deals"
+msgstr "Ver Todas as Ofertas"
+
+#: .\\vault\\templates\\discovery.html:13
+msgid "FEATURED"
+msgstr "DESTAQUE"
+
+#: .\\vault\\templates\\discovery.html:15
+msgid ""
+"The highly anticipated expansion. Dive back into the Lands Between with new "
+"weapons, enemies, and lore."
+msgstr ""
+"A expansão altamente antecipada. Mergulhe de volta nas Terras Intermédias "
+"com novas armas, inimigos e lore."
+
+#: .\\vault\\templates\\discovery.html:17
+msgid "View Game"
+msgstr "Ver Jogo"
+
+#: .\\vault\\templates\\discovery.html:18
+msgid "+ Wishlist"
+msgstr "+ Lista de Desejos"
+
+#: .\\vault\\templates\\discovery.html:41
+msgid "RPG • 96 Score"
+msgstr "RPG • Nota 96"
+
+#: .\\vault\\templates\\discovery.html:49 .\\vault\\templates\\profile.html:105
+msgid "Hall of Fame"
+msgstr "Hall da Fama"
+
+#: .\\vault\\templates\\discovery.html:51
+msgid "Critics Choice"
+msgstr "Escolha da Crítica"
+
+#: .\\vault\\templates\\discovery.html:52
+msgid "Users Choice"
+msgstr "Escolha dos Usuários"
+
+#: .\\vault\\templates\\discovery.html:60
+#: .\\vault\\templates\\social\\leaderboard.html:18
+msgid "Rank"
+msgstr "Posição"
+
+#: .\\vault\\templates\\discovery.html:61
+msgid "Game Title"
+msgstr "Título do Jogo"
+
+#: .\\vault\\templates\\discovery.html:62
+msgid "Score"
+msgstr "Nota"
+
+#: .\\vault\\templates\\discovery.html:63 .\\vault\\templates\\game_detail.html:161
+#: .\\vault\\templates\\library\\edit_entry.html:17
+msgid "Platform"
+msgstr "Plataforma"
+
+#: .\\vault\\templates\\discovery.html:136
+msgid "Coming Soon"
+msgstr "Em Breve"
+
+#: .\\vault\\templates\\game_detail.html:40
+msgid "RUMOR"
+msgstr "RUMOR"
+
+#: .\\vault\\templates\\game_detail.html:41
+msgid "EARLY ACCESS"
+msgstr "ACESSO ANTECIPADO"
+
+#: .\\vault\\templates\\game_detail.html:48
+#, python-format
+msgid "by <strong class=\"text-white\">%(dev)s</strong>"
+msgstr "por <strong class=\"text-white\">%(dev)s</strong>"
+
+#: .\\vault\\templates\\game_detail.html:73
+msgid "Write Review"
+msgstr "Escrever Review"
+
+#: .\\vault\\templates\\game_detail.html:78
+msgid "Toggle Favorite"
+msgstr "Favoritar"
+
+#: .\\vault\\templates\\game_detail.html:82 .\\vault\\templates\\game_detail.html:607
+msgid "Add to List"
+msgstr "Adicionar à Lista"
+
+#: .\\vault\\templates\\game_detail.html:85
+msgid "Share (Soon)"
+msgstr "Compartilhar (Em Breve)"
+
+#: .\\vault\\templates\\game_detail.html:93
+msgid "Your Status"
+msgstr "Seu Status"
+
+#: .\\vault\\templates\\game_detail.html:124
+#: .\\vault\\templates\\game_detail.html:565
+#: .\\vault\\templates\\includes\\sidebar_content.html:59
+#: .\\vault\\templates\\library.html:139
+msgid "Backlog"
+msgstr "Backlog"
+
+#: .\\vault\\templates\\game_detail.html:138
+msgid "Your Rating"
+msgstr "Sua Nota"
+
+#: .\\vault\\templates\\game_detail.html:150
+msgid "No rating yet"
+msgstr "Sem nota ainda"
+
+#: .\\vault\\templates\\game_detail.html:158
+msgid "Data Sheet"
+msgstr "Ficha Técnica"
+
+#: .\\vault\\templates\\game_detail.html:170
+msgid "Release"
+msgstr "Lançamento"
+
+#: .\\vault\\templates\\game_detail.html:182
+msgid "Engine"
+msgstr "Engine"
+
+#: .\\vault\\templates\\game_detail.html:190
+msgid "Series"
+msgstr "Série"
+
+#: .\\vault\\templates\\game_detail.html:199
+msgid "IGDB ID"
+msgstr "ID IGDB"
+
+#: .\\vault\\templates\\game_detail.html:206
+msgid "Modes"
+msgstr "Modos"
+
+#: .\\vault\\templates\\game_detail.html:225 .\\vault\\templates\\profile.html:130
+msgid "Overview"
+msgstr "Visão Geral"
+
+#: .\\vault\\templates\\game_detail.html:226
+msgid "No overview available."
+msgstr "Nenhuma visão geral disponível."
+
+#: .\\vault\\templates\\game_detail.html:235
+msgid "Read full storyline"
+msgstr "Ler enredo completo"
+
+#: .\\vault\\templates\\game_detail.html:244
+msgid "Gallery"
+msgstr "Galeria"
+
+#: .\\vault\\templates\\game_detail.html:263
+msgid "Trophies"
+msgstr "Troféus"
+
+#: .\\vault\\templates\\game_detail.html:285
+msgid "No trophies tracked for this game."
+msgstr "Nenhum troféu rastreado para este jogo."
+
+#: .\\vault\\templates\\game_detail.html:294
+msgid "Traveler Echoes"
+msgstr "Ecos de Viajantes"
+
+#: .\\vault\\templates\\game_detail.html:296
+msgid "Write Echo"
+msgstr "Escrever Eco"
+
+#: .\\vault\\templates\\game_detail.html:306
+msgid "Leave a short hint for other travelers... (max 280 chars)"
+msgstr "Deixe uma dica curta para outros viajantes... (max 280 chars)"
+
+#: .\\vault\\templates\\game_detail.html:308
+msgid "Post Echo"
+msgstr "Postar Eco"
+
+#: .\\vault\\templates\\game_detail.html:335
+msgid "No echoes recorded yet. Be the first to leave a mark."
+msgstr "Nenhum eco gravado ainda. Seja o primeiro a deixar uma marca."
+
+#: .\\vault\\templates\\game_detail.html:344
+msgid "Your Journal"
+msgstr "Seu Diário"
+
+#: .\\vault\\templates\\game_detail.html:365
+#: .\\vault\\templates\\game_detail.html:581
+msgid "Replay"
+msgstr "Replay"
+
+#: .\\vault\\templates\\game_detail.html:373
+msgid "Edit Entry"
+msgstr "Editar Entrada"
+
+#: .\\vault\\templates\\game_detail.html:374
+msgid "Delete"
+msgstr "Excluir"
+
+#: .\\vault\\templates\\game_detail.html:385
+msgid "Contains Spoilers"
+msgstr "Contém Spoilers"
+
+#: .\\vault\\templates\\game_detail.html:392
+msgid "Journal is empty. Click the pencil icon to write."
+msgstr "O diário está vazio. Clique no ícone de lápis para escrever."
+
+#: .\\vault\\templates\\game_detail.html:401
+msgid "Community Reviews"
+msgstr "Reviews da Comunidade"
+
+#: .\\vault\\templates\\game_detail.html:426
+msgid "Deleted User"
+msgstr "Usuário Deletado"
+
+#: .\\vault\\templates\\game_detail.html:457
+msgid "Spoiler hidden."
+msgstr "Spoiler oculto."
+
+#: .\\vault\\templates\\game_detail.html:458
+msgid "Click to reveal"
+msgstr "Clique para revelar"
+
+#: .\\vault\\templates\\game_detail.html:465
+msgid "Read more"
+msgstr "Ler mais"
+
+#: .\\vault\\templates\\game_detail.html:473
+msgid "No reviews from the community yet."
+msgstr "Nenhuma review da comunidade ainda."
+
+#: .\\vault\\templates\\game_detail.html:490
+msgid "Add to List..."
+msgstr "Adicionar à Lista..."
+
+#: .\\vault\\templates\\game_detail.html:498
+msgid "DLCs & Addons"
+msgstr "DLCs & Expansões"
+
+#: .\\vault\\templates\\game_detail.html:502
+#, python-format
+msgid "%(count)s items linked via IGDB"
+msgstr "%(count)s itens vinculados via IGDB"
+
+#: .\\vault\\templates\\game_detail.html:511
+msgid "Similar Games"
+msgstr "Jogos Similares"
+
+#: .\\vault\\templates\\game_detail.html:513
+#, python-format
+msgid "Matches found: %(count)s"
+msgstr "Correspondências: %(count)s"
+
+#: .\\vault\\templates\\game_detail.html:522
+msgid "DEAL"
+msgstr "OFERTA"
+
+#: .\\vault\\templates\\game_detail.html:524
+msgid "Best Price"
+msgstr "Melhor Preço"
+
+#: .\\vault\\templates\\game_detail.html:526
+msgid "Official"
+msgstr "Oficial"
+
+#: .\\vault\\templates\\game_detail.html:527
+msgid "Check Store"
+msgstr "Ver na Loja"
+
+#: .\\vault\\templates\\game_detail.html:529
+msgid "Compare Prices"
+msgstr "Comparar Preços"
+
+#: .\\vault\\templates\\game_detail.html:547
+msgid "Journal Entry"
+msgstr "Entrada do Diário"
+
+#: .\\vault\\templates\\game_detail.html:560
+#: .\\vault\\templates\\library\\edit_entry.html:29
+msgid "Status"
+msgstr "Status"
+
+#: .\\vault\\templates\\game_detail.html:569
+msgid "Options"
+msgstr "Opções"
+
+#: .\\vault\\templates\\game_detail.html:573
+msgid "Spoilers"
+msgstr "Spoilers"
+
+#: .\\vault\\templates\\game_detail.html:577
+msgid "Recommended"
+msgstr "Recomendado"
+
+#: .\\vault\\templates\\game_detail.html:587
+msgid "Review"
+msgstr "Review"
+
+#: .\\vault\\templates\\game_detail.html:593
+#: .\\vault\\templates\\library\\edit_entry.html:42
+#: .\\vault\\templates\\lists\\create_list.html:23
+#: .\\vault\\templates\\profile.html:205
+#: .\\vault\\templates\\reviews\\delete_review_confirm.html:17
+#: .\\vault\\templates\\tips\\edit_tip.html:30
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: .\\vault\\templates\\game_detail.html:594
+msgid "Save Entry"
+msgstr "Salvar Entrada"
+
+#: .\\vault\\templates\\game_detail.html:622
+msgid "No lists created yet."
+msgstr "Nenhuma lista criada ainda."
+
+#: .\\vault\\templates\\game_detail.html:625
+msgid "+ Create New List"
+msgstr "+ Criar Nova Lista"
+
+#: .\\vault\\templates\\includes\\import_live_rows.html:19
+msgid "IGDB ID:"
+msgstr "ID IGDB:"
+
+#: .\\vault\\templates\\includes\\import_live_rows.html:31
+msgid "Imported"
+msgstr "Importado"
+
+#: .\\vault\\templates\\includes\\import_live_rows.html:38
+#: .\\vault\\templates\\settings\\import_hub.html:88
+msgid "Waiting for data stream..."
+msgstr "Aguardando fluxo de dados..."
+
+#: .\\vault\\templates\\includes\\import_live_rows.html:39
+msgid "This may take a few seconds the first time."
+msgstr "Isso pode levar alguns segundos na primeira vez."
+
+#: .\\vault\\templates\\includes\\import_live_rows.html:66
+#: .\\vault\\templates\\includes\\import_progress.html:21
+msgid "DONE"
+msgstr "FEITO"
+
+#: .\\vault\\templates\\includes\\import_live_rows.html:68
+msgid "FAILED"
+msgstr "FALHOU"
+
+#: .\\vault\\templates\\includes\\import_live_rows.html:77
+msgid "Import Completed."
+msgstr "Importação Concluída."
+
+#: .\\vault\\templates\\includes\\import_live_rows.html:79
+msgid "Import Interrupted."
+msgstr "Importação Interrompida."
+
+#: .\\vault\\templates\\includes\\import_progress.html:17
+msgid "Importing:"
+msgstr "Importando:"
+
+#: .\\vault\\templates\\includes\\import_progress.html:23
+msgid "ERROR"
+msgstr "ERRO"
+
+#: .\\vault\\templates\\includes\\import_progress.html:25
+msgid "RUNNING"
+msgstr "EXECUTANDO"
+
+#: .\\vault\\templates\\includes\\import_progress.html:51
+msgid "Initializing..."
+msgstr "Inicializando..."
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:30
+msgid "Search..."
+msgstr "Pesquisar..."
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:37
+msgid "Log Game"
+msgstr "Registrar Jogo"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:42
+msgid "Main"
+msgstr "Principal"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:44
+msgid "Dashboard"
+msgstr "Painel"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:47
+msgid "Discovery"
+msgstr "Explorar"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:49
+msgid "Feed (Phase 4)"
+msgstr "Feed (Fase 4)"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:50
+msgid "Activity"
+msgstr "Atividade"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:54
+msgid "Library"
+msgstr "Biblioteca"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:56
+msgid "My Games"
+msgstr "Meus Jogos"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:62
+msgid "Lists"
+msgstr "Listas"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:64
+msgid "Wishlist & Deals (Phase 5)"
+msgstr "Desejos e Ofertas (Fase 5)"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:65
+msgid "Wishlist"
+msgstr "Lista de Desejos"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:69
+msgid "Community"
+msgstr "Comunidade"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:71
+msgid "Friends"
+msgstr "Amigos"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:74
+msgid "Leaderboard"
+msgstr "Ranking"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:77
+msgid "Fantasy Critic (Phase 7)"
+msgstr "Fantasy Critic (Fase 7)"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:78
+msgid "Oracle League"
+msgstr "Liga Oráculo"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:88
+msgid "Portuguese"
+msgstr "Português"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:107
+msgid "Spanish"
+msgstr "Espanhol"
+
+#: .\\vault\\templates\\includes\\sidebar_content.html:120
+msgid "Log Out"
+msgstr "Sair"
+
+#: .\\vault\\templates\\library.html:116
+msgid "My Collection"
+msgstr "Minha Coleção"
+
+#: .\\vault\\templates\\library.html:118
+#, python-format
+msgid ""
+"\\n"
+"                %(count)s title\\n"
+"                "
+msgid_plural ""
+"\\n"
+"                %(count)s titles\\n"
+"                "
+msgstr[0] ""
+"\\n"
+"                %(count)s título\\n"
+"                "
+msgstr[1] ""
+"\\n"
+"                %(count)s títulos\\n"
+"                "
+
+#: .\\vault\\templates\\library.html:130
+msgid "All Platforms"
+msgstr "Todas as Plataformas"
+
+#: .\\vault\\templates\\library.html:136
+msgid "All Status"
+msgstr "Todos os Status"
+
+#: .\\vault\\templates\\library.html:143
+msgid "Recently Played"
+msgstr "Jogados Recentemente"
+
+#: .\\vault\\templates\\library.html:144
+msgid "Highest Rated"
+msgstr "Mais Bem Avaliados"
+
+#: .\\vault\\templates\\library.html:145
+msgid "Most Played"
+msgstr "Mais Jogados"
+
+#: .\\vault\\templates\\library.html:226
+msgid "No games found."
+msgstr "Nenhum jogo encontrado."
+
+#: .\\vault\\templates\\library.html:242
+#, python-format
+msgid "Page %(number)s"
+msgstr "Página %(number)s"
+
+#: .\\vault\\templates\\library\\edit_entry.html:8
+msgid "Edit Game in Library"
+msgstr "Editar Jogo na Biblioteca"
+
+#: .\\vault\\templates\\library\\edit_entry.html:9
+msgid "Editing:"
+msgstr "Editando:"
+
+#: .\\vault\\templates\\library\\edit_entry.html:24
+msgid "Changing the platform will move this entry to the correct game version."
+msgstr ""
+"Alterar a plataforma moverá esta entrada para a versão correta do jogo."
+
+#: .\\vault\\templates\\library\\edit_entry.html:43
+#: .\\vault\\templates\\reviews\\edit_review.html:26
+msgid "Save Changes"
+msgstr "Salvar Alterações"
+
+#: .\\vault\\templates\\lists\\create_list.html:6
+#: .\\vault\\templates\\lists\\my_lists.html:9
+msgid "Create New List"
+msgstr "Criar Nova Lista"
+
+#: .\\vault\\templates\\lists\\create_list.html:15
+msgid "List Title"
+msgstr "Título da Lista"
+
+#: .\\vault\\templates\\lists\\create_list.html:16
+msgid "Ex: Best RPGs"
+msgstr "Ex: Melhores RPGs"
+
+#: .\\vault\\templates\\lists\\create_list.html:19
+msgid "Description (Optional)"
+msgstr "Descrição (Opcional)"
+
+#: .\\vault\\templates\\lists\\create_list.html:22
+msgid "Save List"
+msgstr "Salvar Lista"
+
+#: .\\vault\\templates\\lists\\list_detail.html:10
+#, python-format
+msgid ""
+"\\n"
+"        Created by <strong>%(user)s</strong> on %(date)s\\n"
+"        "
+msgstr ""
+"\\n"
+"        Criado por <strong>%(user)s</strong> em %(date)s\\n"
+"        "
+
+#: .\\vault\\templates\\lists\\list_detail.html:38
+msgid "This list is empty."
+msgstr "Esta lista está vazia."
+
+#: .\\vault\\templates\\lists\\list_detail.html:39
+msgid "Go to the library and add games here!"
+msgstr "Vá para a biblioteca e adicione jogos aqui!"
+
+#: .\\vault\\templates\\lists\\my_lists.html:7
+msgid "My Lists"
+msgstr "Minhas Listas"
+
+#: .\\vault\\templates\\lists\\my_lists.html:21
+msgid "View List"
+msgstr "Ver Lista"
+
+#: .\\vault\\templates\\lists\\my_lists.html:24
+#, python-format
+msgid ""
+"\\n"
+"                %(count)s game(s) | Updated on %(date)s\\n"
+"                "
+msgstr ""
+"\\n"
+"                %(count)s jogo(s) | Atualizado em %(date)s\\n"
+"                "
+
+#: .\\vault\\templates\\lists\\my_lists.html:33
+msgid "You haven't created any lists yet."
+msgstr "Você ainda não criou nenhuma lista."
+
+#: .\\vault\\templates\\profile.html:34
+msgid "PRO"
+msgstr "PRO"
+
+#: .\\vault\\templates\\profile.html:39
+msgid "Just another digital traveler."
+msgstr "Apenas mais um viajante digital."
+
+#: .\\vault\\templates\\profile.html:45
+#: .\\vault\\templates\\social\\leaderboard.html:20
+msgid "Games"
+msgstr "Jogos"
+
+#: .\\vault\\templates\\profile.html:48
+msgid "Achievements"
+msgstr "Conquistas"
+
+#: .\\vault\\templates\\profile.html:51
+msgid "XP"
+msgstr "XP"
+
+#: .\\vault\\templates\\profile.html:63
+msgid "Sync Steam"
+msgstr "Sincronizar Steam"
+
+#: .\\vault\\templates\\profile.html:69
+msgid "Config"
+msgstr "Config"
+
+#: .\\vault\\templates\\profile.html:72
+msgid "Privacy & Data"
+msgstr "Privacidade & Dados"
+
+#: .\\vault\\templates\\profile.html:77
+msgid "Download my data (ZIP/CSV)"
+msgstr "Baixar meus dados (ZIP/CSV)"
+
+#: .\\vault\\templates\\profile.html:86
+msgid "Delete Account"
+msgstr "Excluir Conta"
+
+#: .\\vault\\templates\\profile.html:94
+msgid "Edit Profile"
+msgstr "Editar Perfil"
+
+#: .\\vault\\templates\\profile.html:115
+msgid "ADD GAME"
+msgstr "ADD JOGO"
+
+#: .\\vault\\templates\\profile.html:133
+msgid "Journal"
+msgstr "Diário"
+
+#: .\\vault\\templates\\profile.html:136
+msgid "Stats"
+msgstr "Estatísticas"
+
+#: .\\vault\\templates\\profile.html:139
+msgid "Badges"
+msgstr "Insígnias"
+
+#: .\\vault\\templates\\profile.html:147
+msgid "Recent Activity"
+msgstr "Atividade Recente"
+
+#: .\\vault\\templates\\profile.html:151
+msgid "No recent activity recorded."
+msgstr "Nenhuma atividade recente registrada."
+
+#: .\\vault\\templates\\profile.html:160
+msgid "Alkahest Star"
+msgstr "Estrela Alkahest"
+
+#: .\\vault\\templates\\profile.html:161
+msgid "Based on gameplay volume, skill, and variety"
+msgstr "Baseado em volume de jogo, habilidade e variedade"
+
+#: .\\vault\\templates\\profile.html:170
+msgid "Platforms"
+msgstr "Plataformas"
+
+#: .\\vault\\templates\\profile.html:180
+msgid "No platform data available."
+msgstr "Sem dados de plataforma disponíveis."
+
+#: .\\vault\\templates\\profile.html:191
+msgid "Danger Zone"
+msgstr "Zona de Perigo"
+
+#: .\\vault\\templates\\profile.html:192
+msgid "Close"
+msgstr "Fechar"
+
+#: .\\vault\\templates\\profile.html:196
+msgid "Are you sure?"
+msgstr "Tem certeza?"
+
+#: .\\vault\\templates\\profile.html:198
+msgid ""
+"This action will delete your library, price history, and anonymize your "
+"reviews."
+msgstr ""
+"Esta ação excluirá sua biblioteca, histórico de preços e anonimizará suas "
+"reviews."
+
+#: .\\vault\\templates\\profile.html:199
+#: .\\vault\\templates\\reviews\\delete_review_confirm.html:11
+#: .\\vault\\templates\\tips\\delete_tip_confirm.html:22
+msgid "This action cannot be undone."
+msgstr "Esta ação não pode ser desfeita."
+
+#: .\\vault\\templates\\profile.html:206
+msgid "Yes, delete my account"
+msgstr "Sim, excluir minha conta"
+
+#: .\\vault\\templates\\reviews\\delete_review_confirm.html:5
+#: .\\vault\\templates\\tips\\delete_tip_confirm.html:7
+msgid "Confirm Deletion"
+msgstr "Confirmar Exclusão"
+
+#: .\\vault\\templates\\reviews\\delete_review_confirm.html:7
+#, python-format
+msgid ""
+"\\n"
+"    Are you sure you want to delete your review for <strong>%(game_title)s</"
+"strong>?\\n"
+"    "
+msgstr ""
+"\\n"
+"    Tem certeza que deseja excluir sua review de <strong>%(game_title)s</"
+"strong>?\\n"
+"    "
+
+#: .\\vault\\templates\\reviews\\delete_review_confirm.html:16
+#: .\\vault\\templates\\tips\\delete_tip_confirm.html:26
+msgid "Yes, Delete"
+msgstr "Sim, Excluir"
+
+#: .\\vault\\templates\\reviews\\edit_review.html:5
+msgid "Edit Review"
+msgstr "Editar Review"
+
+#: .\\vault\\templates\\reviews\\edit_review.html:7
+#, python-format
+msgid ""
+"\\n"
+"    For game: %(game_title)s\\n"
+"    "
+msgstr ""
+"\\n"
+"    Para o jogo: %(game_title)s\\n"
+"    "
+
+#: .\\vault\\templates\\reviews\\edit_review.html:18
+msgid "Rating"
+msgstr "Nota"
+
+#: .\\vault\\templates\\reviews\\edit_review.html:22
+msgid "Review Text"
+msgstr "Texto da Review"
+
+#: .\\vault\\templates\\settings\\import_hub.html:13
+msgid "Backloggd Link"
+msgstr "Link do Backloggd"
+
+#: .\\vault\\templates\\settings\\import_hub.html:23
+msgid "Target Username"
+msgstr "Usuário Alvo"
+
+#: .\\vault\\templates\\settings\\import_hub.html:28
+msgid "ex: Scooz"
+msgstr "ex: Scooz"
+
+#: .\\vault\\templates\\settings\\import_hub.html:35
+msgid "START SYNC"
+msgstr "INICIAR SYNC"
+
+#: .\\vault\\templates\\settings\\import_hub.html:41
+msgid ""
+"The process runs in the background. You can leave this page, but stay to "
+"watch the magic."
+msgstr ""
+"O processo roda em segundo plano. Você pode sair desta página, mas fique "
+"para ver a mágica."
+
+#: .\\vault\\templates\\settings\\import_hub.html:61
+msgid "Live Data Stream"
+msgstr "Fluxo de Dados ao Vivo"
+
+#: .\\vault\\templates\\settings\\import_hub.html:63
+msgid "REAL-TIME"
+msgstr "TEMPO REAL"
+
+#: .\\vault\\templates\\settings\\import_hub.html:71
+msgid "IMG"
+msgstr "IMG"
+
+#: .\\vault\\templates\\settings\\import_hub.html:72
+msgid "GAME TITLE"
+msgstr "TÍTULO DO JOGO"
+
+#: .\\vault\\templates\\settings\\import_hub.html:73
+msgid "RATING"
+msgstr "NOTA"
+
+#: .\\vault\\templates\\settings\\import_hub.html:74
+msgid "STATUS"
+msgstr "STATUS"
+
+#: .\\vault\\templates\\social\\hub.html:8
+msgid "Social Hub"
+msgstr "Hub Social"
+
+#: .\\vault\\templates\\social\\hub.html:9
+msgid "Manage your circle and discover new travelers."
+msgstr "Gerencie seu círculo e descubra novos viajantes."
+
+#: .\\vault\\templates\\social\\hub.html:20
+msgid "Following"
+msgstr "Seguindo"
+
+#: .\\vault\\templates\\social\\hub.html:25
+msgid "Followers"
+msgstr "Seguidores"
+
+#: .\\vault\\templates\\social\\hub.html:41
+#, python-format
+msgid ""
+"\\n"
+"                                    Lvl %(level)s • %(bio)s\\n"
+"                                    "
+msgstr ""
+"\\n"
+"                                    Nvl %(level)s • %(bio)s\\n"
+"                                    "
+
+#: .\\vault\\templates\\social\\hub.html:48
+msgid "Unfollow"
+msgstr "Deixar de Seguir"
+
+#: .\\vault\\templates\\social\\hub.html:54
+msgid "You are not following anyone yet."
+msgstr "Você não está seguindo ninguém ainda."
+
+#: .\\vault\\templates\\social\\hub.html:70
+#, python-format
+msgid ""
+"\\n"
+"                                    Follows you since %(date)s\\n"
+"                                    "
+msgstr ""
+"\\n"
+"                                    Te segue desde %(date)s\\n"
+"                                    "
+
+#: .\\vault\\templates\\social\\hub.html:78
+msgid "Follow Back"
+msgstr "Seguir de Volta"
+
+#: .\\vault\\templates\\social\\hub.html:83
+msgid "No followers yet. Be active to get noticed!"
+msgstr "Nenhum seguidor ainda. Seja ativo para ser notado!"
+
+#: .\\vault\\templates\\social\\hub.html:93
+msgid "Discover Travelers"
+msgstr "Descobrir Viajantes"
+
+#: .\\vault\\templates\\social\\hub.html:101
+msgid "Maybe you know?"
+msgstr "Talvez você conheça?"
+
+#: .\\vault\\templates\\social\\hub.html:109
+msgid "No suggestions right now."
+msgstr "Nenhuma sugestão no momento."
+
+#: .\\vault\\templates\\social\\hub.html:114
+msgid "Invite Friends"
+msgstr "Convidar Amigos"
+
+#: .\\vault\\templates\\social\\hub.html:115
+msgid "Share your profile link to compare stats."
+msgstr "Compartilhe seu link de perfil para comparar estatísticas."
+
+#: .\\vault\\templates\\social\\leaderboard.html:7
+msgid "Global Leaderboard"
+msgstr "Ranking Global"
+
+#: .\\vault\\templates\\social\\leaderboard.html:8
+msgid "Ranking based on Total XP. Play more to climb."
+msgstr "Ranking baseado em XP Total. Jogue mais para subir."
+
+#: .\\vault\\templates\\social\\leaderboard.html:19
+msgid "User"
+msgstr "Usuário"
+
+#: .\\vault\\templates\\social\\leaderboard.html:21
+msgid "Total XP"
+msgstr "XP Total"
+
+#: .\\vault\\templates\\social\\leaderboard.html:49
+#, python-format
+msgid ""
+"\\n"
+"                                            Level %(level)s\\n"
+"                                            "
+msgstr ""
+"\\n"
+"                                            Nível %(level)s\\n"
+"                                            "
+
+#: .\\vault\\templates\\tips\\delete_tip_confirm.html:9
+#, python-format
+msgid ""
+"\\n"
+"            Are you sure you want to permanently delete your tip for "
+"<strong>%(game)s</strong>?\\n"
+"            "
+msgstr ""
+"\\n"
+"            Tem certeza que deseja excluir permanentemente sua dica para "
+"<strong>%(game)s</strong>?\\n"
+"            "
+
+#: .\\vault\\templates\\tips\\delete_tip_confirm.html:27
+msgid "No, go back"
+msgstr "Não, voltar"
+
+#: .\\vault\\templates\\tips\\edit_tip.html:7
+msgid "Edit Quick Tip"
+msgstr "Editar Dica Rápida"
+
+#: .\\vault\\templates\\tips\\edit_tip.html:9
+#, python-format
+msgid ""
+"\\n"
+"            For the game: <strong>%(game)s</strong>\\n"
+"            "
+msgstr ""
+"\\n"
+"            Para o jogo: <strong>%(game)s</strong>\\n"
+"            "
+
+#: .\\vault\\templates\\tips\\edit_tip.html:19
+msgid "Tip Text"
+msgstr "Texto da Dica"
+
+#: .\\vault\\templates\\tips\\edit_tip.html:24
+msgid "Editing the tip will not reset received votes."
+msgstr "Editar a dica não resetará os votos recebidos."
+
+#: .\\vault\\templates\\tips\\edit_tip.html:31
+msgid "Save Tip"
+msgstr "Salvar Dica"
+
+#: .\\vault\\templates\\widgets\\metacritic_rating.html:11
+msgid "My Score"
+msgstr "Minha Nota"
