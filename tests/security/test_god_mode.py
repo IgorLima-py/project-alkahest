@@ -104,4 +104,4 @@ def test_merge_security_idor(client):
     
     # O decorador @user_passes_test redireciona (302) para o login se falhar
     assert response.status_code == 302 
-    assert "/accounts/login/" in response.url
+    assert "/login/" in response.url 

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-danger">
+                <i class="bi bi-shield-lock-fill"></i> {% trans "God Mode Dashboard" %}
+            </h1>
+            <p class="text-secondary">{% trans "Dangerous tools for superusers only." %}</p>
+        </div>
+    </div>
+
+    <!-- Feedback de Mensagens (Sucesso/Erro) -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- Card Merge Tool -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card bg-dark border-danger h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-danger fw-bold">
+                        <i class="bi bi-radioactive"></i> {% trans "Game Merge Tool" %}
+                    </h5>
+                    <p class="card-text text-secondary">
+                        {% trans "Fix duplicates by merging two games into one. Moves reviews, lists, and playtimes." %}
+                    </p>
+                    <a href="{% url 'merge_games_tool' %}" class="btn btn-outline-danger w-100">
+                        {% trans "Open Tool" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Placeholder para futuras ferramentas -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card bg-dark border-secondary h-100 opacity-50">
+                <div class="card-body">
+                    <h5 class="card-title text-secondary">
+                        <i class="bi bi-tools"></i> {% trans "Future Tool" %}
+                    </h5>
+                    <p class="card-text text-muted">
+                        {% trans "More administrative powers coming soon." %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
