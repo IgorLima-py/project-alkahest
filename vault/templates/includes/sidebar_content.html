@@ -1,113 +1,123 @@
+{% load i18n %}
+
 <a href="{% url 'dashboard' %}" class="brand text-decoration-none py-2">
-    <!-- Logo Ajustado (Branco, Maior, Mais Grosso) -->
-    <div style="width: 48px; color: white;"> 
-        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="20"> <!-- Stroke width adicionado -->
-            <g fill="currentColor" stroke="none"> <!-- Stroke none para manter fill solido nas bolas -->
-                <circle cx="400" cy="250" r="72" /> <!-- 58 * 1.25 -->
-                <circle cx="400" cy="40" r="30" />  <!-- 24 * 1.25, ajustado Y -->
-                <circle cx="400" cy="460" r="30" /> <!-- 24 * 1.25, ajustado Y -->
-                
-                <!-- Orbitas (Strokes manuais simulados ou paths ajustados) -->
-                <!-- Mantendo paths originais mas escalando via transform SVG se necessário, 
-                     ou apenas aumentando o container div width como fiz acima (32px -> 48px) já resolve o tamanho visual. 
-                     Para "grossura", SVGs de preenchimento (fill) não usam stroke-width facilmente sem alterar o path.
-                     Vou aplicar um filtro de brilho/shadow para dar "peso" visual. -->
-                <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(-20) scale(1.1)" />
-                <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(20) scale(1.1)" />
-            </g>
-        </svg>
-    </div>
-    <span class="tracking-tight fw-bold fs-4 ms-2" style="font-family: 'Space Grotesk', sans-serif; letter-spacing: -1px;">ALKA.GG</span>
+    <!-- Adjusted Logo (White, Larger, Thicker) -->
+    <div style="width: 48px; color: white;"> 
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="20"> <!-- Stroke width added -->
+            <g fill="currentColor" stroke="none"> <!-- Stroke none to keep solid fill on balls -->
+                <circle cx="400" cy="250" r="72" /> <!-- 58 * 1.25 -->
+                <circle cx="400" cy="40" r="30" />  <!-- 24 * 1.25, Y adjusted -->
+                <circle cx="400" cy="460" r="30" /> <!-- 24 * 1.25, Y adjusted -->
+                
+                <!-- Orbits (Simulated manual strokes or adjusted paths) -->
+                <!-- Keeping original paths but scaling via SVG transform if necessary, 
+                     or just increasing the container div width as done above (32px -> 48px) solves visual size. 
+                     For "thickness", fill SVGs don't use stroke-width easily without altering the path.
+                     Applying a glow/shadow filter to give visual "weight". -->
+                <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(-20) scale(1.1)" />
+                <path d="M -350 0 A 350 120 0 1 1 350 0 A 350 120 0 1 1 -350 0 M -335 -7.5 A 335 107.5 0 1 0 335 -7.5 A 335 107.5 0 1 0 -335 -7.5 Z" fill-rule="evenodd" transform="translate(400, 250) rotate(20) scale(1.1)" />
+            </g>
+        </svg>
+    </div>
+    <span class="tracking-tight fw-bold fs-4 ms-2" style="font-family: 'Space Grotesk', sans-serif; letter-spacing: -1px;">ALKA.GG</span>
 </a>
 
-<div class="d-flex flex-column flex-grow-1 overflow-auto pe-2 custom-scrollbar justify-content-center"> <!-- Centralizado Verticalmente -->
-    
-    <!-- SEARCH (Mobile only) -->
-    <div class="d-lg-none mb-3">
-        <input type="text" class="form-control bg-dark border-secondary text-white btn-sm" placeholder="Search...">
-    </div>
 
-    <!-- LOG GAME BUTTON -->
-    <div class="mb-4 mt-2">
-        <a href="{% url 'add_game' %}" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-lg glow-hover py-2" style="background: var(--accent-primary); border: none;">
-            <i data-lucide="plus" size="18"></i> <span>Log Game</span>
-        </a>
-    </div>
+<div class="d-flex flex-column flex-grow-1 overflow-auto pe-2 custom-scrollbar justify-content-center"> <!-- Vertically Centered -->
+    
+    <!-- SEARCH (Mobile only) -->
+    <div class="d-lg-none mb-3">
+        <input type="text" class="form-control bg-dark border-secondary text-white btn-sm" placeholder="{% trans 'Search...' %}">
+    </div>
 
-    <div class="nav-section mt-1">Main</div>
-    <a href="{% url 'dashboard' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-        <i data-lucide="layout-grid" size="18"></i> Dashboard
-    </a>
-    <a href="{% url 'discovery' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'discovery' %}active{% endif %}">
-        <i data-lucide="compass" size="18"></i> Discovery
-    </a>
-    <a href="#" class="nav-link-custom opacity-75" title="Feed (Phase 4)">
-        <i data-lucide="activity" size="18"></i> Activity
-    </a>
 
-    <div class="nav-section">Library</div>
-    <a href="{% url 'library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'library' %}active{% endif %}">
-        <i data-lucide="gamepad-2" size="18"></i> My Games
-    </a>
-    <a href="{% url 'library' %}?status=backlog" class="nav-link-custom">
-        <i data-lucide="layers" size="18"></i> Backlog
-    </a>
-    <a href="{% url 'my_lists' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'my_lists' %}active{% endif %}">
-        <i data-lucide="scroll" size="18"></i> Lists
-    </a>
-    <a href="#" class="nav-link-custom opacity-75" title="Wishlist & Deals (Phase 5)">
-        <i data-lucide="gift" size="18"></i> Wishlist
-    </a>
+    <!-- LOG GAME BUTTON -->
+    <div class="mb-4 mt-2">
+        <a href="{% url 'add_game' %}" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-lg glow-hover py-2" style="background: var(--accent-primary); border: none;">
+            <i data-lucide="plus" size="18"></i> <span>{% trans "Log Game" %}</span>
+        </a>
+    </div>
 
-    <div class="nav-section">Community</div>
-    <a href="{% url 'social_hub' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'social_hub' %}active{% endif %}">
-        <i data-lucide="users" size="18"></i> Friends
-    </a>
-    <a href="{% url 'rivals' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'rivals' %}active{% endif %}">
-        <i data-lucide="trophy" size="18"></i> Leaderboard
-    </a>
-    <!-- ORACLE LEAGUE MOVIDO PARA CÁ -->
-    <a href="#" class="nav-link-custom" title="Fantasy Critic (Phase 7)">
-        <i data-lucide="dices" size="18"></i> Oracle League
-    </a>
+
+    <div class="nav-section mt-1">{% trans "Main" %}</div>
+    <a href="{% url 'dashboard' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i data-lucide="layout-grid" size="18"></i> {% trans "Dashboard" %}
+    </a>
+    <a href="{% url 'discovery' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'discovery' %}active{% endif %}">
+        <i data-lucide="compass" size="18"></i> {% trans "Discovery" %}
+    </a>
+    <a href="#" class="nav-link-custom opacity-75" title="{% trans 'Feed (Phase 4)' %}">
+        <i data-lucide="activity" size="18"></i> {% trans "Activity" %}
+    </a>
+
+
+    <div class="nav-section">{% trans "Library" %}</div>
+    <a href="{% url 'library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'library' %}active{% endif %}">
+        <i data-lucide="gamepad-2" size="18"></i> {% trans "My Games" %}
+    </a>
+    <a href="{% url 'library' %}?status=backlog" class="nav-link-custom">
+        <i data-lucide="layers" size="18"></i> {% trans "Backlog" %}
+    </a>
+    <a href="{% url 'my_lists' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'my_lists' %}active{% endif %}">
+        <i data-lucide="scroll" size="18"></i> {% trans "Lists" %}
+    </a>
+    <a href="#" class="nav-link-custom opacity-75" title="{% trans 'Wishlist & Deals (Phase 5)' %}">
+        <i data-lucide="gift" size="18"></i> {% trans "Wishlist" %}
+    </a>
+
+
+    <div class="nav-section">{% trans "Community" %}</div>
+    <a href="{% url 'social_hub' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'social_hub' %}active{% endif %}">
+        <i data-lucide="users" size="18"></i> {% trans "Friends" %}
+    </a>
+    <a href="{% url 'rivals' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'rivals' %}active{% endif %}">
+        <i data-lucide="trophy" size="18"></i> {% trans "Leaderboard" %}
+    </a>
+    <!-- ORACLE LEAGUE MOVED HERE -->
+    <a href="#" class="nav-link-custom" title="{% trans 'Fantasy Critic (Phase 7)' %}">
+        <i data-lucide="dices" size="18"></i> {% trans "Oracle League" %}
+    </a>
 </div>
+
 
 <div class="d-flex justify-content-center gap-3 mb-3 pt-3">
-    <form action="{% url 'set_language' %}" method="post">
-        {% csrf_token %}
-        <input name="next" type="hidden" value="{{ request.get_full_path }}">
-        <input name="language" type="hidden" value="pt-br">
-        <button type="submit" class="btn btn-link p-0 text-decoration-none grayscale-hover {% if LANGUAGE_CODE == 'pt-br' %}opacity-100{% else %}opacity-25{% endif %}" title="Português">
-            <span style="font-size: 1.2rem;">🇧🇷</span>
-        </button>
-    </form>
+    <form action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+        <input name="language" type="hidden" value="pt-br">
+        <button type="submit" class="btn btn-link p-0 text-decoration-none grayscale-hover {% if LANGUAGE_CODE == 'pt-br' %}opacity-100{% else %}opacity-25{% endif %}" title="{% trans 'Portuguese' %}">
+            <span style="font-size: 1.2rem;">🇧🇷</span>
+        </button>
+    </form>
 
-    <form action="{% url 'set_language' %}" method="post">
-        {% csrf_token %}
-        <input name="next" type="hidden" value="{{ request.get_full_path }}">
-        <input name="language" type="hidden" value="en">
-        <button type="submit" class="btn btn-link p-0 text-decoration-none grayscale-hover {% if LANGUAGE_CODE == 'en' %}opacity-100{% else %}opacity-25{% endif %}" title="English">
-            <span style="font-size: 1.2rem;">🇺🇸</span>
-        </button>
-    </form>
-    
-    <form action="{% url 'set_language' %}" method="post">
-        {% csrf_token %}
-        <input name="next" type="hidden" value="{{ request.get_full_path }}">
-        <input name="language" type="hidden" value="es">
-        <button type="submit" class="btn btn-link p-0 text-decoration-none grayscale-hover {% if LANGUAGE_CODE == 'es' %}opacity-100{% else %}opacity-25{% endif %}" title="Español">
-            <span style="font-size: 1.2rem;">🇪🇸</span>
-        </button>
-    </form>
+
+    <form action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+        <input name="language" type="hidden" value="en">
+        <button type="submit" class="btn btn-link p-0 text-decoration-none grayscale-hover {% if LANGUAGE_CODE == 'en' %}opacity-100{% else %}opacity-25{% endif %}" title="{% trans 'English' %}">
+            <span style="font-size: 1.2rem;">🇺🇸</span>
+        </button>
+    </form>
+    
+    <form action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+        <input name="language" type="hidden" value="es">
+        <button type="submit" class="btn btn-link p-0 text-decoration-none grayscale-hover {% if LANGUAGE_CODE == 'es' %}opacity-100{% else %}opacity-25{% endif %}" title="{% trans 'Spanish' %}">
+            <span style="font-size: 1.2rem;">🇪🇸</span>
+        </button>
+    </form>
 </div>
+
 
 
 <div class="mt-auto pt-3 border-top border-subtle">
-    <form action="{% url 'logout' %}" method="post" class="d-inline">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-link text-danger text-decoration-none p-0 d-flex align-items-center gap-2">
-            <i data-lucide="log-out" size="20"></i>
-            <span>Sair</span>
-        </button>
-    </form>
+    <form action="{% url 'logout' %}" method="post" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-link text-danger text-decoration-none p-0 d-flex align-items-center gap-2">
+            <i data-lucide="log-out" size="20"></i>
+            <span>{% trans "Log Out" %}</span>
+        </button>
+    </form>
 </div>

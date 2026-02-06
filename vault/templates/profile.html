@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
 <!-- === PROFILE HEADER === -->
@@ -19,7 +20,7 @@
                      style="border: 6px solid var(--bg-body); object-fit: cover;">
                 
                 <span class="position-absolute bottom-0 start-50 translate-middle-x badge bg-dark border border-warning text-warning rounded-pill px-3 py-1 shadow-lg mt-2 fw-bold font-monospace" style="bottom: -10px;">
-                    LVL {{ current_level|default:"1" }}
+                    {% trans "LVL" %} {{ current_level|default:"1" }}
                 </span>
             </div>
             
@@ -30,24 +31,24 @@
                 <!-- TAG PRO DOURADA -->
                 <span class="badge bg-warning text-dark border border-warning shadow-sm fw-bold fs-6" 
                       style="background: linear-gradient(45deg, #FFD700, #DAA520); color: #422006 !important; text-shadow: 0px 1px 0px rgba(255,255,255,0.4);">
-                    PRO
+                    {% trans "PRO" %}
                 </span>
                 {% endif %}
             </h1>
             <p class="text-muted mb-3 fst-italic" style="max-width: 500px;">
-                "{{ user.profile.bio|default:'Just another digital traveler.' }}"
+                "{{ user.profile.bio|default:_('Just another digital traveler.') }}"
             </p>
             
             <!-- Stats Pills -->
             <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
                 <div class="badge bg-dark border border-subtle text-light fw-normal p-2 px-3">
-                    <span class="fw-bold text-white">{{ total_games|default:"0" }}</span> Games
+                    <span class="fw-bold text-white">{{ total_games|default:"0" }}</span> {% trans "Games" %}
                 </div>
                 <div class="badge bg-dark border border-subtle text-light fw-normal p-2 px-3">
-                    <span class="fw-bold text-white">{{ achievements_count|default:"0" }}</span> Achievements
+                    <span class="fw-bold text-white">{{ achievements_count|default:"0" }}</span> {% trans "Achievements" %}
                 </div>
                 <div class="badge bg-dark border border-subtle text-light fw-normal p-2 px-3">
-                    <span class="fw-bold text-accent-primary">{{ total_xp|default:"0"|intcomma }}</span> XP
+                    <span class="fw-bold text-accent-primary">{{ total_xp|default:"0"|intcomma }}</span> {% trans "XP" %}
                 </div>
             </div>
 
@@ -59,21 +60,21 @@
                         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                         hx-swap="outerHTML">
                     <i data-lucide="refresh-cw" size="16"></i> 
-                    <span>Sync Steam</span>
+                    <span>{% trans "Sync Steam" %}</span>
                 </button>
 
                 <!-- DROPDOWN CONFIG (LGPD INTEGRADO) -->
                 <div class="dropdown">
                     <button class="btn btn-sm btn-outline-secondary text-white hover-white d-flex align-items-center gap-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i data-lucide="settings" size="16"></i> Config
+                        <i data-lucide="settings" size="16"></i> {% trans "Config" %}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-dark shadow-lg border-secondary">
-                        <li><h6 class="dropdown-header text-uppercase small fw-bold">Privacidade & Dados</h6></li>
+                        <li><h6 class="dropdown-header text-uppercase small fw-bold">{% trans "Privacy & Data" %}</h6></li>
                         
                         <!-- Ação: Exportar Dados -->
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'request_export' %}">
-                                <i data-lucide="download" size="14"></i> Baixar meus dados (ZIP/CSV)
+                                <i data-lucide="download" size="14"></i> {% trans "Download my data (ZIP/CSV)" %}
                             </a>
                         </li>
                         
@@ -82,7 +83,7 @@
                         <!-- Ação: Deletar Conta (Trigger Modal) -->
                         <li>
                             <button class="dropdown-item text-danger d-flex align-items-center gap-2 fw-bold" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
-                                <i data-lucide="trash-2" size="14"></i> Excluir Conta
+                                <i data-lucide="trash-2" size="14"></i> {% trans "Delete Account" %}
                             </button>
                         </li>
                     </ul>
@@ -90,7 +91,7 @@
                 
                 <!-- Botão Visual de Edição (Placeholder para Fase 5) -->
                 <button class="btn btn-sm btn-primary fw-bold shadow-lg bg-gradient-to-r from-accent-primary to-purple-600 border-0">
-                    Edit Profile
+                    {% trans "Edit Profile" %}
                 </button>
             </div>
         </div>
@@ -101,7 +102,7 @@
 <div class="mb-5 text-center">
     <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
         <i data-lucide="crown" size="20" class="text-warning"></i>
-        <h6 class="mb-0 text-white text-uppercase fw-bold letter-spacing-2">Hall of Fame</h6>
+        <h6 class="mb-0 text-white text-uppercase fw-bold letter-spacing-2">{% trans "Hall of Fame" %}</h6>
     </div>
 
     <!-- Slots Grid (5 items) -->
@@ -111,7 +112,7 @@
             <!-- Placeholder Slot -->
             <div class="w-100 h-100 rounded border border-dashed border-secondary bg-dark bg-opacity-50 d-flex flex-column align-items-center justify-content-center text-muted hover-border-accent transition-all cursor-pointer">
                 <i data-lucide="plus" size="32" class="opacity-50 mb-2 group-hover-text-accent"></i>
-                <span class="small fw-bold" style="font-size: 0.7rem;">ADD GAME</span>
+                <span class="small fw-bold" style="font-size: 0.7rem;">{% trans "ADD GAME" %}</span>
             </div>
             
             <!-- Rank Badge -->
@@ -126,16 +127,16 @@
 <!-- === PROFILE TABS (Navigation) === -->
 <ul class="nav nav-pills justify-content-center mb-4 border-bottom border-subtle pb-3 gap-3">
     <li class="nav-item">
-        <a class="nav-link active bg-transparent text-white border-bottom border-2 border-accent-primary rounded-0 px-1 pb-3" href="#">Overview</a>
+        <a class="nav-link active bg-transparent text-white border-bottom border-2 border-accent-primary rounded-0 px-1 pb-3" href="#">{% trans "Overview" %}</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-muted hover-white rounded-0 px-1 pb-3" href="#">Journal</a>
+        <a class="nav-link text-muted hover-white rounded-0 px-1 pb-3" href="#">{% trans "Journal" %}</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-muted hover-white rounded-0 px-1 pb-3" href="#">Stats</a>
+        <a class="nav-link text-muted hover-white rounded-0 px-1 pb-3" href="#">{% trans "Stats" %}</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link text-muted hover-white rounded-0 px-1 pb-3" href="#">Badges</a>
+        <a class="nav-link text-muted hover-white rounded-0 px-1 pb-3" href="#">{% trans "Badges" %}</a>
     </li>
 </ul>
 
@@ -143,11 +144,11 @@
 <div class="row g-4">
     <!-- Esquerda: Recent Activity & Bio -->
     <div class="col-12 col-lg-8">
-        <h5 class="fw-bold font-heading mb-3">Recent Activity</h5>
+        <h5 class="fw-bold font-heading mb-3">{% trans "Recent Activity" %}</h5>
         <!-- Placeholder de Activity -->
         <div class="b-card p-4 text-center border-dashed border-secondary opacity-50">
              <i data-lucide="activity" size="32" class="mb-2"></i>
-             <p class="mb-0">No recent activity recorded.</p>
+             <p class="mb-0">{% trans "No recent activity recorded." %}</p>
         </div>
     </div>
 
@@ -156,8 +157,8 @@
         <!-- Alkahest Star -->
         <div class="b-card mb-4 d-flex flex-column align-items-center p-3">
             <div class="d-flex justify-content-between w-100 mb-2">
-                <h6 class="fw-bold text-white small text-uppercase">Alkahest Star</h6>
-                <i data-lucide="info" size="14" class="text-muted" title="Based on gameplay volume, skill, and variety"></i>
+                <h6 class="fw-bold text-white small text-uppercase">{% trans "Alkahest Star" %}</h6>
+                <i data-lucide="info" size="14" class="text-muted" title="{% trans 'Based on gameplay volume, skill, and variety' %}"></i>
             </div>
             <div class="position-relative w-100" style="height: 200px;">
                 <canvas id="radarChart"></canvas>
@@ -166,7 +167,7 @@
 
         <!-- Platform Stats -->
         <div class="b-card p-3">
-             <h6 class="fw-bold text-white small text-uppercase mb-3">Platforms</h6>
+             <h6 class="fw-bold text-white small text-uppercase mb-3">{% trans "Platforms" %}</h6>
              {% for stat in platform_stats %}
              <div class="d-flex align-items-center justify-content-between mb-2">
                  <div class="d-flex align-items-center gap-2">
@@ -176,7 +177,7 @@
                  <span class="badge bg-dark border border-subtle text-white">{{ stat.count }}</span>
              </div>
              {% empty %}
-             <span class="text-muted small">No platform data available.</span>
+             <span class="text-muted small">{% trans "No platform data available." %}</span>
              {% endfor %}
         </div>
     </div>
@@ -187,22 +188,22 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark border border-danger">
             <div class="modal-header border-danger border-opacity-25">
-                <h5 class="modal-title text-danger fw-bold">Zona de Perigo</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title text-danger fw-bold">{% trans "Danger Zone" %}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
             </div>
             <div class="modal-body text-center py-4">
                 <i data-lucide="alert-triangle" size="48" class="text-danger mb-3"></i>
-                <h4 class="text-white fw-bold">Tem certeza?</h4>
+                <h4 class="text-white fw-bold">{% trans "Are you sure?" %}</h4>
                 <p class="text-muted mb-4">
-                    Essa ação vai deletar sua biblioteca, histórico de preços e anonimizar suas reviews. <br>
-                    <strong>Essa ação não pode ser desfeita.</strong>
+                    {% trans "This action will delete your library, price history, and anonymize your reviews." %} <br>
+                    <strong>{% trans "This action cannot be undone." %}</strong>
                 </p>
                 
                 <form action="{% url 'delete_account' %}" method="POST">
                     {% csrf_token %}
                     <div class="d-flex justify-content-center gap-3">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-danger fw-bold">Sim, deletar minha conta</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                        <button type="submit" class="btn btn-danger fw-bold">{% trans "Yes, delete my account" %}</button>
                     </div>
                 </form>
             </div>

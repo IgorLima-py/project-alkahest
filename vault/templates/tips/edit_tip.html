@@ -1,29 +1,34 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-7">
-        <h1 class="display-5 fw-bold">Editar Dica Rápida</h1>
-        <p class="lead text-muted">Para o jogo: <strong>{{ tip.master_game.title }}</strong></p>
+        <h1 class="display-5 fw-bold">{% trans "Edit Quick Tip" %}</h1>
+        <p class="lead text-muted">
+            {% blocktrans with game=tip.master_game.title %}
+            For the game: <strong>{{ game }}</strong>
+            {% endblocktrans %}
+        </p>
 
         <div class="card bg-dark border-secondary p-4 mt-4">
             <form method="POST">
                 {% csrf_token %}
                 
                 <div class="mb-3">
-                    <label for="{{ form.text.id_for_label }}" class="form-label">Texto da Dica</label>
+                    <label for="{{ form.text.id_for_label }}" class="form-label">{% trans "Tip Text" %}</label>
                     <textarea name="{{ form.text.name }}" id="{{ form.text.id_for_label }}" class="form-control bg-secondary text-light border-0" rows="4">{{ form.text.value }}</textarea>
                 </div>
 
                 <div class="alert alert-warning small">
-                    Editar a dica não irá resetar os votos recebidos.
+                    {% trans "Editing the tip will not reset received votes." %}
                 </div>
                 
                 <hr class="border-secondary my-4">
 
                 <div class="d-flex justify-content-end gap-2">
-                    <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-success fw-bold">Salvar Dica</button>
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
+                    <button type="submit" class="btn btn-success fw-bold">{% trans "Save Tip" %}</button>
                 </div>
             </form>
         </div>

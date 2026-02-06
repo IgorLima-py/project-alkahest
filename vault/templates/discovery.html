@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load i18n %}
 
 {% block content %}
 <!-- HERO SECTION: Featured Game -->
@@ -9,12 +10,12 @@
     <div style="background: linear-gradient(90deg, rgba(9,9,11,1) 0%, rgba(9,9,11,0.6) 50%, transparent 100%); position: absolute; inset: 0;"></div>
 
     <div class="position-relative z-1 p-5 h-100 d-flex flex-column justify-content-center align-items-start text-white" style="max-width: 600px;">
-        <span class="badge bg-accent-primary text-white mb-3">FEATURED</span>
+        <span class="badge bg-accent-primary text-white mb-3">{% trans "FEATURED" %}</span>
         <h1 class="display-4 fw-bold font-heading mb-2">Elden Ring:<br>Shadow of the Erdtree</h1>
-        <p class="lead mb-4 text-light opacity-75">The highly anticipated expansion. Dive back into the Lands Between with new weapons, enemies, and lore.</p>
+        <p class="lead mb-4 text-light opacity-75">{% trans "The highly anticipated expansion. Dive back into the Lands Between with new weapons, enemies, and lore." %}</p>
         <div class="d-flex gap-3">
-            <button class="btn btn-white fw-bold px-4 text-dark">View Game</button>
-            <button class="btn btn-outline-light px-4">+ Wishlist</button>
+            <button class="btn btn-white fw-bold px-4 text-dark">{% trans "View Game" %}</button>
+            <button class="btn btn-outline-light px-4">{% trans "+ Wishlist" %}</button>
         </div>
     </div>
 </div>
@@ -26,8 +27,8 @@
         
         <!-- Section: Trending -->
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="fw-bold font-heading mb-0">Trending Now</h4>
-            <a href="#" class="text-muted small text-decoration-none">View All</a>
+            <h4 class="fw-bold font-heading mb-0">{% trans "Trending Now" %}</h4>
+            <a href="#" class="text-muted small text-decoration-none">{% trans "View All" %}</a>
         </div>
         
         <div class="row row-cols-2 row-cols-md-4 g-3 mb-5">
@@ -37,7 +38,7 @@
                 <div class="game-poster w-100">
                     <img src="https://images.igdb.com/igdb/image/upload/t_cover_big/co49x5.jpg" class="poster-img">
                     <div class="fw-bold text-white small mt-1">Baldur's Gate 3</div>
-                    <div class="small text-muted">RPG • 96 Score</div>
+                    <div class="small text-muted">{% trans "RPG • 96 Score" %}</div>
                 </div>
             </div>
             {% endfor %}
@@ -45,10 +46,10 @@
 
         <!-- Section: Top Rated (Tabs) -->
         <div class="d-flex align-items-center gap-4 mb-3">
-            <h4 class="fw-bold font-heading mb-0">Hall of Fame</h4>
+            <h4 class="fw-bold font-heading mb-0">{% trans "Hall of Fame" %}</h4>
             <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-dark border-subtle text-white active">Critics Choice</button>
-                <button class="btn btn-sm btn-dark border-transparent text-muted">Users Choice</button>
+                <button class="btn btn-sm btn-dark border-subtle text-white active">{% trans "Critics Choice" %}</button>
+                <button class="btn btn-sm btn-dark border-transparent text-muted">{% trans "Users Choice" %}</button>
             </div>
         </div>
 
@@ -56,10 +57,10 @@
             <table class="table table-dark table-hover mb-0">
                 <thead>
                     <tr class="text-muted small text-uppercase">
-                        <th class="ps-4">Rank</th>
-                        <th>Game Title</th>
-                        <th>Score</th>
-                        <th class="text-end pe-4">Platform</th>
+                        <th class="ps-4">{% trans "Rank" %}</th>
+                        <th>{% trans "Game Title" %}</th>
+                        <th>{% trans "Score" %}</th>
+                        <th class="text-end pe-4">{% trans "Platform" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -98,7 +99,7 @@
         <div class="b-card border-success border-opacity-25 bg-success bg-opacity-5 mb-4">
             <div class="d-flex align-items-center gap-2 mb-3 text-success">
                 <i data-lucide="tag" size="20"></i>
-                <h5 class="mb-0 fw-bold font-heading">Best Deals</h5>
+                <h5 class="mb-0 fw-bold font-heading">{% trans "Best Deals" %}</h5>
             </div>
             
             <div class="d-flex flex-column gap-3">
@@ -127,12 +128,12 @@
                 </div>
             </div>
             
-            <button class="btn btn-outline-success w-100 btn-sm mt-3">View All Deals</button>
+            <button class="btn btn-outline-success w-100 btn-sm mt-3">{% trans "View All Deals" %}</button>
         </div>
 
         <!-- Coming Soon -->
         <div class="b-card">
-            <h5 class="fw-bold font-heading mb-3">Coming Soon</h5>
+            <h5 class="fw-bold font-heading mb-3">{% trans "Coming Soon" %}</h5>
             <div class="d-flex flex-column gap-3">
                 <div class="d-flex justify-content-between border-bottom border-subtle pb-2">
                     <span class="text-white small fw-bold">GTA VI</span>

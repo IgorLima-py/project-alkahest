@@ -1,38 +1,43 @@
 {% extends 'base.html' %}
+{% load i18n %}
+
 
 {% block content %}
 <div class="mb-4 border-bottom border-secondary pb-4">
-    <h1 class="display-4 fw-bold text-warning">{{ list.title }}</h1>
-    <p class="lead text-light">{{ list.description }}</p>
-    <div class="text-muted small">
-        Criada por <strong>{{ list.user.username }}</strong> em {{ list.created_at|date:"d/m/Y" }}
-    </div>
+    <h1 class="display-4 fw-bold text-warning">{{ list.title }}</h1>
+    <p class="lead text-light">{{ list.description }}</p>
+    <div class="text-muted small">
+        {% blocktrans with user=list.user.username date=list.created_at|date:"d/m/Y" %}
+        Created by <strong>{{ user }}</strong> on {{ date }}
+        {% endblocktrans %}
+    </div>
 </div>
 
+
 <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3">
-    {% for item in items %}
-    <div class="col">
-        <div class="card card-game bg-dark h-100">
-            {% if item.master_game.cover_url %}
-            <img src="{{ item.master_game.cover_url }}" class="card-img-top">
-            {% else %}
-            <div class="bg-secondary d-flex align-items-center justify-content-center p-4" style="height: 200px;">
-                <small>{{ item.master_game.title }}</small>
-            </div>
-            {% endif %}
-            <div class="card-body p-2">
-                <p class="card-title small mb-1 fw-bold text-light">{{ item.master_game.title }}</p>
-                {% if item.comment %}
-                <p class="text-muted fst-italic small mb-0" style="font-size: 0.75rem;">"{{ item.comment }}"</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    {% empty %}
-    <div class="col-12 text-center py-5">
-        <h5 class="text-muted">Esta lista está vazia.</h5>
-        <p class="text-secondary">Vá até a biblioteca e adicione jogos aqui!</p>
-    </div>
-    {% endfor %}
+    {% for item in items %}
+    <div class="col">
+        <div class="card card-game bg-dark h-100">
+            {% if item.master_game.cover_url %}
+            <img src="{{ item.master_game.cover_url }}" class="card-img-top">
+            {% else %}
+            <div class="bg-secondary d-flex align-items-center justify-content-center p-4" style="height: 200px;">
+                <small>{{ item.master_game.title }}</small>
+            </div>
+            {% endif %}
+            <div class="card-body p-2">
+                <p class="card-title small mb-1 fw-bold text-light">{{ item.master_game.title }}</p>
+                {% if item.comment %}
+                <p class="text-muted fst-italic small mb-0" style="font-size: 0.75rem;">"{{ item.comment }}"</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <h5 class="text-muted">{% trans "This list is empty." %}</h5>
+        <p class="text-secondary">{% trans "Go to the library and add games here!" %}</p>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}

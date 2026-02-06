@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load vault_extras %}
 {% load humanize %}
+{% load i18n %}
+
 
 {% block extra_css %}
 <style>
@@ -12,6 +14,7 @@
         z-index: 10;
         pointer-events: none;
     }
+
 
     /* Imagem Container */
     .poster-container {
@@ -29,11 +32,13 @@
         z-index: 10;
     }
 
+
     .game-poster {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
+
 
     /* Overlay */
     .poster-overlay {
@@ -52,6 +57,7 @@
     }
     .poster-container:hover .poster-overlay { opacity: 1; }
 
+
     /* Quadrado da Nota (AUMENTADO 1.3x) */
     .rating-square {
         width: 32px;  /* Aumentado de 24px */
@@ -66,6 +72,7 @@
         flex-shrink: 0;
     }
 
+
     /* Meta Row (Barra de Status) */
     .meta-row {
         margin-top: 10px; /* Espaço ideal */
@@ -74,6 +81,7 @@
         justify-content: space-between;
         height: 32px; /* Altura alinhada com o quadrado maior */
     }
+
 
     /* Ícones Sutis (Letterboxd Style) */
     .icon-subtle {
@@ -93,41 +101,52 @@
         opacity: 0.5;
     }
 
+
 </style>
 {% endblock %}
+
 
 {% block content %}
 <div class="d-flex flex-column gap-4">
 
+
     <!-- Header & Filters -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 pb-3 border-bottom border-secondary border-opacity-10">
         <div>
-            <h2 class="h4 fw-bold text-white mb-0">My Collection</h2>
-            <p class="text-muted small mb-0">{{ total_games }} titles</p>
+            <h2 class="h4 fw-bold text-white mb-0">{% trans "My Collection" %}</h2>
+            <p class="text-muted small mb-0">
+                {% blocktrans count count=total_games %}
+                {{ count }} title
+                {% plural %}
+                {{ count }} titles
+                {% endblocktrans %}
+            </p>
         </div>
+
 
         <form method="GET" class="d-flex flex-wrap gap-2">
             {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
             <select name="platform" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;" onchange="this.form.submit()">
-                <option value="">All Platforms</option>
+                <option value="">{% trans "All Platforms" %}</option>
                 {% for p in platforms %}
                 <option value="{{ p.slug }}" {% if current_platform == p.slug %}selected{% endif %}>{{ p.name }}</option>
                 {% endfor %}
             </select>
             <select name="status" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;" onchange="this.form.submit()">
-                <option value="">All Status</option>
-                <option value="playing" {% if current_status == 'playing' %}selected{% endif %}>Playing</option>
-                <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Completed</option>
-                <option value="backlog" {% if current_status == 'backlog' %}selected{% endif %}>Backlog</option>
-                <option value="dropped" {% if current_status == 'dropped' %}selected{% endif %}>Dropped</option>
+                <option value="">{% trans "All Status" %}</option>
+                <option value="playing" {% if current_status == 'playing' %}selected{% endif %}>{% trans "Playing" %}</option>
+                <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>{% trans "Completed" %}</option>
+                <option value="backlog" {% if current_status == 'backlog' %}selected{% endif %}>{% trans "Backlog" %}</option>
+                <option value="dropped" {% if current_status == 'dropped' %}selected{% endif %}>{% trans "Dropped" %}</option>
             </select>
             <select name="sort" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;" onchange="this.form.submit()">
-                <option value="recent" {% if current_sort == 'recent' %}selected{% endif %}>Recently Played</option>
-                <option value="rating_desc" {% if current_sort == 'rating_desc' %}selected{% endif %}>Highest Rated</option>
-                <option value="playtime_desc" {% if current_sort == 'playtime_desc' %}selected{% endif %}>Most Played</option>
+                <option value="recent" {% if current_sort == 'recent' %}selected{% endif %}>{% trans "Recently Played" %}</option>
+                <option value="rating_desc" {% if current_sort == 'rating_desc' %}selected{% endif %}>{% trans "Highest Rated" %}</option>
+                <option value="playtime_desc" {% if current_sort == 'playtime_desc' %}selected{% endif %}>{% trans "Most Played" %}</option>
             </select>
         </form>
     </div>
+
 
     <!-- GRID -->
     <!-- Espaçamento Vertical Aumentado: g-y-5 + mb-4 nos itens -->
@@ -142,6 +161,7 @@
                         <div class="platinum-border"></div>
                     {% endif %}
 
+
                     <img src="{{ entry.platform_game.master_game.cover_url|default:'https://placehold.co/300x450/1a1a1a/FFF' }}" class="game-poster" loading="lazy">
                     
                     <div class="poster-overlay">
@@ -152,6 +172,7 @@
                     </div>
                 </div>
             </a>
+
 
             <!-- 2. BARRA DE STATUS -->
             <div class="meta-row">
@@ -172,6 +193,7 @@
                         <div class="rating-square bg-dark border border-secondary border-opacity-25 text-muted">-</div>
                     {% endif %}
 
+
                     <!-- Ícones -->
                     <div class="d-flex align-items-center gap-2 ms-1">
                         <!-- Review (3 Linhas Sutil) -->
@@ -179,13 +201,16 @@
                             <i data-lucide="align-justify" class="review-icon"></i>
                         {% endif %}
 
+
                         <!-- Favorito -->
                         {% if entry.is_favorite %}
                             <i data-lucide="heart" size="14" class="icon-active" fill="currentColor"></i>
                         {% endif %}
                     </div>
 
+
                 </div>
+
 
                 <!-- DIREITA: Conquistas -->
                 {% if entry.achievement_percentage > 0 %}
@@ -194,12 +219,14 @@
                 </div>
                 {% endif %}
 
+
             </div>
         </div>
         {% empty %}
-        <div class="col-12 py-5 text-center text-muted">No games found.</div>
+        <div class="col-12 py-5 text-center text-muted">{% trans "No games found." %}</div>
         {% endfor %}
     </div>
+
 
     <!-- Pagination -->
     {% if page_obj.paginator.num_pages > 1 %}
@@ -211,7 +238,9 @@
                 </li>
             {% endif %}
             <li class="page-item disabled">
-                <span class="page-link bg-dark text-muted border-secondary">Page {{ page_obj.number }}</span>
+                <span class="page-link bg-dark text-muted border-secondary">
+                    {% blocktrans with number=page_obj.number %}Page {{ number }}{% endblocktrans %}
+                </span>
             </li>
             {% if page_obj.has_next %}
                 <li class="page-item">
@@ -221,6 +250,7 @@
         </ul>
     </nav>
     {% endif %}
+
 
 </div>
 {% endblock %}

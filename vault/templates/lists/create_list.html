@@ -1,25 +1,28 @@
 {% extends 'base.html' %}
+{% load i18n %}
+
 
 {% block content %}
-<h1 class="display-5 fw-bold mb-4">Criar Nova Lista</h1>
+<h1 class="display-5 fw-bold mb-4">{% trans "Create New List" %}</h1>
+
 
 <div class="row">
-    <div class="col-md-6">
-        <div class="card bg-dark border-secondary p-4">
-            <form method="POST">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label class="form-label">Título da Lista</label>
-                    <input type="text" name="title" class="form-control bg-secondary text-light border-0" required placeholder="Ex: Melhores RPGs">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Descrição (Opcional)</label>
-                    <textarea name="description" class="form-control bg-secondary text-light border-0" rows="3"></textarea>
-                </div>
-                <button type="submit" class="btn btn-success fw-bold">Salvar Lista</button>
-                <a href="{% url 'my_lists' %}" class="btn btn-outline-secondary">Cancelar</a>
-            </form>
-        </div>
-    </div>
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary p-4">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">{% trans "List Title" %}</label>
+                    <input type="text" name="title" class="form-control bg-secondary text-light border-0" required placeholder="{% trans 'Ex: Best RPGs' %}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{% trans "Description (Optional)" %}</label>
+                    <textarea name="description" class="form-control bg-secondary text-light border-0" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success fw-bold">{% trans "Save List" %}</button>
+                <a href="{% url 'my_lists' %}" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -1,22 +1,29 @@
 {% extends 'base.html' %}
+{% load i18n %}
+
 {% block content %}
-<h1 class="display-5 fw-bold">Editar Review</h1>
-<p class="lead text-muted">Para o jogo: {{ review.library_entry.platform_game.master_game.title }}</p>
+<h1 class="display-5 fw-bold">{% trans "Edit Review" %}</h1>
+<p class="lead text-muted">
+    {% blocktrans with game_title=review.library_entry.platform_game.master_game.title %}
+    For game: {{ game_title }}
+    {% endblocktrans %}
+</p>
+
 
 <div class="card bg-dark border-secondary p-4">
-    <form method="POST">
-        {% csrf_token %}
-        <!-- Aqui você pode estilizar o formulário como quiser, ex: -->
-        <div class="mb-3">
-            <label class="form-label">Nota</label>
-            {{ form.rating }}
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Texto da Review</label>
-            {{ form.text }}
-        </div>
-        <!-- Adicione outros campos do form aqui -->
-        <button type="submit" class="btn btn-success">Salvar Alterações</button>
-    </form>
+    <form method="POST">
+        {% csrf_token %}
+        <!-- Here you can style the form as you like, ex: -->
+        <div class="mb-3">
+            <label class="form-label">{% trans "Rating" %}</label>
+            {{ form.rating }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{% trans "Review Text" %}</label>
+            {{ form.text }}
+        </div>
+        <!-- Add other form fields here -->
+        <button type="submit" class="btn btn-success">{% trans "Save Changes" %}</button>
+    </form>
 </div>
 {% endblock %}

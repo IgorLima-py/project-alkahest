@@ -1,13 +1,20 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load i18n %}
 
 {% block content %}
 <!-- WELCOME HEADER -->
 <div class="row mb-5 align-items-center">
     <div class="col-12 col-lg-8">
-        <h1 class="display-5 fw-bold text-white font-heading mb-1">Welcome back, {{ user.username }}.</h1>
+        <h1 class="display-5 fw-bold text-white font-heading mb-1">
+            {% blocktrans with username=user.username %}Welcome back, {{ username }}.{% endblocktrans %}
+        </h1>
         <p class="text-muted lead fs-6 mb-0">
-            You have <strong class="text-white">{{ playing_count }} games</strong> in progress and <strong class="text-white">{{ backlog_count }} titles</strong> in your backlog.
+            {% blocktrans count playing=playing_count backlog=backlog_count %}
+            You have <strong class="text-white">{{ playing }} game</strong> in progress and <strong class="text-white">{{ backlog }} title</strong> in your backlog.
+            {% plural %}
+            You have <strong class="text-white">{{ playing }} games</strong> in progress and <strong class="text-white">{{ backlog }} titles</strong> in your backlog.
+            {% endblocktrans %}
         </p>
     </div>
     <div class="col-12 col-lg-4 mt-3 mt-lg-0">
@@ -15,12 +22,12 @@
         <div class="b-card p-3 bg-dark border-subtle d-flex justify-content-around align-items-center shadow-lg">
              <div class="text-center">
                  <div class="h2 fw-bold text-white mb-0 font-monospace">{{ total_completed }}</div>
-                 <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Completed</div>
+                 <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">{% trans "Completed" %}</div>
              </div>
              <div class="vr bg-secondary opacity-25" style="height: 40px;"></div>
              <div class="text-center">
                  <div class="h2 fw-bold text-accent-primary mb-0 font-monospace">{{ total_hours }}h</div>
-                 <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Playtime</div>
+                 <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">{% trans "Playtime" %}</div>
              </div>
         </div>
     </div>
@@ -29,9 +36,9 @@
 <!-- JUMP BACK IN (5 Cards Grid) -->
 <div class="mb-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold font-heading mb-0 text-white">Jump Back In</h4>
+        <h4 class="fw-bold font-heading mb-0 text-white">{% trans "Jump Back In" %}</h4>
         <a href="{% url 'library' %}?status=playing" class="btn btn-sm btn-link text-muted text-decoration-none small hover-white transition-colors">
-            View All <i data-lucide="arrow-right" size="14"></i>
+            {% trans "View All" %} <i data-lucide="arrow-right" size="14"></i>
         </a>
     </div>
 
@@ -49,7 +56,7 @@
                     <!-- Progress Bar Overlay (Bottom) -->
                     <div class="position-absolute bottom-0 start-0 w-100 bg-black bg-opacity-75 backdrop-blur-sm p-2">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                             <span class="badge bg-warning text-dark fw-bold border border-warning px-1 py-0" style="font-size: 0.6rem;">PLAYING</span>
+                             <span class="badge bg-warning text-dark fw-bold border border-warning px-1 py-0" style="font-size: 0.6rem;">{% trans "PLAYING" %}</span>
                              <span class="text-white fw-bold font-monospace" style="font-size: 0.7rem;">{{ entry.playtime_hours }}h</span>
                         </div>
                         <!-- Fake Progress Bar based on hours (just visual flavor) -->
@@ -68,8 +75,8 @@
         <div class="col-12">
             <div class="text-center py-5 border border-dashed border-subtle rounded text-muted">
                 <i data-lucide="gamepad-2" size="32" class="mb-2 opacity-50"></i>
-                <p class="mb-0">No games currently in progress.</p>
-                <a href="{% url 'add_game' %}" class="btn btn-sm btn-outline-primary mt-2">Start a Game</a>
+                <p class="mb-0">{% trans "No games currently in progress." %}</p>
+                <a href="{% url 'add_game' %}" class="btn btn-sm btn-outline-primary mt-2">{% trans "Start a Game" %}</a>
             </div>
         </div>
         {% endfor %}
@@ -81,7 +88,7 @@
     
     <!-- LEFT COL: FRIEND ACTIVITY (6 Cols) -->
     <div class="col-12 col-xl-6">
-        <h5 class="fw-bold font-heading mb-3 text-white">Friend Activity</h5>
+        <h5 class="fw-bold font-heading mb-3 text-white">{% trans "Friend Activity" %}</h5>
         <div class="d-flex flex-column gap-3">
             {% for item in community_pulse %}
             <div class="b-card p-3 hover-border-light transition-all d-flex gap-3 position-relative overflow-hidden">
@@ -100,11 +107,19 @@
                         <div>
                             <span class="fw-bold text-white">{{ item.user.username }}</span>
                             <span class="text-muted small">
-                                {% if item.activity_type == 'review' %}reviewed{% else %}started playing{% endif %}
+                                {% if item.activity_type == 'review' %}
+                                    {% trans "reviewed" %}
+                                {% else %}
+                                    {% trans "started playing" %}
+                                {% endif %}
                             </span>
                         </div>
                         <span class="text-muted small" style="font-size: 0.7rem;">
-                            {% if item.created_at %}{{ item.created_at|timesince }}{% else %}{{ item.last_synced|timesince }}{% endif %} ago
+                            {% if item.created_at %}
+                                {% blocktrans with time=item.created_at|timesince %}{{ time }} ago{% endblocktrans %}
+                            {% else %}
+                                {% blocktrans with time=item.last_synced|timesince %}{{ time }} ago{% endblocktrans %}
+                            {% endif %}
                         </span>
                     </div>
                     
@@ -124,14 +139,14 @@
                         </div>
                         <p class="small text-muted mb-0 fst-italic text-truncate">"{{ item.text|striptags }}"</p>
                     {% else %}
-                        <span class="badge bg-warning text-dark border border-warning px-1 py-0 small mt-1">NEW JOURNEY</span>
+                        <span class="badge bg-warning text-dark border border-warning px-1 py-0 small mt-1">{% trans "NEW JOURNEY" %}</span>
                     {% endif %}
                 </div>
             </div>
             {% empty %}
             <div class="text-center text-muted py-5 border border-dashed border-subtle rounded">
-                <p class="mb-0">Your friends are quiet. Too quiet.</p>
-                <a href="{% url 'social_hub' %}" class="btn btn-link btn-sm">Find people to follow</a>
+                <p class="mb-0">{% trans "Your friends are quiet. Too quiet." %}</p>
+                <a href="{% url 'social_hub' %}" class="btn btn-link btn-sm">{% trans "Find people to follow" %}</a>
             </div>
             {% endfor %}
         </div>
@@ -139,11 +154,11 @@
 
     <!-- MIDDLE COL: TRENDING / HALL OF FAME (3 Cols) -->
     <div class="col-12 col-lg-6 col-xl-3">
-        <h5 class="fw-bold font-heading mb-3 text-white">Trending Now</h5>
+        <h5 class="fw-bold font-heading mb-3 text-white">{% trans "Trending Now" %}</h5>
         
         <!-- Critic Choice (Mock) -->
         <div class="mb-4">
-            <label class="small text-muted text-uppercase fw-bold mb-2 opacity-75">Critics' Choice</label>
+            <label class="small text-muted text-uppercase fw-bold mb-2 opacity-75">{% trans "Critics' Choice" %}</label>
             <div class="d-flex flex-column gap-2">
                 {% for game in trending_games|slice:":3" %} 
                 <div class="d-flex align-items-center gap-2 p-2 rounded bg-dark border border-subtle hover-bg-hover transition-colors cursor-pointer">
@@ -152,18 +167,18 @@
                     </div>
                     <div class="text-truncate flex-grow-1">
                         <div class="text-white small fw-bold text-truncate">{{ game.title }}</div>
-                        <div class="text-accent-primary small" style="font-size: 0.7rem;">96 OpenCritic</div>
+                        <div class="text-accent-primary small" style="font-size: 0.7rem;">{% trans "96 OpenCritic" %}</div>
                     </div>
                 </div>
                 {% empty %}
-                 <div class="text-muted small">No data yet.</div>
+                 <div class="text-muted small">{% trans "No data yet." %}</div>
                 {% endfor %}
             </div>
         </div>
 
         <!-- Community Top (Mock) -->
         <div>
-            <label class="small text-muted text-uppercase fw-bold mb-2 opacity-75">Community Top</label>
+            <label class="small text-muted text-uppercase fw-bold mb-2 opacity-75">{% trans "Community Top" %}</label>
             <div class="d-flex flex-column gap-2">
                  <div class="d-flex align-items-center gap-2 p-2 rounded bg-dark border border-subtle opacity-75">
                     <div class="text-warning fw-bold small">#1</div>
@@ -183,8 +198,8 @@
         <div class="b-card p-0 overflow-hidden mb-4 position-relative">
             <img src="https://image.api.playstation.com/vulcan/ap/rnd/202310/1816/8c7c77c7c7c7c7.jpg" class="w-100 opacity-50" style="height: 120px; object-fit: cover;">
             <div class="position-absolute bottom-0 start-0 w-100 p-3 bg-gradient-to-t from-black">
-                <span class="badge bg-success mb-1">GAME PASS</span>
-                <h6 class="fw-bold text-white mb-0 lh-1">New on Service</h6>
+                <span class="badge bg-success mb-1">{% trans "GAME PASS" %}</span>
+                <h6 class="fw-bold text-white mb-0 lh-1">{% trans "New on Service" %}</h6>
                 <div class="small text-white opacity-75">Indiana Jones and the Great Circle</div>
             </div>
         </div>
@@ -192,7 +207,7 @@
         <!-- Deals Widget (Mock) -->
         <div class="b-card p-3 border-success border-opacity-25 bg-success bg-opacity-5">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                 <h6 class="fw-bold text-white mb-0 text-uppercase small"><i data-lucide="tag" size="14" class="me-1"></i> Best Deals</h6>
+                 <h6 class="fw-bold text-white mb-0 text-uppercase small"><i data-lucide="tag" size="14" class="me-1"></i> {% trans "Best Deals" %}</h6>
             </div>
             <div class="d-flex flex-column gap-2">
                 <div class="d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25 pb-2">
@@ -204,7 +219,7 @@
                     <span class="text-success fw-bold small">-40%</span>
                 </div>
             </div>
-             <button class="btn btn-sm btn-outline-success w-100 mt-3">View All Deals</button>
+             <button class="btn btn-sm btn-outline-success w-100 mt-3">{% trans "View All Deals" %}</button>
         </div>
     </div>
 

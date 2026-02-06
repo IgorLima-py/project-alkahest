@@ -1,79 +1,84 @@
 <!-- vault/templates/includes/import_live_rows.html -->
+{% load i18n %}
 
 {% for entry in entries %}
 <tr class="align-middle fade-in">
-    <td>
-        {% if entry.platform_game.master_game.cover_url %}
-        <img src="{{ entry.platform_game.master_game.cover_url }}" 
-             class="rounded border border-secondary" 
-             style="width: 40px; height: 56px; object-fit: cover;">
-        {% else %}
-        <div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 56px;">
-            <i class="fas fa-gamepad text-dark"></i>
-        </div>
-        {% endif %}
-    </td>
-    <td>
-        <div class="fw-bold text-white">{{ entry.platform_game.master_game.title }}</div>
-        <div class="small text-muted">IGDB ID: {{ entry.platform_game.master_game.igdb_id }}</div>
-    </td>
-    <td class="text-center">
-        {% if entry.rating %}
-            <span class="badge bg-warning text-dark">{{ entry.rating }}</span>
-        {% else %}
-            <span class="text-muted">-</span>
-        {% endif %}
-    </td>
-    <td class="text-center">
-        <span class="text-success small"><i class="fas fa-check-circle"></i> Imported</span>
-    </td>
+    <td>
+        {% if entry.platform_game.master_game.cover_url %}
+        <img src="{{ entry.platform_game.master_game.cover_url }}" 
+             class="rounded border border-secondary" 
+             style="width: 40px; height: 56px; object-fit: cover;">
+        {% else %}
+        <div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 56px;">
+            <i class="fas fa-gamepad text-dark"></i>
+        </div>
+        {% endif %}
+    </td>
+    <td>
+        <div class="fw-bold text-white">{{ entry.platform_game.master_game.title }}</div>
+        <div class="small text-muted">{% trans "IGDB ID:" %} {{ entry.platform_game.master_game.igdb_id }}</div>
+        
+    </td>
+    <td class="text-center">
+        {% if entry.rating %}
+            <span class="badge bg-warning text-dark">{{ entry.rating }}</span>
+        {% else %}
+            <span class="text-muted">-</span>
+        {% endif %}
+        
+    </td>
+    <td class="text-center">
+        <span class="text-success small"><i class="fas fa-check-circle"></i> {% trans "Imported" %}</span>
+    </td>
 </tr>
 {% empty %}
 <tr>
-    <td colspan="4" class="text-center text-muted py-4">
-        <div class="spinner-border spinner-border-sm text-secondary mb-2" role="status"></div>
-        <div>Aguardando fluxo de dados...</div>
-        <div class="small text-muted mt-1">Isso pode levar alguns segundos na primeira vez.</div>
-    </td>
+    <td colspan="4" class="text-center text-muted py-4">
+        <div class="spinner-border spinner-border-sm text-secondary mb-2" role="status"></div>
+        <div>{% trans "Waiting for data stream..." %}</div>
+        <div class="small text-muted mt-1">{% trans "This may take a few seconds the first time." %}</div>
+    </td>
 </tr>
 {% endfor %}
 
-<!-- Lógica segura para parar o polling -->
+
+<!-- Secure logic to stop polling -->
 {% if job.status == 'completed' or job.status == 'failed' %}
-    <!-- Elemento invisível que usa HTMX OOB para substituir o TBODY pai e remover o trigger -->
-    <tbody id="live-feed-body" hx-swap-oob="true">
-        <!-- Renderizamos as linhas uma última vez, mas SEM atributos hx-get/hx-trigger no tbody -->
-        {% for entry in entries %}
-        <tr class="align-middle">
-            <td>
-                {% if entry.platform_game.master_game.cover_url %}
-                <img src="{{ entry.platform_game.master_game.cover_url }}" class="rounded" style="width: 40px;">
-                {% endif %}
-            </td>
-            <td>
-                <div class="fw-bold text-white">{{ entry.platform_game.master_game.title }}</div>
-            </td>
-            <td class="text-center">
-                <span class="badge bg-warning text-dark">{{ entry.rating|default:"-" }}</span>
-            </td>
-            <td class="text-center">
-                {% if job.status == 'completed' %}
-                    <span class="badge bg-success">DONE</span>
-                {% else %}
-                    <span class="badge bg-danger">FAILED</span>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-        
-        <tr>
-            <td colspan="4" class="text-center py-3 text-muted border-top border-secondary">
-                {% if job.status == 'completed' %}
-                    <i class="fas fa-check-circle text-success me-1"></i> Importação Finalizada.
-                {% else %}
-                    <i class="fas fa-exclamation-triangle text-danger me-1"></i> Importação Interrompida.
-                {% endif %}
-            </td>
-        </tr>
-    </tbody>
+    <!-- Invisible element using HTMX OOB to replace parent TBODY and remove the trigger -->
+    <tbody id="live-feed-body" hx-swap-oob="true">
+        <!-- We render the rows one last time, but WITHOUT hx-get/hx-trigger attributes on the tbody -->
+        {% for entry in entries %}
+        <tr class="align-middle">
+            <td>
+                {% if entry.platform_game.master_game.cover_url %}
+                <img src="{{ entry.platform_game.master_game.cover_url }}" class="rounded" style="width: 40px;">
+                {% endif %}
+                
+            </td>
+            <td>
+                <div class="fw-bold text-white">{{ entry.platform_game.master_game.title }}</div>
+            </td>
+            <td class="text-center">
+                <span class="badge bg-warning text-dark">{{ entry.rating|default:"-" }}</span>
+            </td>
+            <td class="text-center">
+                {% if job.status == 'completed' %}
+                    <span class="badge bg-success">{% trans "DONE" %}</span>
+                {% else %}
+                    <span class="badge bg-danger">{% trans "FAILED" %}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        
+        <tr>
+            <td colspan="4" class="text-center py-3 text-muted border-top border-secondary">
+                {% if job.status == 'completed' %}
+                    <i class="fas fa-check-circle text-success me-1"></i> {% trans "Import Completed." %}
+                {% else %}
+                    <i class="fas fa-exclamation-triangle text-danger me-1"></i> {% trans "Import Interrupted." %}
+                {% endif %}
+            </td>
+        </tr>
+    </tbody>
 {% endif %}

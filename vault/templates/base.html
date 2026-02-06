@@ -1,10 +1,11 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="pt-br" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALKA.GG</title>
+    <title>{% trans "ALKA.GG" %}</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -169,7 +170,7 @@
             <div class="position-relative d-none d-md-block">
                 <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 16px;"></i>
                 <form action="{% url 'library' %}" method="GET">
-                    <input type="text" name="q" class="search-input" placeholder="Search games, lists, or users..." value="{{ request.GET.q }}">
+                    <input type="text" name="q" class="search-input" placeholder="{% trans 'Search games, lists, or users...' %}" value="{{ request.GET.q }}">
                 </form>
             </div>
 
@@ -193,7 +194,7 @@
                     
                     <!-- Dropdown com Botão que FUNCIONA -->
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-lg border-secondary" style="width: 320px; max-height: 400px; overflow-y: auto;">
-                        <li><h6 class="dropdown-header px-3 py-2">Notificações</h6></li>
+                        <li><h6 class="dropdown-header px-3 py-2">{% trans "Notifications" %}</h6></li>
                         
                         <!-- Botão que MARCA COMO LIDO -->
                         <li>
@@ -204,12 +205,12 @@
                                     hx-swap="outerHTML"
                                     hx-on::after-request="this.closest('.dropdown-menu').remove()">
                                 <i data-lucide="check-circle" size="14" class="me-2"></i>
-                                Marcar todas como lida
+                                {% trans "Mark all as read" %}
                             </button>
                         </li>
                         
                         <li><hr class="dropdown-divider mx-3"></li>
-                        <li><p class="px-3 small text-muted text-center">Nenhuma notificação nova.</p></li>
+                        <li><p class="px-3 small text-muted text-center">{% trans "No new notifications." %}</p></li>
                     </ul>
                 </div>
                 <!-- ============================ -->
@@ -220,7 +221,7 @@
                         <div class="d-flex flex-column lh-1">
                             <span class="fw-bold text-white" style="font-size: 0.8rem;">{{ user.username }}</span>
                             <div class="d-flex align-items-center gap-1">
-                                <span class="badge bg-warning text-dark border border-warning rounded-pill p-0 px-1" style="font-size: 0.6rem;">LVL {{ current_level|default:"42" }}</span>
+                                <span class="badge bg-warning text-dark border border-warning rounded-pill p-0 px-1" style="font-size: 0.6rem;">{% trans "LVL" %} {{ current_level|default:"42" }}</span>
                                 <div class="progress bg-dark border border-secondary" style="width: 60px; height: 4px;">
                                     <div class="progress-bar bg-accent-primary" style="width: 75%;"></div>
                                 </div>
@@ -230,13 +231,12 @@
                 </a>
                 {% else %}
                 <!-- Botão Login caso não esteja logado -->
-                <a href="{% url 'account_login' %}" class="btn btn-sm btn-outline-light">Login</a>
-                <a href="{% url 'account_signup' %}" class="btn btn-sm btn-primary">Sign Up</a>
+                <a href="{% url 'account_login' %}" class="btn btn-sm btn-outline-light">{% trans "Login" %}</a>
+                <a href="{% url 'account_signup' %}" class="btn btn-sm btn-primary">{% trans "Sign Up" %}</a>
                 {% endif %}
             </div>
         </header>
         {% endblock %}
-
 
         <!-- ONDE O CONTEÚDO DAS PÁGINAS ENTRA -->
         <div class="p-3 p-md-4 mx-auto w-100" style="max-width: 1600px;">

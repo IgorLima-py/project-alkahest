@@ -1,11 +1,14 @@
 {% extends 'base.html' %}
 {% load vault_extras %}
 {% load humanize %}
+{% load i18n %}
 
 {% block content %}
 
+
 <!-- Carrega CSS/JS do Widget APENAS nesta página para performance e funcionalidade do modal -->
 {{ review_form.media }}
+
 
 <!-- =========================================================
      HERO BANNER & HEADER VISUAL
@@ -34,15 +37,15 @@
                 {% for genre in master.genres|slice:":3" %}
                 <span class="badge bg-white bg-opacity-10 backdrop-blur text-white border border-white border-opacity-25 fw-normal">{{ genre }}</span>
                 {% endfor %}
-                {% if master.status == 7 %}<span class="badge bg-info text-dark fw-bold">RUMOR</span>{% endif %}
-                {% if master.status == 4 %}<span class="badge bg-warning text-dark fw-bold">EARLY ACCESS</span>{% endif %}
+                {% if master.status == 7 %}<span class="badge bg-info text-dark fw-bold">{% trans "RUMOR" %}</span>{% endif %}
+                {% if master.status == 4 %}<span class="badge bg-warning text-dark fw-bold">{% trans "EARLY ACCESS" %}</span>{% endif %}
             </div>
             
             <h1 class="display-3 fw-bold text-white font-heading lh-1 text-shadow mb-1">{{ master.title }}</h1>
             
             {% if master.developers %}
             <p class="text-white text-opacity-75 mb-0 fs-5">
-                by <strong class="text-white">{{ master.developers.0 }}</strong>
+                {% blocktrans with dev=master.developers.0 %}by <strong class="text-white">{{ dev }}</strong>{% endblocktrans %}
                 {% if master.publishers %} & {{ master.publishers.0 }}{% endif %}
             </p>
             {% endif %}
@@ -50,7 +53,9 @@
     </div>
 </div>
 
+
 <div class="row g-4 align-items-start">
+
 
     <!-- =========================================================
          COLUNA ESQUERDA: AÇÕES, STATUS & METADADOS
@@ -62,28 +67,30 @@
             <img src="{{ master.cover_url|default:'https://placehold.co/600x900/1a1a1a/FFF' }}" class="rounded shadow w-50 border border-subtle">
         </div>
 
+
         <!-- QUICK ACTIONS BAR -->
         <div class="b-card p-2 mb-3 d-flex justify-content-around align-items-center bg-dark border border-subtle rounded-3">
-            <button class="btn btn-link text-muted hover-white p-2" data-bs-toggle="modal" data-bs-target="#reviewModal" title="Write Review">
+            <button class="btn btn-link text-muted hover-white p-2" data-bs-toggle="modal" data-bs-target="#reviewModal" title="{% trans 'Write Review' %}">
                 <i data-lucide="pencil" size="20"></i>
             </button>
             <form method="POST" class="d-inline">{% csrf_token %}
                 <input type="hidden" name="toggle_favorite" value="true">
-                <button type="submit" class="btn btn-link {% if entry.is_favorite %}text-danger{% else %}text-muted hover-white{% endif %} p-2" title="Toggle Favorite">
+                <button type="submit" class="btn btn-link {% if entry.is_favorite %}text-danger{% else %}text-muted hover-white{% endif %} p-2" title="{% trans 'Toggle Favorite' %}">
                     <i data-lucide="heart" size="20" fill="{% if entry.is_favorite %}currentColor{% else %}none{% endif %}"></i>
                 </button>
             </form>
-            <button class="btn btn-link text-muted hover-white p-2" data-bs-toggle="modal" data-bs-target="#addListModal" title="Add to List">
+            <button class="btn btn-link text-muted hover-white p-2" data-bs-toggle="modal" data-bs-target="#addListModal" title="{% trans 'Add to List' %}">
                 <i data-lucide="list-plus" size="20"></i>
             </button>
-            <button class="btn btn-link text-muted hover-white p-2" title="Share (Soon)">
+            <button class="btn btn-link text-muted hover-white p-2" title="{% trans 'Share (Soon)' %}">
                 <i data-lucide="share-2" size="20"></i>
             </button>
         </div>
 
+
         <!-- USER STATUS CARD -->
         <div class="b-card p-3 mb-3 bg-dark border border-subtle rounded-3">
-            <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Your Status</label>
+            <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">{% trans "Your Status" %}</label>
             
             <!-- Status Dropdown (Actionable) -->
             <div class="dropdown w-100 mb-3">
@@ -100,35 +107,35 @@
                         <form method="POST">{% csrf_token %}
                             <input type="hidden" name="create_review" value="true"> <!-- Reusa lógica de update -->
                             <input type="hidden" name="status" value="playing">
-                            <button type="submit" class="dropdown-item small">Playing</button>
+                            <button type="submit" class="dropdown-item small">{% trans "Playing" %}</button>
                         </form>
                     </li>
                     <li>
                         <form method="POST">{% csrf_token %}
                             <input type="hidden" name="create_review" value="true">
                             <input type="hidden" name="status" value="completed">
-                            <button type="submit" class="dropdown-item small">Completed</button>
+                            <button type="submit" class="dropdown-item small">{% trans "Completed" %}</button>
                         </form>
                     </li>
                     <li>
                         <form method="POST">{% csrf_token %}
                             <input type="hidden" name="create_review" value="true">
                             <input type="hidden" name="status" value="backlog">
-                            <button type="submit" class="dropdown-item small">Backlog</button>
+                            <button type="submit" class="dropdown-item small">{% trans "Backlog" %}</button>
                         </form>
                     </li>
                     <li>
                         <form method="POST">{% csrf_token %}
                             <input type="hidden" name="create_review" value="true">
                             <input type="hidden" name="status" value="dropped">
-                            <button type="submit" class="dropdown-item small">Dropped</button>
+                            <button type="submit" class="dropdown-item small">{% trans "Dropped" %}</button>
                         </form>
                     </li>
                 </ul>
             </div>
             
             <!-- NOVA EXIBIÇÃO DE NOTA (QUADRADO COLORIDO) -->
-            <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Your Rating</label>
+            <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">{% trans "Your Rating" %}</label>
             <div class="d-flex align-items-center gap-3">
                 {% with rating_val=entry.rating %}
                 <div class="d-flex align-items-center justify-content-center fw-bold rounded shadow-sm"
@@ -140,17 +147,18 @@
                 {% endwith %}
                 
                 {% if not entry.rating %}
-                <span class="text-muted small fst-italic">No rating yet</span>
+                <span class="text-muted small fst-italic">{% trans "No rating yet" %}</span>
                 {% endif %}
             </div>
         </div>
 
+
         <!-- GAME INFO (METADADOS RICOS) -->
         <div class="b-card p-3 bg-dark border border-subtle rounded-3">
-            <h6 class="font-heading fw-bold mb-3 text-white small text-uppercase border-bottom border-secondary pb-2">Data Sheet</h6>
+            <h6 class="font-heading fw-bold mb-3 text-white small text-uppercase border-bottom border-secondary pb-2">{% trans "Data Sheet" %}</h6>
             
             <div class="d-flex justify-content-between mb-2 small">
-                <span class="text-muted">Platform</span>
+                <span class="text-muted">{% trans "Platform" %}</span>
                 <span class="badge bg-dark border border-subtle d-flex align-items-center gap-1">
                     {% if "Steam" in platform.name %}<i data-lucide="monitor" size="12"></i>{% endif %}
                     {% if "PlayStation" in platform.name %}<i data-lucide="gamepad-2" size="12"></i>{% endif %}
@@ -159,39 +167,43 @@
             </div>
             
             <div class="d-flex justify-content-between mb-2 small">
-                <span class="text-muted">Release</span>
+                <span class="text-muted">{% trans "Release" %}</span>
                 <span class="text-white text-end">{{ master.release_date|date:"M Y" }}</span>
             </div>
             
             <div class="d-flex justify-content-between mb-2 small">
-                <span class="text-muted">Playtime</span>
+                <span class="text-muted">{% trans "Playtime" %}</span>
                 <span class="text-white fw-bold">{{ entry.playtime_hours }}h</span>
             </div>
 
+
             {% if master.game_engines %}
             <div class="d-flex justify-content-between mb-2 small">
-                <span class="text-muted">Engine</span>
+                <span class="text-muted">{% trans "Engine" %}</span>
                 <span class="text-white text-end">{{ master.game_engines.0 }}</span>
             </div>
             {% endif %}
 
+
             {% if master.collection %}
             <div class="d-flex justify-content-between mb-2 small">
-                <span class="text-muted">Series</span>
+                <span class="text-muted">{% trans "Series" %}</span>
                 <span class="text-white text-end text-truncate" style="max-width: 120px;" title="{{ master.collection }}">
                     {{ master.collection }}
                 </span>
             </div>
             {% endif %}
 
+
             <div class="d-flex justify-content-between mb-2 small">
-                <span class="text-muted">IGDB ID</span>
+                <span class="text-muted">{% trans "IGDB ID" %}</span>
                 <span class="font-monospace text-muted">{{ master.igdb_id }}</span>
             </div>
 
+
             {% if master.game_modes %}
             <div class="mt-3 pt-2 border-top border-secondary border-opacity-25">
-                <span class="text-muted small d-block mb-2 text-uppercase fw-bold" style="font-size: 0.65rem;">Modes</span>
+                <span class="text-muted small d-block mb-2 text-uppercase fw-bold" style="font-size: 0.65rem;">{% trans "Modes" %}</span>
                 <div class="d-flex flex-wrap gap-1">
                     {% for mode in master.game_modes %}
                     <span class="badge bg-black text-muted border border-subtle fw-normal" style="font-size: 0.65rem;">{{ mode }}</span>
@@ -202,6 +214,7 @@
         </div>
     </div>
 
+
     <!-- =========================================================
          COLUNA CENTRAL: CONTEÚDO PRINCIPAL
          ========================================================= -->
@@ -209,8 +222,8 @@
         
         <!-- OVERVIEW & STORYLINE -->
         <div class="mb-5">
-            <h5 class="fw-bold text-white mb-2 font-heading">Overview</h5>
-            <p class="text-light opacity-75 lh-lg mb-3">{{ master.summary|default:"No overview available." }}</p>
+            <h5 class="fw-bold text-white mb-2 font-heading">{% trans "Overview" %}</h5>
+            <p class="text-light opacity-75 lh-lg mb-3">{{ master.summary|default:_("No overview available.") }}</p>
             
             {% if master.storyline %}
             <div class="collapse" id="storyCollapse">
@@ -219,15 +232,16 @@
                 </div>
             </div>
             <button class="btn btn-link btn-sm text-warning text-decoration-none p-0 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#storyCollapse">
-                Read full storyline <i data-lucide="chevron-down" size="14" class="ms-1"></i>
+                {% trans "Read full storyline" %} <i data-lucide="chevron-down" size="14" class="ms-1"></i>
             </button>
             {% endif %}
         </div>
 
+
         <!-- SCREENSHOTS GALLERY -->
         {% if master.screenshots %}
         <div class="mb-5">
-            <h5 class="fw-bold text-white mb-3 font-heading">Gallery</h5>
+            <h5 class="fw-bold text-white mb-3 font-heading">{% trans "Gallery" %}</h5>
             <div class="d-flex gap-3 overflow-auto pb-3 custom-scrollbar">
                 {% for screen in master.screenshots %}
                 <img src="{{ screen }}" class="rounded shadow border border-subtle cursor-pointer hover-opacity-75 transition-all" 
@@ -238,13 +252,15 @@
         </div>
         {% endif %}
 
+
         <!-- TROPHIES SECTION -->
         <div class="b-card mb-5 position-relative overflow-hidden bg-dark border border-subtle rounded-3 p-4">
             <!-- Glow Effect -->
             <div class="position-absolute top-0 end-0 bg-warning opacity-5 rounded-circle" style="width: 200px; height: 200px; filter: blur(80px); transform: translate(30%, -30%); pointer-events: none;"></div>
 
+
             <div class="d-flex justify-content-between align-items-end mb-2 position-relative">
-                <h5 class="fw-bold font-heading mb-0 text-white">Trophies</h5>
+                <h5 class="fw-bold font-heading mb-0 text-white">{% trans "Trophies" %}</h5>
                 <span class="text-warning small fw-bold font-monospace">{{ unlocked_achievements }} / {{ total_achievements }} ({{ percentage|floatformat:0 }}%)</span>
             </div>
             
@@ -266,32 +282,35 @@
                     </div>
                     {% endif %}
                 {% empty %}
-                     <div class="text-muted small fst-italic w-100 text-center py-3">No trophies tracked for this game.</div>
+                     <div class="text-muted small fst-italic w-100 text-center py-3">{% trans "No trophies tracked for this game." %}</div>
                 {% endfor %}
             </div>
         </div>
 
+
         <!-- TRAVELER ECHOES (TIPS) -->
         <div class="mb-5">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold font-heading mb-0 text-white">Traveler Echoes</h5>
+                <h5 class="fw-bold font-heading mb-0 text-white">{% trans "Traveler Echoes" %}</h5>
                 <button class="btn btn-sm btn-outline-warning text-warning border-warning border-opacity-50" data-bs-toggle="collapse" data-bs-target="#tipForm">
-                    <i data-lucide="edit-2" size="14" class="me-1"></i> Write Echo
+                    <i data-lucide="edit-2" size="14" class="me-1"></i> {% trans "Write Echo" %}
                 </button>
             </div>
+
 
             <div class="collapse mb-3" id="tipForm">
                 <div class="b-card p-3 border-warning border-opacity-25 bg-warning bg-opacity-5 rounded-3">
                     <form method="POST">
                         {% csrf_token %}
                         <input type="hidden" name="create_tip" value="true">
-                        <textarea name="tip_text" class="form-control bg-black text-white border-secondary mb-2" rows="2" placeholder="Leave a short hint for other travelers... (max 280 chars)"></textarea>
+                        <textarea name="tip_text" class="form-control bg-black text-white border-secondary mb-2" rows="2" placeholder="{% trans 'Leave a short hint for other travelers... (max 280 chars)' %}"></textarea>
                         <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-warning btn-sm text-dark fw-bold">Post Echo</button>
+                            <button type="submit" class="btn btn-warning btn-sm text-dark fw-bold">{% trans "Post Echo" %}</button>
                         </div>
                     </form>
                 </div>
             </div>
+
 
             <div class="d-flex flex-column gap-2">
                 {% for tip in tips|slice:":5" %}
@@ -313,15 +332,16 @@
                 </div>
                 {% empty %}
                 <div class="text-center py-4 border border-dashed border-subtle rounded text-muted small opacity-50">
-                    No echoes recorded yet. Be the first to leave a mark.
+                    {% trans "No echoes recorded yet. Be the first to leave a mark." %}
                 </div>
                 {% endfor %}
             </div>
         </div>
 
+
         <!-- REVIEWS / JOURNAL (USER) -->
         <div class="mb-5">
-            <h5 class="fw-bold font-heading mb-3 text-white">Your Journal</h5>
+            <h5 class="fw-bold font-heading mb-3 text-white">{% trans "Your Journal" %}</h5>
             {% for review in user_reviews %}
             <div class="b-card p-4 mb-3 bg-dark border border-subtle rounded-3 hover-lift transition-all">
                 <div class="d-flex justify-content-between mb-2">
@@ -342,7 +362,7 @@
                         <div class="d-flex flex-column">
                             <span class="text-muted small" style="font-size: 0.7rem;">{{ review.created_at|date:"M d, Y" }}</span>
                             {% if review.is_replay %}
-                            <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-25 small" style="width: fit-content;">Replay</span>
+                            <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-25 small" style="width: fit-content;">{% trans "Replay" %}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -350,8 +370,8 @@
                     <div class="dropdown">
                         <button class="btn btn-sm btn-link text-muted p-0" data-bs-toggle="dropdown"><i data-lucide="more-horizontal" size="16"></i></button>
                         <ul class="dropdown-menu dropdown-menu-dark">
-                            <li><a class="dropdown-item small" href="{% url 'edit_review' review.id %}">Edit Entry</a></li>
-                            <li><a class="dropdown-item small text-danger" href="{% url 'delete_review' review.id %}">Delete</a></li>
+                            <li><a class="dropdown-item small" href="{% url 'edit_review' review.id %}">{% trans "Edit Entry" %}</a></li>
+                            <li><a class="dropdown-item small text-danger" href="{% url 'delete_review' review.id %}">{% trans "Delete" %}</a></li>
                         </ul>
                     </div>
                 </div>
@@ -362,26 +382,28 @@
                 
                 {% if review.contains_spoilers %}
                 <div class="mt-2">
-                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Contains Spoilers</span>
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">{% trans "Contains Spoilers" %}</span>
                 </div>
                 {% endif %}
             </div>
             {% empty %}
              <div class="text-center py-5 border border-dashed border-subtle rounded text-muted small">
                 <i data-lucide="book-open" size="24" class="mb-2 opacity-50"></i><br>
-                Journal is empty. Click the pencil icon to write.
+                {% trans "Journal is empty. Click the pencil icon to write." %}
             </div>
             {% endfor %}
         </div>
 
+
         <!-- COMMUNITY REVIEWS -->
         <div class="mb-5">
             <h5 class="fw-bold font-heading mb-3 text-white border-top border-secondary border-opacity-25 pt-4 d-flex justify-content-between align-items-center">
-                <span>Community Reviews</span>
+                <span>{% trans "Community Reviews" %}</span>
                 {% if community_reviews %}
                 <span class="badge bg-dark border border-subtle text-muted fw-normal">{{ community_reviews.count }}</span>
                 {% endif %}
             </h5>
+
 
             <div class="d-flex flex-column gap-3">
                 {% for review in community_reviews %}
@@ -392,6 +414,7 @@
                              class="rounded-circle border border-secondary" width="40" height="40">
                     </div>
 
+
                     <!-- Content Column -->
                     <div class="flex-grow-1">
                         <div class="d-flex justify-content-between align-items-start mb-1">
@@ -400,7 +423,7 @@
                                     {% if review.user.is_active %}
                                         {{ review.user.username }}
                                     {% else %}
-                                        <span class="fst-italic text-muted">Deleted User</span>
+                                        <span class="fst-italic text-muted">{% trans "Deleted User" %}</span>
                                     {% endif %}
                                 </h6>
                                 <div class="d-flex align-items-center gap-2 mt-1">
@@ -426,19 +449,20 @@
                             </div>
                         </div>
 
+
                         <!-- Review Text -->
                         <div class="text-light opacity-90 small lh-sm mt-2">
                             {% if review.contains_spoilers %}
                                 <div class="p-2 bg-black rounded border border-danger border-opacity-25 text-danger small fst-italic">
-                                    <i data-lucide="eye-off" size="12" class="me-1"></i> Spoiler hidden. 
-                                    <span class="text-muted text-decoration-underline cursor-pointer">Click to reveal</span>
+                                    <i data-lucide="eye-off" size="12" class="me-1"></i> {% trans "Spoiler hidden." %} 
+                                    <span class="text-muted text-decoration-underline cursor-pointer">{% trans "Click to reveal" %}</span>
                                 </div>
                             {% else %}
                                 <div class="text-truncate-3-lines">
                                     {{ review.text_html|safe|truncatewords_html:30 }}
                                 </div>
                                 {% if review.text|length > 150 %}
-                                <a href="#" class="small text-muted text-decoration-none">Read more</a>
+                                <a href="#" class="small text-muted text-decoration-none">{% trans "Read more" %}</a>
                                 {% endif %}
                             {% endif %}
                         </div>
@@ -446,13 +470,15 @@
                 </div>
                 {% empty %}
                 <div class="text-center py-4 border border-dashed border-subtle rounded text-muted small opacity-50">
-                    No reviews from the community yet.
+                    {% trans "No reviews from the community yet." %}
                 </div>
                 {% endfor %}
             </div>
         </div>
 
+
     </div>
+
 
     <!-- =========================================================
          COLUNA DIREITA: EXTRA INFO, LISTAS & DLCS
@@ -461,18 +487,19 @@
         
         <!-- Add to List Button -->
         <button class="btn btn-dark border border-subtle w-100 text-start text-muted d-flex justify-content-between align-items-center p-3 mb-4 hover-border-light transition-all rounded-3" data-bs-toggle="modal" data-bs-target="#addListModal">
-            <span>Add to List...</span>
+            <span>{% trans "Add to List..." %}</span>
             <i data-lucide="plus" size="16"></i>
         </button>
+
 
         <!-- DLCs List -->
         {% if master.dlcs %}
         <div class="mb-4">
-            <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">DLCs & Addons</label>
+            <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">{% trans "DLCs & Addons" %}</label>
             <div class="list-group list-group-flush rounded border border-subtle">
                 <div class="list-group-item bg-dark text-muted small py-2">
                     <i data-lucide="package" size="12" class="me-1"></i>
-                    {{ master.dlcs|length }} items linked via IGDB
+                    {% blocktrans with count=master.dlcs|length %}{{ count }} items linked via IGDB{% endblocktrans %}
                 </div>
             </div>
         </div>
@@ -481,39 +508,43 @@
         <!-- Similar Games -->
         {% if master.similar_games %}
         <div class="mb-4">
-            <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Similar Games</label>
+            <label class="small text-muted text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">{% trans "Similar Games" %}</label>
             <div class="d-flex flex-wrap gap-2">
-                <span class="badge bg-dark border border-subtle text-muted fw-normal">Matches found: {{ master.similar_games|length }}</span>
+                <span class="badge bg-dark border border-subtle text-muted fw-normal">{% blocktrans with count=master.similar_games|length %}Matches found: {{ count }}{% endblocktrans %}</span>
             </div>
         </div>
         {% endif %}
 
+
         <!-- Price Widget -->
         <div class="b-card border-success border-opacity-25 bg-success bg-opacity-5 position-relative overflow-hidden rounded-3 p-3">
             <div class="position-absolute top-0 end-0 p-1">
-                 <span class="badge bg-success text-white" style="font-size: 0.6rem;">DEAL</span>
+                 <span class="badge bg-success text-white" style="font-size: 0.6rem;">{% trans "DEAL" %}</span>
             </div>
-            <h6 class="fw-bold text-white mb-3 small text-uppercase">Best Price</h6>
+            <h6 class="fw-bold text-white mb-3 small text-uppercase">{% trans "Best Price" %}</h6>
             <div class="d-flex justify-content-between align-items-center mb-2 small">
-                <span class="text-muted"><i data-lucide="monitor" size="12" class="me-1"></i>Official</span>
-                <span class="text-success fw-bold">Check Store</span>
+                <span class="text-muted"><i data-lucide="monitor" size="12" class="me-1"></i>{% trans "Official" %}</span>
+                <span class="text-success fw-bold">{% trans "Check Store" %}</span>
             </div>
-            <button class="btn btn-outline-success w-100 btn-sm fw-bold mt-2">Compare Prices</button>
+            <button class="btn btn-outline-success w-100 btn-sm fw-bold mt-2">{% trans "Compare Prices" %}</button>
         </div>
     </div>
 
+
 </div>
+
 
 <!-- =========================================================
      MODALS (Review & Add List)
      ========================================================= -->
+
 
 <!-- REVIEW MODAL CORRIGIDO COM WIDGET NOVO -->
 <div class="modal fade" id="reviewModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content bg-card border border-subtle shadow-lg">
             <div class="modal-header border-subtle">
-                <h5 class="modal-title fw-bold font-heading text-white">Journal Entry</h5>
+                <h5 class="modal-title fw-bold font-heading text-white">{% trans "Journal Entry" %}</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST">
@@ -526,53 +557,54 @@
                             {{ review_form.rating }}
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small text-muted text-uppercase fw-bold">Status</label>
+                            <label class="form-label small text-muted text-uppercase fw-bold">{% trans "Status" %}</label>
                             <select name="status" class="form-select bg-dark text-white border-secondary">
-                                <option value="playing" {% if entry.status == 'playing' %}selected{% endif %}>Playing</option>
-                                <option value="completed" {% if entry.status == 'completed' %}selected{% endif %}>Completed</option>
-                                <option value="dropped" {% if entry.status == 'dropped' %}selected{% endif %}>Dropped</option>
-                                <option value="backlog" {% if entry.status == 'backlog' %}selected{% endif %}>Backlog</option>
+                                <option value="playing" {% if entry.status == 'playing' %}selected{% endif %}>{% trans "Playing" %}</option>
+                                <option value="completed" {% if entry.status == 'completed' %}selected{% endif %}>{% trans "Completed" %}</option>
+                                <option value="dropped" {% if entry.status == 'dropped' %}selected{% endif %}>{% trans "Dropped" %}</option>
+                                <option value="backlog" {% if entry.status == 'backlog' %}selected{% endif %}>{% trans "Backlog" %}</option>
                             </select>
                             
                             <div class="mt-4">
-                                <label class="form-label small text-muted text-uppercase fw-bold mb-2">Options</label>
+                                <label class="form-label small text-muted text-uppercase fw-bold mb-2">{% trans "Options" %}</label>
                                 <div class="d-flex gap-3 flex-wrap">
                                     <div class="form-check form-switch">
                                         {{ review_form.contains_spoilers }}
-                                        <label class="form-check-label text-white small ms-2">Spoilers</label>
+                                        <label class="form-check-label text-white small ms-2">{% trans "Spoilers" %}</label>
                                     </div>
                                     <div class="form-check form-switch">
                                         {{ review_form.is_recommended }}
-                                        <label class="form-check-label text-white small ms-2">Recommended</label>
+                                        <label class="form-check-label text-white small ms-2">{% trans "Recommended" %}</label>
                                     </div>
                                     <div class="form-check form-switch">
                                         {{ review_form.is_replay }}
-                                        <label class="form-check-label text-white small ms-2">Replay</label>
+                                        <label class="form-check-label text-white small ms-2">{% trans "Replay" %}</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label small text-muted text-uppercase fw-bold">Review</label>
+                            <label class="form-label small text-muted text-uppercase fw-bold">{% trans "Review" %}</label>
                             {{ review_form.text }}
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-subtle">
-                    <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary fw-bold px-4">Save Entry</button>
+                    <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4">{% trans "Save Entry" %}</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+
 <!-- ADD LIST MODAL (Mantido) -->
 <div class="modal fade" id="addListModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-card border border-subtle">
             <div class="modal-header border-subtle">
-                <h6 class="text-white fw-bold mb-0">Add to List</h6>
+                <h6 class="text-white fw-bold mb-0">{% trans "Add to List" %}</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
@@ -587,16 +619,17 @@
                         </button>
                     </form>
                     {% empty %}
-                    <div class="p-3 text-center text-muted small">No lists created yet.</div>
+                    <div class="p-3 text-center text-muted small">{% trans "No lists created yet." %}</div>
                     {% endfor %}
                     <a href="{% url 'create_list' %}" class="list-group-item list-group-item-action bg-dark text-accent-primary border-subtle fw-bold text-center">
-                        + Create New List
+                        {% trans "+ Create New List" %}
                     </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 
 <style>
     .hover-white:hover { color: white !important; }
@@ -612,5 +645,6 @@
         overflow: hidden;
     }
 </style>
+
 
 {% endblock %}

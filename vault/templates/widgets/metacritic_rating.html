@@ -1,3 +1,4 @@
+{% load i18n %}
 <div class="metacritic-widget-wrapper">
     <!-- Input escondido que o Django lê -->
     <input type="hidden" name="{{ widget.name }}" value="{{ widget.value|default:0 }}">
@@ -7,7 +8,7 @@
     </div>
     
     <div class="rating-bars-wrapper mt-2">
-        <p class="text-muted small mb-1 text-center" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">My Score</p>
+        <p class="text-muted small mb-1 text-center" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">{% trans "My Score" %}</p>
         <div class="bars-container">
             <!-- 10 Barras geradas manualmente para controle total -->
             <div class="rating-bar" data-value="10" data-range="red" title="1"></div>

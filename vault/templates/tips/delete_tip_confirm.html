@@ -1,10 +1,15 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="row justify-content-center text-center">
     <div class="col-md-7">
-        <h1 class="display-5 fw-bold text-danger">Confirmar Deleção</h1>
-        <p class="lead">Você tem certeza que quer apagar permanentemente sua dica para <strong>{{ tip.master_game.title }}</strong>?</p>
+        <h1 class="display-5 fw-bold text-danger">{% trans "Confirm Deletion" %}</h1>
+        <p class="lead">
+            {% blocktrans with game=tip.master_game.title %}
+            Are you sure you want to permanently delete your tip for <strong>{{ game }}</strong>?
+            {% endblocktrans %}
+        </p>
         
         <div class="card bg-dark border-secondary my-4">
             <div class="card-body">
@@ -14,12 +19,12 @@
             </div>
         </div>
 
-        <p class="text-muted">Esta ação não pode ser desfeita.</p>
+        <p class="text-muted">{% trans "This action cannot be undone." %}</p>
 
         <form method="POST" class="d-inline-block">
             {% csrf_token %}
-            <button type="submit" class="btn btn-danger btn-lg">Sim, Deletar</button>
-            <a href="javascript:history.back()" class="btn btn-secondary btn-lg">Não, voltar</a>
+            <button type="submit" class="btn btn-danger btn-lg">{% trans "Yes, Delete" %}</button>
+            <a href="javascript:history.back()" class="btn btn-secondary btn-lg">{% trans "No, go back" %}</a>
         </form>
     </div>
 </div>

@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load i18n %}
 
 {% block content %}
 <div class="text-center mb-5">
-    <h1 class="display-5 fw-bold text-white font-heading mb-2">Global Leaderboard</h1>
-    <p class="text-muted">Ranking based on Total XP. Play more to climb.</p>
+    <h1 class="display-5 fw-bold text-white font-heading mb-2">{% trans "Global Leaderboard" %}</h1>
+    <p class="text-muted">{% trans "Ranking based on Total XP. Play more to climb." %}</p>
 </div>
 
 <div class="row justify-content-center">
@@ -14,10 +15,10 @@
                 <table class="table table-dark table-hover mb-0 align-middle">
                     <thead class="bg-black">
                         <tr>
-                            <th scope="col" class="py-3 ps-4 text-muted text-uppercase small fw-bold" style="width: 80px;">Rank</th>
-                            <th scope="col" class="py-3 text-muted text-uppercase small fw-bold">User</th>
-                            <th scope="col" class="py-3 text-center text-muted text-uppercase small fw-bold">Games</th>
-                            <th scope="col" class="py-3 text-end pe-4 text-muted text-uppercase small fw-bold">Total XP</th>
+                            <th scope="col" class="py-3 ps-4 text-muted text-uppercase small fw-bold" style="width: 80px;">{% trans "Rank" %}</th>
+                            <th scope="col" class="py-3 text-muted text-uppercase small fw-bold">{% trans "User" %}</th>
+                            <th scope="col" class="py-3 text-center text-muted text-uppercase small fw-bold">{% trans "Games" %}</th>
+                            <th scope="col" class="py-3 text-end pe-4 text-muted text-uppercase small fw-bold">{% trans "Total XP" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -44,7 +45,11 @@
                                     </div>
                                     <div>
                                         <div class="fw-bold text-white">{{ entry.user.username }}</div>
-                                        <div class="small text-muted">Level {{ entry.level }}</div>
+                                        <div class="small text-muted">
+                                            {% blocktrans with level=entry.level %}
+                                            Level {{ level }}
+                                            {% endblocktrans %}
+                                        </div>
                                     </div>
                                 </div>
                             </td>

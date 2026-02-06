@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load i18n %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <h1 class="display-5 fw-bold text-white font-heading mb-1">Social Hub</h1>
-        <p class="text-muted lead fs-6">Manage your circle and discover new travelers.</p>
+        <h1 class="display-5 fw-bold text-white font-heading mb-1">{% trans "Social Hub" %}</h1>
+        <p class="text-muted lead fs-6">{% trans "Manage your circle and discover new travelers." %}</p>
     </div>
 </div>
 
@@ -16,12 +17,12 @@
         <ul class="nav nav-pills mb-3 border-bottom border-subtle pb-2 gap-3" id="pills-tab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active bg-transparent text-white border-bottom border-2 border-accent-primary rounded-0 px-1" id="following-tab" data-bs-toggle="pill" data-bs-target="#pills-following" type="button" role="tab">
-                    Following <span class="badge bg-dark border border-subtle ms-2">{{ following.count }}</span>
+                    {% trans "Following" %} <span class="badge bg-dark border border-subtle ms-2">{{ following.count }}</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link text-muted hover-white rounded-0 px-1" id="followers-tab" data-bs-toggle="pill" data-bs-target="#pills-followers" type="button" role="tab">
-                    Followers <span class="badge bg-dark border border-subtle ms-2">{{ followers.count }}</span>
+                    {% trans "Followers" %} <span class="badge bg-dark border border-subtle ms-2">{{ followers.count }}</span>
                 </button>
             </li>
         </ul>
@@ -36,17 +37,21 @@
                             <img src="{{ follow.target.profile.avatar_url|default:'https://ui-avatars.com/api/?name='|add:follow.target.username }}" class="rounded-circle shadow-sm" width="48" height="48">
                             <div>
                                 <h6 class="mb-0 fw-bold text-white">{{ follow.target.username }}</h6>
-                                <span class="text-muted small">Lvl {{ follow.target.profile.current_level|default:"1" }} • {{ follow.target.profile.bio|truncatechars:30 }}</span>
+                                <span class="text-muted small">
+                                    {% blocktrans with level=follow.target.profile.current_level|default:"1" bio=follow.target.profile.bio|truncatechars:30 %}
+                                    Lvl {{ level }} • {{ bio }}
+                                    {% endblocktrans %}
+                                </span>
                             </div>
                         </div>
                         <a href="{% url 'toggle_follow' follow.target.username %}" class="btn btn-sm btn-outline-danger border-opacity-25 hover-bg-danger text-white">
-                            Unfollow
+                            {% trans "Unfollow" %}
                         </a>
                     </div>
                     {% empty %}
                     <div class="text-center py-5 border border-dashed border-subtle rounded text-muted">
                         <i data-lucide="ghost" size="32" class="mb-2 opacity-50"></i>
-                        <p>You are not following anyone yet.</p>
+                        <p>{% trans "You are not following anyone yet." %}</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -61,17 +66,21 @@
                             <img src="{{ follow.follower.profile.avatar_url|default:'https://ui-avatars.com/api/?name='|add:follow.follower.username }}" class="rounded-circle shadow-sm" width="48" height="48">
                             <div>
                                 <h6 class="mb-0 fw-bold text-white">{{ follow.follower.username }}</h6>
-                                <span class="text-muted small">Follows you since {{ follow.created_at|date:"M Y" }}</span>
+                                <span class="text-muted small">
+                                    {% blocktrans with date=follow.created_at|date:"M Y" %}
+                                    Follows you since {{ date }}
+                                    {% endblocktrans %}
+                                </span>
                             </div>
                         </div>
-                        <!-- Lógica simplificada: Se eu não sigo de volta, mostra Follow -->
+                        <!-- Simplified logic: If I don't follow back, show Follow -->
                         <a href="{% url 'toggle_follow' follow.follower.username %}" class="btn btn-sm btn-primary">
-                            Follow Back
+                            {% trans "Follow Back" %}
                         </a>
                     </div>
                     {% empty %}
                     <div class="text-center py-5 border border-dashed border-subtle rounded text-muted">
-                        <p>No followers yet. Be active to get noticed!</p>
+                        <p>{% trans "No followers yet. Be active to get noticed!" %}</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -81,7 +90,7 @@
 
     <!-- RIGHT: Suggestions -->
     <div class="col-12 col-lg-4">
-        <h6 class="fw-bold text-white mb-3 text-uppercase small">Discover Travelers</h6>
+        <h6 class="fw-bold text-white mb-3 text-uppercase small">{% trans "Discover Travelers" %}</h6>
         <div class="d-flex flex-column gap-2">
             {% for user in suggestions %}
             <div class="b-card p-3 d-flex align-items-center justify-content-between border-dashed hover-solid transition-all">
@@ -89,7 +98,7 @@
                     <img src="{{ user.profile.avatar_url|default:'https://ui-avatars.com/api/?name='|add:user.username }}" class="rounded-circle" width="40" height="40">
                     <div class="lh-sm">
                         <div class="fw-bold text-white small">{{ user.username }}</div>
-                        <div class="text-muted" style="font-size: 0.7rem;">Maybe you know?</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">{% trans "Maybe you know?" %}</div>
                     </div>
                 </div>
                 <a href="{% url 'toggle_follow' user.username %}" class="btn btn-sm btn-outline-primary border-0 bg-primary bg-opacity-10 text-primary fw-bold">
@@ -97,13 +106,13 @@
                 </a>
             </div>
             {% empty %}
-            <div class="text-muted small">No suggestions right now.</div>
+            <div class="text-muted small">{% trans "No suggestions right now." %}</div>
             {% endfor %}
         </div>
         
         <div class="mt-4 p-3 rounded bg-gradient-to-r from-purple-900 to-black border border-subtle">
-            <h6 class="fw-bold text-white">Invite Friends</h6>
-            <p class="small text-muted mb-2">Share your profile link to compare stats.</p>
+            <h6 class="fw-bold text-white">{% trans "Invite Friends" %}</h6>
+            <p class="small text-muted mb-2">{% trans "Share your profile link to compare stats." %}</p>
             <div class="input-group input-group-sm">
                 <input type="text" class="form-control bg-dark border-secondary text-muted" value="alka.gg/u/{{ user.username }}" readonly>
                 <button class="btn btn-secondary text-white"><i data-lucide="copy" size="14"></i></button>

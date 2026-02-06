@@ -1,33 +1,38 @@
 {% extends 'base.html' %}
+{% load i18n %}
+
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="display-5 fw-bold">Minhas Listas</h1>
-    <a href="{% url 'create_list' %}" class="btn btn-success">
-        <i class="bi bi-plus-lg"></i> Criar Nova Lista
-    </a>
+    <h1 class="display-5 fw-bold">{% trans "My Lists" %}</h1>
+    <a href="{% url 'create_list' %}" class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> {% trans "Create New List" %}
+    </a>
 </div>
 
+
 <div class="row g-3">
-    {% for list in lists %}
-    <div class="col-md-4">
-        <div class="card bg-dark border-secondary h-100">
-            <div class="card-body">
-                <h5 class="card-title text-warning">{{ list.title }}</h5>
-                <p class="card-text text-muted small">{{ list.description|truncatewords:20 }}</p>
-                <a href="{% url 'list_detail' list.id %}" class="btn btn-outline-warning btn-sm">Ver Lista</a>
-            </div>
-            <div class="card-footer border-secondary text-muted small">
-                {{ list.items.count }} jogo(s) | Atualizado em {{ list.updated_at|date:"d/m/y" }}
-            </div>
-        </div>
-    </div>
-    {% empty %}
-    <div class="col-12">
-        <div class="alert alert-dark border-secondary text-center py-5">
-            <h4 class="text-muted">Você ainda não criou nenhuma lista.</h4>
-        </div>
-    </div>
-    {% endfor %}
+    {% for list in lists %}
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-body">
+                <h5 class="card-title text-warning">{{ list.title }}</h5>
+                <p class="card-text text-muted small">{{ list.description|truncatewords:20 }}</p>
+                <a href="{% url 'list_detail' list.id %}" class="btn btn-outline-warning btn-sm">{% trans "View List" %}</a>
+            </div>
+            <div class="card-footer border-secondary text-muted small">
+                {% blocktrans with count=list.items.count date=list.updated_at|date:"d/m/y" %}
+                {{ count }} game(s) | Updated on {{ date }}
+                {% endblocktrans %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-dark border-secondary text-center py-5">
+            <h4 class="text-muted">{% trans "You haven't created any lists yet." %}</h4>
+        </div>
+      </div>
+    {% endfor %}
 </div>
 {% endblock %}
