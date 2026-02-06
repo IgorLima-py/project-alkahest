@@ -96,3 +96,40 @@ class GameTipForm(forms.ModelForm):
     def clean_text(self):
         data = self.cleaned_data.get('text')
         return nh3.clean(data, tags=set()) 
+    
+
+    # ==========================================
+# BLOCO 5: ADMIN TOOLS (GOD MODE)
+# ==========================================
+class GameMergeForm(forms.Form):
+    source_id = forms.UUIDField(
+        label="ID do Jogo DUPLICADO (Vai sumir)",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Cole o UUID aqui'}),
+        help_text="CUIDADO: Este jogo será DELETADO permanentemente."
+    )
+    target_id = forms.UUIDField(
+        label="ID do Jogo OFICIAL (Vai ficar)",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Cole o UUID aqui'}),
+        help_text="Este jogo receberá todas as reviews e dados do duplicado."
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        source_id = cleaned_data.get("source_id")
+        target_id = cleaned_data.get("target_id")
+
+        if source_id and target_id and source_id == target_id:
+            raise forms.ValidationError("Origem e Destino não podem ser o mesmo ID.")
+
+        # Validação cruzada no Banco
+        try:
+            # Import local para evitar circular imports no topo do arquivo
+            from .models import MasterGame
+            source = MasterGame.objects.get(id=source_id)
+            target = MasterGame.objects.get(id=target_id)
+        except MasterGame.DoesNotExist:
+            raise forms.ValidationError("Um ou ambos os IDs não existem no banco.")
+
+        cleaned_data['source_game'] = source
+        cleaned_data['target_game'] = target
+        return cleaned_data
