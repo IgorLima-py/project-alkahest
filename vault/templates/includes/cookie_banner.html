@@ -1,0 +1,42 @@
+{% load i18n %}
+
+<!-- Só mostra se não tiver o cookie ainda (lógica via JS ou backend, mas JS é melhor pra cache) -->
+<div id="cookie-banner" class="fixed-bottom bg-dark border-top border-warning p-3 d-none" style="z-index: 9999;">
+    <div class="container d-flex justify-content-between align-items-center flex-column flex-md-row gap-3">
+        <div class="text-light">
+            <i class="bi bi-cookie text-warning me-2"></i>
+            {% trans "We use cookies to improve your experience and analyze traffic." %}
+            <a href="#" class="text-warning text-decoration-underline">{% trans "Privacy Policy" %}</a>.
+        </div>
+        <div class="d-flex gap-2">
+            <button id="accept-cookies" class="btn btn-warning btn-sm fw-bold">
+                {% trans "Accept All" %}
+            </button>
+            <button id="reject-cookies" class="btn btn-outline-light btn-sm">
+                {% trans "Reject" %}
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Verifica se já tem consentimento
+        if (!document.cookie.split('; ').find(row => row.startsWith('cookie_consent='))) {
+            document.getElementById('cookie-banner').classList.remove('d-none');
+        }
+
+        document.getElementById('accept-cookies').addEventListener('click', function() {
+            // Seta cookie por 1 ano
+            document.cookie = "cookie_consent=accepted; path=/; max-age=31536000; SameSite=Lax";
+            document.getElementById('cookie-banner').classList.add('d-none');
+            // Recarrega para ativar o PostHog imediatamente
+            window.location.reload();
+        });
+
+        document.getElementById('reject-cookies').addEventListener('click', function() {
+            document.cookie = "cookie_consent=rejected; path=/; max-age=31536000; SameSite=Lax";
+            document.getElementById('cookie-banner').classList.add('d-none');
+        });
+    });
+</script>

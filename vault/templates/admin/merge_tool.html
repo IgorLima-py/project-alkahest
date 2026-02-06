@@ -1,16 +1,22 @@
 {% extends "base.html" %}
+{% load i18n %}
+
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card bg-dark border-danger mb-4">
                 <div class="card-header bg-danger text-white fw-bold">
-                    <i class="bi bi-exclamation-triangle-fill"></i> GOD MODE: FUSÃO DE JOGOS
+                    <i class="bi bi-exclamation-triangle-fill"></i> 
+                    {% trans "GOD MODE: GAME MERGE" %}
                 </div>
                 <div class="card-body">
                     <p class="text-danger-emphasis">
-                        Esta ferramenta unifica dois jogos em um. Todos os dados (reviews, playtimes, listas) 
-                        do jogo de <strong>ORIGEM</strong> serão movidos para o jogo de <strong>DESTINO</strong>.
+                        {% blocktrans %}
+                        This tool merges two games into one. All data (reviews, playtimes, lists) 
+                        from the <strong>SOURCE</strong> game will be moved to the <strong>TARGET</strong> game.
+                        The Source game will be permanently DELETED.
+                        {% endblocktrans %}
                     </p>
                     <hr class="border-secondary">
                     
@@ -30,10 +36,13 @@
                         {% endfor %}
                         
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Tem certeza absoluta? Esta ação não pode ser desfeita.');">
-                                <i class="bi bi-radioactive"></i> EXECUTAR FUSÃO
+                            <button type="submit" class="btn btn-danger btn-lg" 
+                                    onclick="return confirm('{% trans "Are you absolutely sure? This action cannot be undone." %}');">
+                                <i class="bi bi-radioactive"></i> {% trans "EXECUTE MERGE" %}
                             </button>
-                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                                {% trans "Cancel" %}
+                            </a>
                         </div>
                     </form>
                 </div>
