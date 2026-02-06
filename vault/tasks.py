@@ -240,11 +240,18 @@ def sync_ra_achievements_task(user_id, entry_id):
 # ==========================================
 # ENRICHMENT (IGDB) TASKS
 # ==========================================
+# ==========================================
+# ENRICHMENT (IGDB) TASKS
+# ==========================================
 @shared_task
 def enrich_library_task():
     """
     Pega jogos importados (IDs negativos) ou Provisórios (IDs > 900mi)
     e busca os dados oficiais no IGDB.
+    
+    BLINDAGEM: 
+    1. Prioriza Steam ID.
+    2. Usa Cache para ignorar jogos que falharam recentemente (evita loop infinito).
     """
     BATCH_SIZE = 10 
     
@@ -261,42 +268,71 @@ def enrich_library_task():
 
     print(f"🔄 [ENRICH] Processando lote de {len(targets)} jogos...")
     updated_count = 0
+    skipped_count = 0
 
     for master in targets:
+        # --- TRAVA ANTI-LOOP (REDIS) ---
+        # Se já tentamos esse ID nas últimas 24h e falhou, pula.
+        lock_key = f"ignore_enrich_{master.id}"
+        if cache.get(lock_key):
+            print(f" ⏩ [SKIP] {master.title} (Já falhou recentemente)")
+            skipped_count += 1
+            continue
+        # -------------------------------
+
         original_title = master.title
-        print(f" 🔎 Buscando dados oficiais para: {original_title}")
+        steam_id = None
         
+        # Tenta extrair ID da Steam para busca exata
         try:
-            # Busca no IGDB pelo nome
-            new_master = fetch_and_update_game(search_name=original_title)
+            steam_pg = master.platforms.filter(platform__slug='steam').first()
+            if steam_pg:
+                steam_id = steam_pg.external_id
+                print(f" 🔎 [STEAM ID] Usando AppID {steam_id} para: {original_title}")
+            else:
+                print(f" 🔎 [NOME] Buscando: {original_title}")
+        except: pass
+
+        try:
+            new_master = fetch_and_update_game(
+                search_name=original_title, 
+                steam_id=steam_id
+            )
             
             if new_master and new_master.id != master.id:
-                # SUCESSO: O jogo existe no IGDB!
-                print(f"    ✅ Encontrado! Mesclando {master.id} -> {new_master.id}")
+                print(f"    ✅ SUCESSO! Mesclando...")
                 
                 with transaction.atomic():
-                    # Move PlatformGames para o novo MasterGame
+                    # Move PlatformGames
                     for pg in master.platforms.all():
                         if not PlatformGame.objects.filter(master_game=new_master, platform=pg.platform).exists():
                             pg.master_game = new_master
                             pg.save()
-                    
-                    # Atualiza entries da library (não precisa fazer nada se movemos o PG)
+                        else:
+                            # Conflito: deleta duplicata e move library entries
+                            official_pg = PlatformGame.objects.get(master_game=new_master, platform=pg.platform)
+                            pg.userlibraryentry_set.update(platform_game=official_pg)
+                            pg.delete()
                     
                 master.delete()
                 updated_count += 1
             else:
-                print(f"    ⚠️ Não encontrado no IGDB. Mantendo Stub.")
+                print(f"    ⚠️ FALHOU. Marcando para ignorar por 24h.")
+                # TRAVA ATIVADA: Não tenta esse ID de novo por 1 dia (86400s)
+                cache.set(lock_key, True, timeout=86400)
                 
         except Exception as e:
-            print(f"    ❌ Erro ao enriquecer {original_title}: {e}")
+            print(f"    ❌ ERRO: {e}")
+            cache.set(lock_key, True, timeout=3600) # Erro de código? Ignora por 1h só.
 
-    # Re-agenda se tiver mais
-    if MasterGame.objects.filter(Q(igdb_id__gt=900000000) | Q(igdb_id__lt=0)).exists():
+    # Re-agenda APENAS se houver items que NÃO foram ignorados/processados no lote
+    # Se tudo foi "Skipped", o loop para para não fritar a CPU.
+    # A task será chamada de novo naturalmente pelo próximo user action ou cron.
+    remaining = len(targets) - (updated_count + skipped_count)
+    if remaining > 0 or updated_count > 0:
         enrich_library_task.apply_async(countdown=5)
 
-    return f"Lote finalizado. Atualizados: {updated_count}"
-
+    return f"Lote fim. Atualizados: {updated_count}, Ignorados: {skipped_count}"
 
 # ==========================================
 # IMPORTADOR BACKLOGGD (CELERY TASK)
