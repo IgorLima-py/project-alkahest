@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Beta Access" %} | Project Alkahest{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="card bg-dark border-secondary shadow-lg" style="max-width: 400px; width: 100%;">
+        <div class="card-body p-5 text-center">
+            <h1 class="h3 mb-4 text-white">🚧 Private Beta</h1>
+            <p class="text-muted mb-4">
+                {% trans "Project Alkahest is currently in closed beta. Please enter your invite code to proceed." %}
+            </p>
+
+            <form method="post" class="d-grid gap-3">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="form-group">
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary btn-lg mt-2">
+                    {% trans "Unlock Access" %}
+                </button>
+            </form>
+            
+            <div class="mt-4 text-muted small">
+                <i class="bi bi-shield-lock"></i> Secured by Alkahest
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
