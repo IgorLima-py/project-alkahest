@@ -1,1 +1,2 @@
-web: gunicorn core.wsgi:application --log-file -
+web: gunicorn core.wsgi --log-file -
+worker: celery -A core worker -l INFO

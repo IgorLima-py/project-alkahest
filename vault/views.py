@@ -28,7 +28,6 @@ from django.views.decorators.cache import never_cache # <--- NOVO (Mata Zumbi)
 from .utils.security import sanitize_html, friendly_ratelimit
 
 from .tasks import run_backloggd_import_task
-from .models import ProfileImportJob
 
 
 # Forms
@@ -38,7 +37,7 @@ from .forms import ReviewForm, UserLibraryEntryForm, GameTipForm
 from .models import (
     UserLibraryEntry, UserAchievement, Review, GameTip, TipVote, 
     GameList, GameListItem, MasterGame, Platform, PlatformGame,
-    UserProfile, UserFollow, User, Notification, ProfileImportJob, UserLibraryEntry
+    UserProfile, UserFollow, User, Notification, ProfileImportJob, UserLibraryEntry, ProfileImportJob, BetaInvite
 )
 
 from .tasks import sync_steam_library_task, delete_user_account_task, export_user_data_task
@@ -752,3 +751,29 @@ def import_live_feed(request, job_id):
         'entries': latest_entries,
         'job': job
     })
+
+
+def beta_login_view(request):
+    # Se já tem acesso, manda pra home (ou login)
+    if request.session.get('has_beta_access'):
+        return redirect('login') # Ou dashboard
+
+    if request.method == 'POST':
+        code = request.POST.get('invite_code', '').strip().upper()
+        
+        # Bypass mestre via ENV (Backdoor do dev)
+        master_key = settings.SECRET_KEY[:5] # Apenas exemplo, use env var dedicada idealmente
+        
+        try:
+            invite = BetaInvite.objects.get(code=code)
+            if invite.use():
+                request.session['has_beta_access'] = True
+                request.session.set_expiry(60 * 60 * 24 * 30) # 30 dias
+                messages.success(request, "Welcome to Project Alkahest Beta.")
+                return redirect('login')
+            else:
+                messages.error(request, "This invite code has expired.")
+        except BetaInvite.DoesNotExist:
+            messages.error(request, "Invalid invite code.")
+
+    return render(request, 'beta_login.html')

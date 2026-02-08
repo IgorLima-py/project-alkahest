@@ -4,7 +4,7 @@ from django.contrib.auth import views as auth_views
 from allauth.account.views import LoginView as AllauthLoginView # Importação da View Híbrida (Email/User)
 from django_ratelimit.decorators import ratelimit
 from vault import views
-from vault.views import set_language_view
+from vault.views import set_language_view, beta_login_view
 from vault.views_admin import merge_games_tool, god_mode_dashboard
 
 from django.contrib.auth.views import LogoutView
@@ -24,6 +24,7 @@ urlpatterns = [
     # ==========================================
     # Rotas padrão do Allauth (Necessário para Steam, Signup, Password Reset)
     # CRÍTICO: Isso ativa as tags {% provider_login_url %} e {% url 'account_signup' %}
+    path('beta-login/', beta_login_view, name='beta_login'),
     path('accounts/', include('allauth.urls')),
 
     # Login Customizado (Sobrescreve a rota padrão com Rate Limit e Template Dark)

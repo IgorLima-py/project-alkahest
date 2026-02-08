@@ -440,3 +440,30 @@ class ProfileImportJob(models.Model):
 
     def __str__(self):
         return f"{self.source} import for {self.target_username} ({self.status})"
+    
+
+# ==========================================
+# BLOCO 12: BETA SYSTEM
+# ==========================================
+class BetaInvite(models.Model):
+    code = models.CharField(max_length=20, unique=True, db_index=True)
+    is_active = models.BooleanField(default=True)
+    max_uses = models.IntegerField(default=1)
+    used_count = models.IntegerField(default=0)
+    note = models.CharField(max_length=100, blank=True, help_text="Quem recebeu este código?")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        return self.is_active and self.used_count < self.max_uses
+
+    def use(self):
+        if self.is_valid():
+            self.used_count = F('used_count') + 1
+            self.save(update_fields=['used_count'])
+            self.refresh_from_db() # Atualiza para checar status
+            return True
+        return False
+    
+    def __str__(self):
+        return f"{self.code} ({self.used_count}/{self.max_uses})"
