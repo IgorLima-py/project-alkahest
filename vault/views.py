@@ -22,6 +22,7 @@ from core.celery import app
 import json
 import uuid
 import nh3
+from django.contrib import messages
 
 
 from django.views.decorators.cache import never_cache # <--- NOVO (Mata Zumbi)
