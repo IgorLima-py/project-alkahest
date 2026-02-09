@@ -11,13 +11,14 @@ class BetaAccessMiddleware:
         self.get_response = get_response
         # Rotas permitidas mesmo sem beta
         self.whitelist = [
-            '/beta-login/', # A porta de entrada
-            '/admin/',      # Você precisa logar
-            '/static/',     # Assets
-            '/media/',      # Uploads
-            '/accounts/',   # Login do Allauth (Steam callback precisa passar)
-            '/health/',     # Health check do Railway (se tiver)
+            '/beta-login', # SEM BARRA NO FINAL
+            '/admin',
+            '/static',
+            '/media',
+            '/accounts',
+            '/health',
         ]
+
 
     def __call__(self, request):
         # 1. Se Beta estiver desligado, deixa passar tudo

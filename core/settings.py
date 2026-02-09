@@ -12,9 +12,10 @@ env = environ.Env(
     # Castings e defaults
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ['127.0.0.1', 'localhost']),
+    # GARANTIA: Default explícito caso a ENV falhe
     CSRF_TRUSTED_ORIGINS=(list, ['https://alka.gg', 'https://www.alka.gg']),
     ENABLE_ANALYTICS=(bool, False),
-    BETA_ACTIVE=(bool, True), # Flag mestre do Beta
+    BETA_ACTIVE=(bool, True), 
 )
 
 # Lê .env local se existir
@@ -22,12 +23,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # 2. Segurança Core
-SECRET_KEY = env('DJANGO_SECRET_KEY') # Vai quebrar se não tiver setado (bom!)
+SECRET_KEY = env('DJANGO_SECRET_KEY') 
 DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
-# Necessário para Cloudflare/Railway não bloquear POST requests
-CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS')
+
+# FIX CRÍTICO: Usar env.list para forçar parsing correto de lista separada por vírgula
+# Se no Railway estiver "https://alka.gg,https://www.alka.gg", o env.list resolve.
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=['https://alka.gg', 'https://www.alka.gg'])
 
 # Headers de Proxy (Railway/Cloudflare)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -49,14 +52,14 @@ else:
 
 # Application definition
 INSTALLED_APPS = [
-    'vault', # Seu app principal
+    'vault', 
     
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles', # Whitenoise precisa disso
+    'django.contrib.staticfiles',
     'django.contrib.humanize',
     'django.contrib.sites',
     'dbbackup',
@@ -76,7 +79,7 @@ SITE_ID = 1
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     
-    # --- STATIC FILES (CRÍTICO) ---
+    # --- STATIC FILES ---
     'whitenoise.middleware.WhiteNoiseMiddleware', 
     
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -113,14 +116,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database (Neon/Postgres)
+# Database
 DATABASES = {
     'default': env.db('DATABASE_URL', default='sqlite:///db.sqlite3')
 }
-# Otimização de conexão para Serverless (Neon)
 DATABASES['default']['CONN_MAX_AGE'] = 600 
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     { 'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
     { 'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
@@ -142,11 +143,10 @@ LANGUAGES = [
 ]
 LOCALE_PATHS = [BASE_DIR / 'locale']
 
-# Static files (Whitenoise Config)
+# Static files
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' # Pasta onde o collectstatic junta tudo
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [ BASE_DIR / 'static' ]
-# Compressão e Caching agressivo para performance
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Redis & Celery
@@ -169,7 +169,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
-# Auth & Allauth
+# Auth
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
@@ -199,3 +199,12 @@ POSTHOG_HOST = env('POSTHOG_HOST', default='https://app.posthog.com')
 
 # Beta Flag
 BETA_ACTIVE = env('BETA_ACTIVE')
+
+# --- DEBUG LOGGER ---
+# Isso vai aparecer nos logs do Railway e nos dirá a verdade
+import sys
+print("="*50, file=sys.stderr)
+print(f"DEBUG PROD: ALLOWED_HOSTS (raw env) = {env('ALLOWED_HOSTS')}", file=sys.stderr)
+print(f"DEBUG PROD: CSRF_TRUSTED_ORIGINS (final) = {CSRF_TRUSTED_ORIGINS}", file=sys.stderr)
+print(f"DEBUG PROD: BETA_ACTIVE = {BETA_ACTIVE}", file=sys.stderr)
+print("="*50, file=sys.stderr)
